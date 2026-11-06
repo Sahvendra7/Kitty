@@ -161,3 +161,32 @@ A wrongly shared line could be dropped from the desk, but a line wrongly marked 
 **What this can't hide:** that Dev asked. Others pay more, so they're entitled to know who came off and by how much. Only the reason stays private. Making the asker anonymous would mean others approve a cost they can't assess, and on a six-person trip the changed share would reveal it anyway.
 
 **Why it's not built today:** it adds a claim type, a multi-party approval state, a new way for a released expense to change, a settled-payments edge case (what if money has already moved on the old numbers?), and matching work in `verify.py`. That touches the part of the system with the strongest evidence, close to the deadline, and the six-person run shows the common case is already handled. About a day's careful work, with tests.
+
+## ADR-016: The Pot trip: one engine, one `treasurer` setting, and only the recipient's confirmation counts
+
+**Decided:** 7 Nov 2026, direction by the owner. **Status:** specified in `docs/POT_TRIP_SPEC.md`. **Not built. Implementation waits for the owner's approval of the spec.**
+
+**The ask:** make Kitty useful for Indian groups whose money runs through one organiser's personal UPI account, without anyone exposing their financial records.
+
+**Options:** (a) stay as a reconciler with an evidence vault; (b) a separate Treasurer Mode; (c) a lightweight expense management platform; (d) two workflows on one engine.
+
+**Decision:** (d), reduced to a single trip setting. With `treasurer` set, a member-to-treasurer payment becomes a `contribution`, and it counts only while the treasurer's own human account has confirmed it. The treasurer's agent checks the treasurer's records in plain code with no model. A screenshot can't change any state.
+
+**Why:** the code needs no new accounting. `ledger.balances` already nets contributions, spending and refunds through one person. We checked `pot_position == -net[treasurer] - treasurer's shares` and hub settlement over 20,000 random histories in a throwaway script. Research found receipt OCR and approval queues are commodity, and approval is crowded in this very hackathon. Confirming money against a private account is the part we didn't find elsewhere, within limited search.
+
+**Rejected:**
+
+- *Reusing `find_credit`.* We ran it: it returns a credit that was later taken back, and matches two claims to one row. That's acceptable for Mode A's story, and wrong for a pot. A new search goes in new code, and Mode A's stays as it is.
+- *Giving the clerk the transactions so it can validate matches.* That breaks ADR-002. The clerk checks an attestation instead, using keyed tokens it can compare and can't read.
+- *Sending references through desks.* That would fail an existing `verify.py` rule, rightly. Tokens replace them.
+- *A treasurer change, or an organiser override, in this version.* Nobody else has the money, so an override would invent a confirmation.
+- *An expense approval gate.* Demand is unproven, and it can come later.
+
+**Trade-offs and limits:**
+
+- A confirmation is a person's word. A treasurer can lie, and collusion can't be detected.
+- The decision history is append-only and tamper-evident, not immutable. Whoever controls the database can still rewrite everything.
+- **Whoever hosts Switch or Mattermost can read private rooms,** so a treasurer who is also the host isn't bound by room boundaries.
+- A treasurer with no statement can only confirm by hand, and then Kitty is little more than a tracker.
+- Real 12-digit references, real statements, groups above 12, and use without Docker are all out of scope.
+- **No user research.** Five interview questions and the assumptions to test are in the spec, and nothing beyond it should be built until they have answers.

@@ -264,3 +264,27 @@ With the owner's go-ahead, we restarted Switch's own process. Its bridge came ba
 | Three people, real model | Clean, 37 of 37 |
 
 Then a fresh three-person trip was set up, so the stage is ready. The test trips made during the sprint were deleted locally. Their rooms stay in Switch (issue #1202).
+
+## E. Product decision: the Pot trip
+
+### Sat 7 Nov, 04:33-05:08 - research, then a specification (documents only, nothing built)
+
+The owner asked whether Kitty should grow into an India-first expense platform with receipts, an evidence vault and a treasurer mode, and told us to recommend against the idea if that was right. Report: `research/kitty-india-expense-workflows.md`, outside this repository.
+
+What we found. Receipt OCR, UPI hand-off, and statement import are all advertised by Indian apps already. Payer-marks, receiver-confirms exists in SplitMitra. Approval queues exist in Zoho Expense and Expensify, and in this hackathon's finance entries. The part we didn't find, within limited search, was confirming money against a private account. NPCI's FAQ page returned 404 in a real browser, Splitr couldn't be reached, and there was no user research at all.
+
+The owner then decided: keep the engine, add a `treasurer` setting, and make collection through one person's UPI the headline. Spec: `docs/POT_TRIP_SPEC.md`. Decision: ADR-016.
+
+**Reading the code changed the design.** We ran a throwaway probe against the unchanged code, with these results:
+
+| Assumed | What ran |
+|---|---|
+| `find_credit` could be reused | It returns a credit later taken back, and matches two claims to one row |
+| A pot can use the existing transfer | `date_outside_trip` refuses any payment before the trip, which is when pots are collected |
+| A UPI reference can be matched | The importer refuses 12-digit runs by design (`long_number`), and `verify.py` forbids references on desks |
+
+Reading also found that replay gives every clerk record a new time, so the "decision history" we'd have claimed didn't really exist, and that a treasurer's first statement review would send their personal spending to the model. Both are handled in the spec.
+
+**A correction to our own numbers.** The report guessed 3 to 4 hours for this work, before we'd read this much. The spec covers more, and now gives 2 to 3 hours for a smaller Core, plus evidence and the rest on top. These are still guesses, from commit times this sprint.
+
+Nothing is approved for building. No application code changed, and no video was recorded.
