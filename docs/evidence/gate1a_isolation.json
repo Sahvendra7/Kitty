@@ -1,0 +1,146 @@
+{
+ "switch_commit": "fa933012b",
+ "run": "4d6c9b",
+ "results": [
+  {
+   "check": "three separate non-admin owners exist",
+   "pass": true,
+   "detail": "roles=['user', 'user', 'user']"
+  },
+  {
+   "check": "meera's agent can invite the clerk into meera's own private room",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "arjun's agent can invite the clerk into arjun's own private room",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "DENIED: meera-agent read_context on group room",
+   "pass": true,
+   "detail": "403 {\"detail\":\"Agent is not a member of this room\"}"
+  },
+  {
+   "check": "DENIED: meera-agent read_context on arjun's private room",
+   "pass": true,
+   "detail": "403 {\"detail\":\"Agent is not a member of this room\"}"
+  },
+  {
+   "check": "DENIED: meera-agent post_message HTTP on group room",
+   "pass": true,
+   "detail": "403 {\"detail\":\"Agent is not a member of this room\"}"
+  },
+  {
+   "check": "DENIED: meera-agent post_message HTTP on arjun's private room",
+   "pass": true,
+   "detail": "403 {\"detail\":\"Agent is not a member of this room\"}"
+  },
+  {
+   "check": "DENIED: meera-agent connect_to_room on group room",
+   "pass": true,
+   "detail": "400 {\"detail\":\"Agent is not a member of this room\"}"
+  },
+  {
+   "check": "DENIED: meera-agent connect_to_room on arjun's private room",
+   "pass": true,
+   "detail": "400 {\"detail\":\"Agent is not a member of this room\"}"
+  },
+  {
+   "check": "DENIED: meera-agent invites herself into group room",
+   "pass": true,
+   "detail": "403 {\"detail\":\"Not authorized to change this room's membership\"}"
+  },
+  {
+   "check": "DENIED: meera-agent invites herself into arjun's private room",
+   "pass": true,
+   "detail": "403 {\"detail\":\"Not authorized to change this room's membership\"}"
+  },
+  {
+   "check": "DENIED: arjun-agent invites himself into group room",
+   "pass": true,
+   "detail": "403 {\"detail\":\"Not authorized to change this room's membership\"}"
+  },
+  {
+   "check": "DENIED: meera-agent get_room_detail on arjun's private room",
+   "pass": true,
+   "detail": "403 {\"detail\":\"Agent is not a member of this room\"}"
+  },
+  {
+   "check": "private rooms not listed to another owner's agent (list_all_rooms)",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "meera-agent's own room list has only her room",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "DENIED: meera-agent opens a connection on the group room",
+   "pass": true,
+   "detail": "refused={'status': 403, 'detail': 'Agent is not a member of this room'} close=None events=0"
+  },
+  {
+   "check": "DENIED: meera-agent opens a connection on arjun's private room",
+   "pass": true,
+   "detail": "refused={'status': 403, 'detail': 'Agent is not a member of this room'} events=0"
+  },
+  {
+   "check": "meera-agent posts a claim into her private room",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "clerk receives the claim from the private room",
+   "pass": true,
+   "detail": "event received"
+  },
+  {
+   "check": "event carries a server-set sender id",
+   "pass": true,
+   "detail": "@switch-agent-69fd4a4b:localhost"
+  },
+  {
+   "check": "event names its room",
+   "pass": true,
+   "detail": "11f65343-940f-4c0d-82ed-a4f6d6746acf"
+  },
+  {
+   "check": "clerk posts the claim to the group room",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "the relayed claim is in group room history",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "meera's connection only ever delivered her own room",
+   "pass": true,
+   "detail": "0 events"
+  },
+  {
+   "check": "arjun-agent received no private-room or group-room traffic",
+   "pass": true,
+   "detail": "0 bodies"
+  },
+  {
+   "check": "canary absent from group room history",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "canary absent from arjun's private history",
+   "pass": true,
+   "detail": "200"
+  },
+  {
+   "check": "typed name cannot change the server-set sender",
+   "pass": true,
+   "detail": "@switch-agent-69fd4a4b:localhost"
+  }
+ ]
+}

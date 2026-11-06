@@ -1,0 +1,30 @@
+{
+ "inconclusive": true,
+ "results": [
+  {
+   "check": "CLI started and reported its init event",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "check": "the model is the one we asked for",
+   "pass": false,
+   "detail": "claude-haiku-4-5-20251001"
+  },
+  {
+   "check": "the CLI reports zero tools",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "the CLI reports zero MCP servers",
+   "pass": true,
+   "detail": "[]"
+  },
+  {
+   "check": "the model actually ran (otherwise every check below is vacuous)",
+   "pass": false,
+   "detail": "Not logged in · Please run /login"
+  }
+ ]
+}

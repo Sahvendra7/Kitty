@@ -1,0 +1,19 @@
+[project]
+name = "kitty"
+version = "0.1.0"
+description = "Group trip settlement where each friend's private agent reads their own statement, and only owner-released claims reach the group."
+requires-python = ">=3.12"
+dependencies = [
+    "httpx>=0.27",
+    "fastapi>=0.115",
+    "uvicorn>=0.30",
+    "websockets>=17.4",
+]
+
+[dependency-groups]
+dev = ["pytest>=8", "hypothesis>=4"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+markers = ["live: needs a running Switch stack (excluded by default)"]
+addopts = "-m 'not live'"

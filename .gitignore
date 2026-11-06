@@ -1,0 +1,25 @@
+# Secrets and local state: never commit
+.env
+.env.*
+!.env.example
+state/
+*.local.json
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.hypothesis/
+.ruff_cache/
+
+# Runtime output
+logs/
+*.log
+!docs/evidence/*.log
+people/
+vault/
+
+# OS / tooling
+.DS_Store
+node_modules/
