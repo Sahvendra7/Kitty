@@ -22,10 +22,13 @@ import httpx
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from kitty import ledger as L  # noqa: E402
+from kitty import paths as P  # noqa: E402
 from kitty.switch_client import Agent, Mattermost  # noqa: E402
 
+# A trip made in the app: KITTY_TRIP_DIR=trips/<id> uv run python scripts/verify.py
+WHERE = P.current()
 DATA = ROOT / "data/synthetic"
-TRIP = json.loads((DATA / "trip.json").read_text())
+TRIP = json.loads(WHERE.trip_json.read_text())
 PEOPLE = TRIP["people"]
 results: list[tuple[str, bool, str]] = []
 
@@ -46,6 +49,25 @@ def history(agent: Agent, room_id: str) -> list[dict]:
     return messages
 
 
+REFUSED_AGAIN = "refused repeatedly"
+
+
+def status_of(agent: Agent, room_id: str) -> str:
+    """How the server answered. After several 403s it answers 429 and says so, and retrying only extends that.
+
+    That reply carries no room data, and it says the same request was already refused, so it counts as a
+    refusal and is shown as its own value. Any other 429 proves nothing, and fails the check.
+    """
+    r = agent.op("read_context", room_id=room_id)
+    if r.status_code == 429 and REFUSED_AGAIN in r.text and "threads" not in r.text:
+        return "403-again"
+    return str(r.status_code)
+
+
+def refused(code: str) -> bool:
+    return code in ("403", "403-again")
+
+
 def body_of(m: dict) -> str:
     return m["body"]
 
@@ -56,7 +78,7 @@ def forbidden_terms() -> set[str]:
     noise = {"UPI", "GPAY", "PHONEPE", "NEFT", "ORDER", "TRANSFER", "SYNTHETIC", "SESSION", "INDIA", "ROOM", "FAILED"} | names
     terms: set[str] = set()
     for pid in PEOPLE:
-        with (DATA / f"{pid}.csv").open() as handle:
+        with (WHERE.statement(pid) if WHERE.in_app else DATA / f"{pid}.csv").open() as handle:
             for row in csv.DictReader(handle):
                 terms.add(row["ref"])
                 terms.add(row["account"])
@@ -67,16 +89,25 @@ def forbidden_terms() -> set[str]:
 
 
 def rupees_to_paise(text: str) -> int:
-    whole, _, frac = text.replace("₹", "").replace(",", "").partition(".")
+    whole, _, frac = re.sub(r"[₹$€£,]", "", text).partition(".")
     return int(whole) * 100 + int(frac or 0)
 
 
-LINE = re.compile(r"^\*\*(c\d+)\*\* (₹[\d,.]+) · (\w+) · (\d+ \w+) · paid by (\w+) · (.+)$")
-CONFIRMED = re.compile(r"^\*\*(t\d+) confirmed by both sides:\*\* (\w+) paid (\w+) (₹[\d,.]+)\.$")
+LINE = re.compile(r"^\*\*(c\d+)\*\* ([₹$€£][\d,.]+) · (\w+) · (\d+ \w+) · paid by (\w+) · (.+)$")
+CONFIRMED = re.compile(r"^\*\*(t\d+) confirmed by both sides:\*\* (\w+) paid (\w+) ([₹$€£][\d,.]+)\.$")
+CONFLICT = re.compile(r"^\*\*Possible conflict:\*\* (c\d+) and (c\d+) ")
+CLEARED = re.compile(r"^Conflict cleared: \w+ withdrew (c\d+)\. \*\*(c\d+)\*\* now counts: (.+)$")
+SHARE = re.compile(r"(\w+) ([₹$€£][\d,]*\d\.\d{2})")
+
+
+def board_url() -> str:
+    if WHERE.in_app:
+        return f"http://127.0.0.1:{json.loads((WHERE.state / 'runtime.json').read_text())['board']}/api/board"
+    return "http://127.0.0.1:7100/api/board"
 
 
 def main() -> int:
-    state = ROOT / "state"
+    state = WHERE.state
     clerk_cfg = json.loads((state / "clerk.json").read_text())
     agents_cfg = {p: json.loads((state / f"{p}.json").read_text()) for p in PEOPLE}
     clerk = Agent(clerk_cfg["agent_id"], clerk_cfg["api_key"], clerk_cfg["name"])
@@ -91,14 +122,34 @@ def main() -> int:
 
     # 1. Re-derive the ledger from the group room's own words.
     ids = {d["name"]: pid for pid, d in PEOPLE.items()}
-    lines: list[L.Line] = []
+    counted: dict[str, L.Line] = {}
     shown: dict[str, dict] = {}
     withdrawn_or_held = set()
+    conflicts: list[tuple[str, str]] = []
+    cleared: list[tuple[str, str]] = []
+
+    def count(text: str) -> str | None:
+        m = LINE.match(text)
+        if not m:
+            return None
+        shares = tuple((ids[n], rupees_to_paise(v)) for n, v in SHARE.findall(m.group(6)))
+        shown[m.group(1)] = {"payer": ids[m.group(5)]}
+        counted[m.group(1)] = L.Line(ids[m.group(5)], rupees_to_paise(m.group(2)), shares)
+        return m.group(1)
+
+    # In the order the room shows them, because a conflict takes a line back out.
     for text in group_text:
-        if m := LINE.match(text):
-            shares = tuple((ids[n], rupees_to_paise(v)) for n, v in re.findall(r"(\w+) (₹[\d,]*\d\.\d{2})", m.group(6)))
-            shown[m.group(1)] = {"payer": ids[m.group(5)]}
-            lines.append(L.Line(ids[m.group(5)], rupees_to_paise(m.group(2)), shares))
+        if count(text):
+            continue
+        if m := CONFLICT.match(text):
+            conflicts.append((m.group(1), m.group(2)))
+            for cid in m.groups():
+                counted.pop(cid, None)
+                shown.pop(cid, None)
+        elif m := CLEARED.match(text):
+            kept = count(f"**{m.group(2)}** {m.group(3)}")
+            cleared.append((m.group(1), kept or ""))
+    lines = list(counted.values())
     payments: list[L.Payment] = []
     confirmed_ids: list[str] = []
     for text in group_text:
@@ -113,7 +164,7 @@ def main() -> int:
     check("net balances, recomputed from room text, sum to zero", sum(net.values()) == 0, str(net))
 
     try:
-        board = httpx.get("http://127.0.0.1:7100/api/board", timeout=10).json()
+        board = httpx.get(board_url(), timeout=10).json()
     except httpx.HTTPError:
         board = None
     if board:
@@ -133,6 +184,12 @@ def main() -> int:
     agent_senders = {d["agent_sender"] for d in clerk_cfg["people"].values()}
     check("no release in the log came from an agent that took effect", not any(e["sender"] in agent_senders and e["body"].strip().lower().startswith("release") and cid_published(e["body"], shown) and released.get(cid_of(e["body"])) == e["sender"] for e in events))
 
+    if conflicts:
+        drops = {m.group(1).lower(): e["sender"] for e in events if (m := re.match(r"^\s*drop\s+(c\d+)\s*$", e["body"], re.I))}
+        check("every conflict was cleared in the group room", len(conflicts) == len(cleared), f"{len(conflicts)} raised, {len(cleared)} cleared")
+        check("a conflicted expense counts exactly once", all(kept in counted and dropped not in counted for dropped, kept in cleared), str(cleared))
+        check("each dropped claim was dropped by a person's own human account", all(drops.get(dropped) in humans.values() for dropped, _ in cleared), f"{len(cleared)} drops")
+
     # 3. Words from the statements in places they must never be.
     terms = forbidden_terms()
     places = {"group room": group_text}
@@ -151,13 +208,13 @@ def main() -> int:
     detail = r.json()["result"]
     check("the clerk is the only agent in the group room", detail["agent_names"] == [clerk.name], str(detail["agent_names"]))
     for pid, ag in agents.items():
-        r = ag.op("read_context", room_id=group)
-        check(f"{pid}'s agent is refused the group room", r.status_code == 403, f"{r.status_code}")
-        r = clerk.op("read_context", room_id=agents_cfg[pid]["private_room"])
-        check(f"the clerk is refused {pid}'s private room", r.status_code == 403, f"{r.status_code}")
+        code = status_of(ag, group)
+        check(f"{pid}'s agent is refused the group room", refused(code), code)
+        code = status_of(clerk, agents_cfg[pid]["private_room"])
+        check(f"the clerk is refused {pid}'s private room", refused(code), code)
         others = [q for q in PEOPLE if q != pid]
-        codes = [ag.op("read_context", room_id=agents_cfg[q]["private_room"]).status_code for q in others]
-        check(f"{pid}'s agent is refused everyone else's private room", all(c == 403 for c in codes), str(codes))
+        codes = [status_of(ag, agents_cfg[q]["private_room"]) for q in others]
+        check(f"{pid}'s agent is refused everyone else's private room", all(refused(c) for c in codes), str(codes))
 
     # Membership again, this time as Mattermost reports it, seen by each person's own session.
     def mm_members(person: str, room: str) -> set[str]:
@@ -190,7 +247,7 @@ def main() -> int:
 
     failed = [n for n, ok, _ in results if not ok]
     print(f"\n{len(results) - len(failed)}/{len(results)} checks passed")
-    out = ROOT / "docs/evidence/verify_output.json"
+    out = WHERE.logs / "verify_output.json" if WHERE.in_app else ROOT / "docs/evidence/verify_output.json"
     out.write_text(json.dumps({"results": [{"check": n, "pass": ok, "detail": d} for n, ok, d in results], "net": net}, indent=1, ensure_ascii=False))
     return 1 if failed else 0
 

@@ -181,10 +181,14 @@ class PersonalAgent:
             if item.state in ("new", "asked"):
                 item.state = "asked"
                 self.asked = item.row.row_id
-                return [Post("private", f"{self._question(item)}\nTell me in your own words, or say `personal`, `shared`, or `shared arjun priya`.")]
+                return [Post("private", f"{self._question(item)}\nTell me in your own words, or say `personal`, `shared`, or `{self._shared_example()}`.")]
         if self.started:
             return [Post("private", "That's everything for now. Check your desk to release what you're happy to share.")]
         return []
+
+    def _shared_example(self) -> str:
+        others = [p for p in self.trip.participants if p != self.me][:2]
+        return "shared " + " ".join(others)
 
     def _from_owner(self, body: str) -> list[Post]:
         text = body.strip()
@@ -193,12 +197,14 @@ class PersonalAgent:
             return self.start() if not self.started or lowered == "rescan" else self._scan()
         if lowered == "status":
             return [Post("private", f"{len(self.items)} lines read. {sum(i.state == 'filed' for i in self.items.values())} on your desk, {sum(i.state == 'personal' for i in self.items.values())} kept private.")]
+        if lowered.startswith("reopen "):
+            return self._reopen(text[7:].strip())
         if self.asked is None:
             return [Post("private", "Nothing to decide right now. Say `start` to read your statement, or `rescan` for new lines.")]
         item = self.items[self.asked]
         decision = self._read_answer(item, text)
         if decision.verdict == "unsure":
-            return [Post("private", f"I didn't catch that. {self._question(item)} Say `personal`, `shared`, or `shared arjun priya`.")]
+            return [Post("private", f"I didn't catch that. {self._question(item)} Say `personal`, `shared`, or `{self._shared_example()}`.")]
         if decision.verdict == "personal":
             item.state = "personal"
             return [Post("private", f"Got it. {item.title} stays private."), *self._ask_next()]
@@ -208,6 +214,16 @@ class PersonalAgent:
             post = self._file_expense(item, decision.people or tuple(self.trip.participants))
         who = ", ".join(self.names[p] for p, _ in self._last_shares)
         return [post, Post("private", f"Filed {item.title} for {who}. It's on your desk, and the merchant name stays here."), *self._ask_next()]
+
+    def _reopen(self, title: str) -> list[Post]:
+        """The model proposes and the person decides, so a line it kept private can always be asked about again."""
+        wanted = title.lower()
+        item = next((i for i in self.items.values() if i.state == "personal" and i.title.lower() == wanted), None)
+        if item is None:
+            return [Post("private", "I can't find that among the lines I kept private.")]
+        item.state = "new"
+        self.queue.insert(0, item.row.row_id)
+        return self._ask_next() if self.asked is None else [Post("private", f"I'll ask you about {item.title} after this one.")]
 
     def _read_answer(self, item: Item, text: str) -> Decision:
         return self._parse_command(item, text) or self._ask_brain(item, text)

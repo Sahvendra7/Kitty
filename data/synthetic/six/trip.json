@@ -1,0 +1,15 @@
+{
+  "name": "Coorg weekend",
+  "start": "2026-10-16",
+  "end": "2026-10-19",
+  "currency": "INR",
+  "people": [
+    {"name": "Asha", "statement_name": "ASHA M"},
+    {"name": "Bilal", "statement_name": "BILAL K"},
+    {"name": "Chitra", "statement_name": "CHITRA N"},
+    {"name": "Dev", "statement_name": "DEV P"},
+    {"name": "Esha", "statement_name": "ESHA R"},
+    {"name": "Farhan", "statement_name": "FARHAN S"}
+  ],
+  "synthetic_notice": "All statements are invented. No real person, account or transaction."
+}

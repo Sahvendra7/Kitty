@@ -298,7 +298,7 @@ function drawBuilding(t){
   const steps=t.provision.steps,failed=steps.filter(s=>s.state==="failed"),running=steps.find(s=>s.state==="running");
   const wide=steps.filter(s=>!s.person);
   const row=p=>{const mine=steps.filter(s=>s.person===p.id),cur=mine.find(s=>["running","failed"].includes(s.state));
-    return `<div class="who"><b>${esc(p.name)}</b><div class="pips" role="img" aria-label="${p.steps_done} of ${p.steps_total} steps done">${mine.map(s=>`<i class="pip ${s.state}"></i>`).join("")}</div><small class="${cur&&cur.state==="failed"?"bad":""}">${cur?esc(cur.label):p.steps_done===p.steps_total?"Ready":"Waiting"}</small>
+    return `<div class="who"><b>${esc(p.name)}</b><div class="pips" role="img" aria-label="${p.steps_done} of ${p.steps_total} steps done">${mine.map(s=>`<i class="pip ${s.state}"></i>`).join("")}</div><small class="${cur&&cur.state==="failed"?"bad":""}">${cur?(cur.state==="failed"?"Stopped at: ":"")+esc(cur.label):p.steps_done===p.steps_total?"Ready":"Waiting"}</small>
     ${p.failed&&t.editable?`<small style="grid-column:2"><button class="linkish" data-remove="${esc(p.id)}">Remove ${esc(p.name)} from the trip</button></small>`:""}</div>`};
   const before=wide.filter(s=>["connect","clerk"].includes(s.id)),after=wide.filter(s=>!["connect","clerk"].includes(s.id));
   const line=s=>`<div class="tripwide"><i class="dot ${s.state}"></i><span>${esc(s.label)}</span></div>`;

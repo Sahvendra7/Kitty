@@ -262,3 +262,19 @@ def test_agent_post_room_is_only_ever_private_or_desk():
     for pid in TRIP.participants:
         posts = world.agents[pid].start()
         assert posts and all(isinstance(p, AgentPost) and p.room in ("private", "desk") for p in posts)
+
+
+def test_a_line_kept_private_can_be_asked_about_again():
+    world = build()
+    start(world, "priya")
+    agent = world.agents["priya"]
+    world.human("priya", "private", "Yes, but Meera had gone to bed. Just Arjun and me.")
+    assert agent.items["r4"].state == "personal"  # The jewellery.
+    title = agent.items["r4"].title
+    world.human("priya", "private", f"reopen {title}")
+    assert agent.asked == "r4"
+    assert any("Was this shared with the group?" in t and "12,400" in t for t in world.texts("private-priya"))
+    world.human("priya", "private", "shared")
+    assert agent.items["r4"].state == "filed"
+    world.human("priya", "private", "reopen Nothing Like This")
+    assert "can't find" in world.texts("private-priya")[-1]
