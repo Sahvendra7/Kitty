@@ -1,0 +1,354 @@
+{
+ "model": "claude-haiku-5-5",
+ "runs": 3,
+ "lines_scored": 48,
+ "tp": 16,
+ "fp": 0,
+ "fn": 0,
+ "tn": 19,
+ "unclear_shared": 8,
+ "unclear_personal": 5,
+ "missing": 0,
+ "precision_shared_when_decided": 1.0,
+ "recall_shared_without_asking": 0.667,
+ "wrong_personal_would_lose_money": 0,
+ "wrong_shared_still_needs_release": 0,
+ "detail": [
+  {
+   "run": 0,
+   "person": "priya",
+   "line": "AIRBNB*GOA VILLA 84213",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 0,
+   "person": "priya",
+   "line": "TANISHQ GOA JEWELLERS CANARY-GIFT-PRIYA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 0,
+   "person": "priya",
+   "line": "ZOMATO*ORD 8812",
+   "truth": "shared",
+   "guess": "unclear"
+  },
+  {
+   "run": 0,
+   "person": "priya",
+   "line": "FISHERMANS WHARF CANDOLIM",
+   "truth": "shared",
+   "guess": "unclear"
+  },
+  {
+   "run": 0,
+   "person": "priya",
+   "line": "APOLLO PHARMACY CANARY-PHARMACY-PRIYA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 0,
+   "person": "priya",
+   "line": "NETFLIX.COM SUBSCRIPTION",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 0,
+   "person": "arjun",
+   "line": "GOA2WHEELS SCOOTER RENTAL",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 0,
+   "person": "arjun",
+   "line": "GRANDE ISLAND WATERSPORTS",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 0,
+   "person": "arjun",
+   "line": "TITOS CLUB BAGA",
+   "truth": "personal",
+   "guess": "unclear"
+  },
+  {
+   "run": 0,
+   "person": "arjun",
+   "line": "SPOTIFY INDIA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 0,
+   "person": "arjun",
+   "line": "JIO PREPAID RECHARGE CANARY-MOBILE-ARJUN",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 0,
+   "person": "meera",
+   "line": "BIG BAZAAR MAPUSA",
+   "truth": "shared",
+   "guess": "unclear"
+  },
+  {
+   "run": 0,
+   "person": "meera",
+   "line": "HP PETROL PUMP CALANGUTE",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 0,
+   "person": "meera",
+   "line": "CAFE CHAI CANDOLIM",
+   "truth": "personal",
+   "guess": "unclear"
+  },
+  {
+   "run": 0,
+   "person": "meera",
+   "line": "MARTINS CORNER BETALBATIM",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 0,
+   "person": "meera",
+   "line": "MYNTRA FASHION CANARY-MYNTRA-MEERA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 1,
+   "person": "priya",
+   "line": "AIRBNB*GOA VILLA 84213",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 1,
+   "person": "priya",
+   "line": "TANISHQ GOA JEWELLERS CANARY-GIFT-PRIYA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 1,
+   "person": "priya",
+   "line": "ZOMATO*ORD 8812",
+   "truth": "shared",
+   "guess": "unclear"
+  },
+  {
+   "run": 1,
+   "person": "priya",
+   "line": "FISHERMANS WHARF CANDOLIM",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 1,
+   "person": "priya",
+   "line": "APOLLO PHARMACY CANARY-PHARMACY-PRIYA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 1,
+   "person": "priya",
+   "line": "NETFLIX.COM SUBSCRIPTION",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 1,
+   "person": "arjun",
+   "line": "GOA2WHEELS SCOOTER RENTAL",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 1,
+   "person": "arjun",
+   "line": "GRANDE ISLAND WATERSPORTS",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 1,
+   "person": "arjun",
+   "line": "TITOS CLUB BAGA",
+   "truth": "personal",
+   "guess": "unclear"
+  },
+  {
+   "run": 1,
+   "person": "arjun",
+   "line": "SPOTIFY INDIA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 1,
+   "person": "arjun",
+   "line": "JIO PREPAID RECHARGE CANARY-MOBILE-ARJUN",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 1,
+   "person": "meera",
+   "line": "BIG BAZAAR MAPUSA",
+   "truth": "shared",
+   "guess": "unclear"
+  },
+  {
+   "run": 1,
+   "person": "meera",
+   "line": "HP PETROL PUMP CALANGUTE",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 1,
+   "person": "meera",
+   "line": "CAFE CHAI CANDOLIM",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 1,
+   "person": "meera",
+   "line": "MARTINS CORNER BETALBATIM",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 1,
+   "person": "meera",
+   "line": "MYNTRA FASHION CANARY-MYNTRA-MEERA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 2,
+   "person": "priya",
+   "line": "AIRBNB*GOA VILLA 84213",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 2,
+   "person": "priya",
+   "line": "TANISHQ GOA JEWELLERS CANARY-GIFT-PRIYA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 2,
+   "person": "priya",
+   "line": "ZOMATO*ORD 8812",
+   "truth": "shared",
+   "guess": "unclear"
+  },
+  {
+   "run": 2,
+   "person": "priya",
+   "line": "FISHERMANS WHARF CANDOLIM",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 2,
+   "person": "priya",
+   "line": "APOLLO PHARMACY CANARY-PHARMACY-PRIYA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 2,
+   "person": "priya",
+   "line": "NETFLIX.COM SUBSCRIPTION",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 2,
+   "person": "arjun",
+   "line": "GOA2WHEELS SCOOTER RENTAL",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 2,
+   "person": "arjun",
+   "line": "GRANDE ISLAND WATERSPORTS",
+   "truth": "shared",
+   "guess": "unclear"
+  },
+  {
+   "run": 2,
+   "person": "arjun",
+   "line": "TITOS CLUB BAGA",
+   "truth": "personal",
+   "guess": "unclear"
+  },
+  {
+   "run": 2,
+   "person": "arjun",
+   "line": "SPOTIFY INDIA",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 2,
+   "person": "arjun",
+   "line": "JIO PREPAID RECHARGE CANARY-MOBILE-ARJUN",
+   "truth": "personal",
+   "guess": "personal"
+  },
+  {
+   "run": 2,
+   "person": "meera",
+   "line": "BIG BAZAAR MAPUSA",
+   "truth": "shared",
+   "guess": "unclear"
+  },
+  {
+   "run": 2,
+   "person": "meera",
+   "line": "HP PETROL PUMP CALANGUTE",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 2,
+   "person": "meera",
+   "line": "CAFE CHAI CANDOLIM",
+   "truth": "personal",
+   "guess": "unclear"
+  },
+  {
+   "run": 2,
+   "person": "meera",
+   "line": "MARTINS CORNER BETALBATIM",
+   "truth": "shared",
+   "guess": "shared"
+  },
+  {
+   "run": 2,
+   "person": "meera",
+   "line": "MYNTRA FASHION CANARY-MYNTRA-MEERA",
+   "truth": "personal",
+   "guess": "personal"
+  }
+ ]
+}

@@ -12,7 +12,7 @@ import os
 import subprocess
 import tempfile
 
-MODEL = os.environ.get("KITTY_MODEL", "haiku")
+MODEL = os.environ.get("KITTY_MODEL", "claude-haiku-5-5")
 TIMEOUT_SECONDS = 180
 
 

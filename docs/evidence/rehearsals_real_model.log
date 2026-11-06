@@ -1,0 +1,135 @@
+=== rehearsal 1 of 3, Sat Nov  7 00:04:11 IST 2026
+Scripted humans, posting with their own Mattermost sessions.
+  priya  in private: start
+  arjun  in private: start
+  meera  in private: start
+  priya  in private: Yes, but Meera had gone to bed. Just Arjun and me.
+  arjun  in private: That one was just me, personal.
+  meera  in private: Yes, groceries for the whole villa, everyone shared it.
+  meera  in private: No, that was just my own coffee.
+  priya  in desk   : release c1
+  priya  in desk   : release c2
+  priya  in desk   : release c7
+  arjun  in desk   : release c3
+  arjun  in desk   : release c4
+  meera  in desk   : release c5
+  meera  in desk   : release c6
+  meera  in desk   : release c8
+
+The payments people remember:
+  arjun  in desk   : release t1
+  priya  in desk   : release t1
+
+The dispute:
+  meera  in desk   : release t2
+  arjun  in desk   : release t2
+  group room: NOT CONFIRMED
+  Meera's agent found the reversal, privately
+  meera  in desk   : withdraw t2 payment_failed
+
+Balances before settling: {'Priya': 604166, 'Arjun': 39167, 'Meera': -643333}
+  priya  in group  : balances
+  priya  in group  : settle
+
+Synthetic payments land on the statements:
+  meera  in private: rescan
+  meera  in desk   : release t3
+  priya  in desk   : release t3
+  meera  in private: rescan
+  meera  in desk   : release t4
+  arjun  in desk   : release t4
+
+Everyone's square.
+story took 47s
+33/33 checks passed
+=== rehearsal 2 of 3, Sat Nov  7 00:05:24 IST 2026
+Scripted humans, posting with their own Mattermost sessions.
+  priya  in private: start
+  arjun  in private: start
+  meera  in private: start
+  priya  in private: Yes, but Meera had gone to bed. Just Arjun and me.
+  priya  in private: Yes, that was dinner for all of us.
+  arjun  in private: That one was just me, personal.
+  meera  in private: Yes, groceries for the whole villa, everyone shared it.
+  meera  in private: No, that was just my own coffee.
+  priya  in desk   : release c3
+  priya  in desk   : release c6
+  priya  in desk   : release c7
+  arjun  in desk   : release c1
+  arjun  in desk   : release c2
+  meera  in desk   : release c4
+  meera  in desk   : release c5
+  meera  in desk   : release c8
+
+The payments people remember:
+  arjun  in desk   : release t1
+  priya  in desk   : release t1
+
+The dispute:
+  meera  in desk   : release t2
+  arjun  in desk   : release t2
+  group room: NOT CONFIRMED
+  Meera's agent found the reversal, privately
+  meera  in desk   : withdraw t2 payment_failed
+
+Balances before settling: {'Priya': 604166, 'Arjun': 39167, 'Meera': -643333}
+  priya  in group  : balances
+  priya  in group  : settle
+
+Synthetic payments land on the statements:
+  meera  in private: rescan
+  meera  in desk   : release t3
+  priya  in desk   : release t3
+  meera  in private: rescan
+  meera  in desk   : release t4
+  arjun  in desk   : release t4
+
+Everyone's square.
+story took 47s
+33/33 checks passed
+=== rehearsal 3 of 3, Sat Nov  7 00:06:37 IST 2026
+Scripted humans, posting with their own Mattermost sessions.
+  priya  in private: start
+  arjun  in private: start
+  meera  in private: start
+  priya  in private: Yes, but Meera had gone to bed. Just Arjun and me.
+  arjun  in private: Yes, all three of us did that together.
+  arjun  in private: That one was just me, personal.
+  meera  in private: Yes, groceries for the whole villa, everyone shared it.
+  meera  in private: No, that was just my own coffee.
+  priya  in desk   : release c1
+  priya  in desk   : release c2
+  priya  in desk   : release c6
+  arjun  in desk   : release c3
+  arjun  in desk   : release c7
+  meera  in desk   : release c4
+  meera  in desk   : release c5
+  meera  in desk   : release c8
+
+The payments people remember:
+  arjun  in desk   : release t1
+  priya  in desk   : release t1
+
+The dispute:
+  meera  in desk   : release t2
+  arjun  in desk   : release t2
+  group room: NOT CONFIRMED
+  Meera's agent found the reversal, privately
+  meera  in desk   : withdraw t2 payment_failed
+
+Balances before settling: {'Priya': 604166, 'Arjun': 39167, 'Meera': -643333}
+  priya  in group  : balances
+  priya  in group  : settle
+
+Synthetic payments land on the statements:
+  meera  in private: rescan
+  meera  in desk   : release t3
+  priya  in desk   : release t3
+  meera  in private: rescan
+  meera  in desk   : release t4
+  arjun  in desk   : release t4
+
+Everyone's square.
+story took 45s
+33/33 checks passed
+ALL 3 REHEARSALS PASSED, Sat Nov  7 00:07:49 IST 2026

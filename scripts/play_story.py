@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 import time
 from pathlib import Path
@@ -23,7 +24,21 @@ from kitty.switch_client import Mattermost  # noqa: E402
 TRIP = json.loads((ROOT / "data/synthetic/trip.json").read_text())
 PEOPLE = list(TRIP["people"])
 BOARD = "http://127.0.0.1:7100/api/board"
-ANSWERS = {"priya": "Yes, but Meera had gone to bed. Just Arjun and me.", "arjun": "That one was just me, personal."}
+# What each person would say about a line, keyed by its amount, because the model asks about
+# different lines on different runs. Written the way people talk, so a model has to read them.
+ANSWERS = {
+    "₹850": "Yes, but Meera had gone to bed. Just Arjun and me.",
+    "₹1,800": "That one was just me, personal.",
+    "₹180": "No, that was just my own coffee.",
+    "₹7,500": "Yes, all three of us did that together.",
+    "₹4,800": "Yes, that was dinner for all of us.",
+    "₹3,240": "Yes, groceries for the whole villa, everyone shared it.",
+    "₹1,900": "Yes, everyone shared the petrol.",
+    "₹2,610": "Yes, lunch for all three of us.",
+    "₹18,000": "Yes, we all shared the villa.",
+    "₹4,500": "Yes, all of us used the scooters.",
+}
+EXPECTED_BEFORE_SETTLING = {"Priya": 604166, "Arjun": 39167, "Meera": -643333}
 
 
 class Human:
@@ -43,6 +58,33 @@ class Human:
         d = r.json()
         return [d["posts"][i]["message"] for i in reversed(d["order"])]
 
+    def last_private(self) -> tuple[bool, str]:
+        r = self.mm.channel_posts(self.channels["private"])
+        r.raise_for_status()
+        d = r.json()
+        post = d["posts"][d["order"][0]]
+        return post["user_id"] == self.mm.user_id, post["message"]
+
+    def answer_questions(self, seconds: float = 300) -> None:
+        """Answer whatever the agent asks, until it says it's finished."""
+        end = time.time() + seconds
+        tries: dict[str, int] = {}
+        while time.time() < end:
+            mine, text = self.last_private()
+            if not mine and "That's everything for now" in text:
+                return
+            if not mine and "Was this shared with the group?" in text:
+                amount = re.search(r"₹[\d,]+(?:\.\d{2})?", text).group(0).removesuffix(".00")
+                if amount not in ANSWERS:
+                    raise RuntimeError(f"{self.slug}: no scripted answer for {amount}")
+                tries[amount] = tries.get(amount, 0) + 1
+                if tries[amount] > 2:
+                    raise RuntimeError(f"{self.slug}: the agent keeps re-asking about {amount}")
+                self.say("private", ANSWERS[amount])
+                time.sleep(1)
+            time.sleep(0.5)
+        raise TimeoutError(f"{self.slug}: agent never finished")
+
     def wait(self, room: str, needle: str, seconds: float = 180) -> str:
         end = time.time() + seconds
         while time.time() < end:
@@ -58,8 +100,6 @@ def board() -> dict:
 
 
 def open_cards(h: Human) -> list[str]:
-    import re
-
     released = set()
     ids = []
     for text in h.posts("desk"):
@@ -79,13 +119,9 @@ def main() -> int:
 
     for slug, h in humans.items():
         h.say("private", "start")
-        h.wait("private", "I read ")
     for slug, h in humans.items():
-        if slug in ANSWERS:
-            h.wait("private", "Was this shared with the group?")
-            h.say("private", ANSWERS[slug])
-        h.wait("private", "That's everything for now")
-    time.sleep(2)
+        h.answer_questions()
+    time.sleep(3)
 
     for slug, h in humans.items():
         for cid in open_cards(h):
@@ -115,6 +151,11 @@ def main() -> int:
         return 0
     humans["meera"].say("desk", f"withdraw {t_meera} payment_failed")
     humans["meera"].wait("group", f"{t_meera} withdrawn by")
+    time.sleep(1)
+    net = {b["name"]: b["paise"] for b in board()["balances"]}
+    print(f"\nBalances before settling: {net}")
+    if net != EXPECTED_BEFORE_SETTLING:
+        raise AssertionError(f"balances differ from the hand-worked numbers {EXPECTED_BEFORE_SETTLING}")
     humans["priya"].say("group", "balances")
     humans["priya"].wait("group", "| Person | Balance |")
     humans["priya"].say("group", "settle")
