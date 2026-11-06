@@ -20,3 +20,11 @@
 [02:47:54] story finished in 83s. Now the independent check.
 61/61 checks passed
 ALL 3 SIX-PERSON RUNS PASSED, Sat Nov  7 02:47:56 IST 2026
+=== six-person run 1 of 1, Sat Nov  7 03:42:04 IST 2026
+[03:42:51] PASS  six people provisioned in 46s
+[03:43:06] chits people had to correct: 1
+[03:43:20] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[03:43:33] messages people had to resend: 0 
+[03:43:33] story finished in 89s. Now the independent check.
+61/61 checks passed
+ALL 1 SIX-PERSON RUNS PASSED, Sat Nov  7 03:43:36 IST 2026

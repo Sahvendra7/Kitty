@@ -252,3 +252,15 @@ Also added: `reopen <title>`, because a line the model wrongly kept private had 
 Cleaning up a test server, we ran `lsof -ti tcp:7001 | xargs kill`. That matches every process with any connection on the port, not just the listener. Docker's log shows its backend exiting in that same second, 03:03:20, and Docker then stopped, with Mattermost and Postgres. We didn't see the list of processes before it was killed, so the link is by timing, but it's strong, and it was a careless command. It should have been filtered to `-sTCP:LISTEN`, and checked before killing.
 
 Docker and both containers restarted fine, with data intact. Switch's own process stayed up but kept its Mattermost bridge stopped ("Bridge is not running"), so new trips failed at the account step. While tracing this, an edit script of ours also corrupted `kitty/provision.py`, because of an empty slice. Tests caught it at once, and we restored it from git.
+
+### Sat 7 Nov, 03:41-03:45 - stack restored (done)
+
+With the owner's go-ahead, we restarted Switch's own process. Its bridge came back at once, which confirms that restarting was the fix. We then ran what the outage had interrupted:
+
+| Run | Result |
+|---|---|
+| Two people, in dollars, real model (`usd_smoke.py`), its first completed run | Finished, verify 28 of 28 |
+| Six people, real model, a fourth run | Clean, 61 of 61, the same balances, no resends |
+| Three people, real model | Clean, 37 of 37 |
+
+Then a fresh three-person trip was set up, so the stage is ready. The test trips made during the sprint were deleted locally. Their rooms stay in Switch (issue #1202).

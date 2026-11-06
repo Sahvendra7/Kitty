@@ -115,7 +115,7 @@ Mattermost is at <http://localhost:8065>. Each person's login is in `state/<pers
 | `kitty.home_app` | The app: create trips, follow set-up, hand out invites. Keeps each trip in `trips/<id>/` |
 | `scripts/six_person.py` | Six scripted people, end to end, then `verify.py`. `--restart-midway` stops everything mid-trip. `--shots` saves stills |
 | `scripts/rehearse_six.sh` | N six-person runs, stopping at the first failure |
-| `scripts/usd_smoke.py` | A two-person trip in dollars. **Not yet run to completion** |
+| `scripts/usd_smoke.py` | A two-person trip in dollars, then `verify` |
 | `scripts/setup_trip.py` | Command-line fallback: creates users, agents and rooms for the three-person demo. Run it again for a fresh trip |
 | `scripts/run_all.py` | Runs the clerk, each agent and each person's app as separate processes |
 | `scripts/play_story.py` | Scripted people, posting through their own Mattermost sessions |
@@ -131,7 +131,8 @@ These are real runs, and the output is in [`docs/evidence/`](docs/evidence/).
 | Check | Result |
 |---|---|
 | Unit and scenario tests, no Switch, no model | 184 of 184 |
-| Six people, real model, three runs in a row, created and played through the app's routes (`rehearse_six.sh`) | 3 of 3 runs clean, `verify` 61 of 61 each time, balances equal to the [hand-worked numbers](data/synthetic/six/expected.md) each time |
+| Six people, real model, three runs in a row, created and played through the app's routes (`rehearse_six.sh`), and a fourth after a stack restart | 4 of 4 runs clean, `verify` 61 of 61 each time, balances equal to the [hand-worked numbers](data/synthetic/six/expected.md) each time |
+| Two people, in dollars, real model (`usd_smoke.py`) | Finished clean, `verify` 28 of 28 |
 | Six people again, with every process stopped mid-trip and a release sent while they were down (`--restart-midway`) | Finished clean, `verify` 61 of 61 |
 | Isolation between owners (`gate1_spike.py`) | 28 of 28 |
 | Real people in Mattermost (`gate1b_humans.py`) | 26 of 26 |
@@ -164,7 +165,7 @@ Read these before believing the tagline.
 - **It runs on one laptop.** The processes are separate and hold separate credentials, but one OS user could read all of `state/`. Switch enforces room boundaries. The operating system doesn't enforce boundaries between these folders here.
 - **No real banks.** CSV only, in one made-up format. The app refuses unmasked account columns and long digit runs and asks you to confirm the data is made up, but it can't tell whether a file is real. Don't upload real statements.
 - **The home app has no login.** It trusts whoever can reach `127.0.0.1:7000` on this laptop, and it can see each unused invite link. An organiser could open someone's link first. That person would then find it already used, so it's detected and not prevented. The trip board has no login either. It shows only what the group room shows.
-- **Six people is the most we've run live,** and only on a set of statements we wrote. A trip allows up to twelve. Other currencies have unit tests only. `scripts/usd_smoke.py` is written but hasn't completed a live run.
+- **Six people is the most we've run live,** and only on a set of statements we wrote. A trip allows up to twelve. Dollars have one live two-person run (`scripts/usd_smoke.py`, `verify` 28 of 28). Euros and pounds have no live run.
 - **The roster is fixed once the group room opens.** There's no adding someone later, and no changing a split after release (see ADR-015).
 - **A from-source Switch at a pinned commit**, which isn't the released product.
 - **No user research.** Demand is unproven. The one number we found is a survey run by a company selling a split feature: [YouTrip, n=1,000](https://mustsharenews.com/singaporeans-fight-group-trip-expenses/), where 45% of those who front money say they spend over a day settling up.
