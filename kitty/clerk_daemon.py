@@ -25,6 +25,7 @@ from kitty import claims as C
 from kitty import paths as P
 from kitty.clerk import Clerk, Person
 from kitty.switch_client import Agent
+from kitty.trips import read_json, write_json
 
 ROOT = Path(__file__).resolve().parent.parent
 log = logging.getLogger("kitty.clerk")
@@ -112,7 +113,9 @@ def main() -> None:
 
     threading.Thread(target=lambda: uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning"), daemon=True).start()
 
-    conn = agent.listen()
+    cursor_path = state / "clerk-cursor.json"
+    saved = read_json(cursor_path) if where.in_app else None
+    conn = agent.listen(saved["cursor"] if saved else None)
     conn.ready.wait(15)
     log.info("clerk %s listening. Board at http://127.0.0.1:%d", agent.name, port)
     while True:
@@ -133,6 +136,8 @@ def main() -> None:
                 agent.say(post.room_id, post.text)
             except RuntimeError:
                 log.exception("clerk could not post")
+        if where.in_app:
+            write_json(cursor_path, {"cursor": e.raw.get("sequence")})
 
 
 if __name__ == "__main__":

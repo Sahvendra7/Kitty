@@ -177,6 +177,8 @@ function privateView(d){
     for(const p of others) html+=`<button class="ask quiet" data-pick="${esc(p.id)}" aria-pressed="${picked.has(p.id)}">${esc(p.name)}</button>`;
     if(picked.size) html+=`<button class="ask" data-share>Shared with ${[...picked].map(id=>esc(d.people.find(p=>p.id===id).name)).join(" and ")}</button>`;
     html+=`</div>`;
+  } else if(/I can't reach the model|Something went wrong on my side/.test(t)){
+    html+=`<div class="asks"><button class="ask" data-say="private" data-text="rescan">Try again</button></div>`;
   } else if(/failed and was reversed/.test(t)){
     const id=(t.match(/withdraw (t\d+)/)||[])[1];
     const open=d.desk.slips.some(x=>x.id===id&&x.kind==="transfer"&&x.state==="challenged");

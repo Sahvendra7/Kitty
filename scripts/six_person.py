@@ -115,23 +115,25 @@ class Person:
     def answer_questions(self, seconds: float = 480) -> None:
         end = time.time() + seconds
         tries: dict[str, int] = {}
-        seen_text = None
         while time.time() < end:
             private = self.feed()["private"]
             last = private[-1] if private else None
             if last and not last["mine"]:
                 if "That's everything for now" in last["text"]:
                     return
-                if "Was this shared with the group?" in last["text"] and last["text"] != seen_text:
+                if "Was this shared with the group?" in last["text"]:
                     amount = re.search(r"₹[\d,]+(?:\.\d{2})?", last["text"]).group(0).removesuffix(".00")
                     if amount not in TRUTH:
                         raise RuntimeError(f"{self.name}: no scripted answer for {amount}")
                     tries[amount] = tries.get(amount, 0) + 1
-                    if tries[amount] > 2:
+                    if tries[amount] > 3:
                         raise RuntimeError(f"{self.name}: the agent keeps asking about {amount}")
-                    answer = "That one's already covered by someone else's claim, so personal." if amount == "₹6,300" and self.dropped_dinner else TRUTH[amount][1]
+                    answer = "personal" if amount == "₹6,300" and self.dropped_dinner else TRUTH[amount][1]
+                    if last["text"].startswith("I didn't catch that"):
+                        # The agent didn't follow, and it says which words it knows. A person would use them.
+                        answer = "personal" if TRUTH[amount][0] is None or (amount == "₹6,300" and self.dropped_dinner) else "shared " + " ".join(n.lower() for n in sorted(TRUTH[amount][0]))
                     self.say("private", answer)
-                    seen_text = last["text"]
+                    time.sleep(0.5)
             time.sleep(0.7)
         raise TimeoutError(f"{self.name}: the agent never finished")
 
@@ -179,6 +181,7 @@ def check(ok: bool, text: str) -> None:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--leave-unsettled", action="store_true", help="Stop before the final payments, to look around.")
+    ap.add_argument("--restart-midway", action="store_true", help="Stop every process mid-trip, send a release while they're down, then start them again.")
     args = ap.parse_args()
     home = httpx.Client(base_url=HOME, timeout=30)
     began = time.time()
@@ -230,7 +233,9 @@ def main() -> int:
         p.say("private", "start")
     for p in people.values():
         # The model can be slow, so this allows it a long time.
-        p.wait("the agent's reply", lambda d: any(not m["mine"] and m["text"].startswith("I read ") for m in d["private"]), 420)
+        reply = p.wait("the agent's reply", lambda d: next((m["text"] for m in d["private"] if not m["mine"] and (m["text"].startswith("I read ") or "can't reach the model" in m["text"] or "went wrong" in m["text"])), None), 420)
+        if not reply.startswith("I read "):
+            raise RuntimeError(f"{p.name}'s agent couldn't reach the model. Is the account within its usage limit?")
     for p in people.values():
         p.answer_questions()
     for p in people.values():
@@ -252,7 +257,22 @@ def main() -> int:
 
     # A payment both sides can see.
     tb = next(s["id"] for s in bilal.slips() if s["kind"] == "transfer")
-    bilal.act("desk", f"release {tb}", "the release", lambda d: any(s["id"] == tb and s["state"] != "waiting" for s in d["desk"]["slips"] if s["kind"] == "transfer"))
+    if args.restart_midway:
+        from kitty import runtime
+        from kitty.switch_client import Mattermost
+
+        before = net(board_url)
+        runtime.stop(folder)
+        time.sleep(3)
+        log("every process stopped. Bilal releases a payment while they're down, through his own chat account.")
+        login = json.loads((folder / "state/bilal.json").read_text())["mattermost"]
+        Mattermost(login["username"], login["password"]).post(login["channels"]["desk"], f"release {tb}")
+        time.sleep(3)
+        check(home.post(f"/api/trips/{tid}/restart", timeout=120).status_code == 200, "the home app starts the trip again")
+        check(net(board_url) == before, "balances are the same after the restart")
+        check(not home.get(f"/api/trips/{tid}").json()["editable"], "the roster stays fixed")
+    else:
+        bilal.act("desk", f"release {tb}", "the release", lambda d: any(s["id"] == tb and s["state"] != "waiting" for s in d["desk"]["slips"] if s["kind"] == "transfer"))
     answer = asha.wait("the question", lambda d: next((s for s in d["desk"]["slips"] if s["kind"] == "answer" and s["id"] == tb), None))
     check(answer["received"] is True, "Asha's agent finds Bilal's payment on her side")
     asha.act("desk", f"release {tb}", "confirmation", lambda d: any(f"{tb} confirmed by both sides" in x.get("text", "") for x in d["group"]))

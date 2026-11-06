@@ -8,7 +8,7 @@ mkdir -p docs/evidence
 OUT=docs/evidence/rehearsals_real_model.log
 for i in $(seq 1 "$N"); do
   echo "=== rehearsal $i of $N, $(date)" | tee -a "$OUT"
-  pkill -f 'scripts/run_all.py'; sleep 2; pkill -f 'kitty\.(person_app|agent_runner|clerk_daemon)'; sleep 1
+  pkill -f 'scripts/run_all.py'; sleep 2; pkill -f 'kitty\.(person_app [a-z]+ [0-9]+|agent_runner [a-z]+|clerk_daemon)$'; sleep 1
   uv run python scripts/setup_trip.py > /tmp/kitty-setup.$$ 2>&1 || { tail -3 /tmp/kitty-setup.$$ | tee -a "$OUT"; echo "setup FAILED" | tee -a "$OUT"; exit 1; }
   rm -rf logs
   (nohup uv run python scripts/run_all.py > /dev/null 2>&1 &)

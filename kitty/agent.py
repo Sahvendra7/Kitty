@@ -89,6 +89,31 @@ class PersonalAgent:
     started: bool = False
     _n: int = 0
 
+    # ---- remembering, so a restart doesn't lose a review -------------------------------
+
+    def to_state(self) -> dict:
+        """Row ids and decisions, plus the short titles already shown in the private room. Kept on the owner's side."""
+        return {
+            "items": {k: {"title": i.title, "category": i.category, "state": i.state, "ref": i.ref, "claim_id": i.claim_id} for k, i in self.items.items()},
+            "transfers": {ref: row.row_id for ref, row in self.transfers.items()},
+            "filed_transfers": self.filed_transfers,
+            "queue": self.queue,
+            "asked": self.asked,
+            "started": self.started,
+            "n": self._n,
+        }
+
+    def restore(self, state: dict) -> None:
+        """Rows come from the statement, which only ever grows once a review has started."""
+        rows = {r.row_id: r for r in self.rows}
+        self.items = {k: Item(rows[k], d["title"], d["category"], d["state"], d["ref"], d["claim_id"]) for k, d in state["items"].items()}
+        self.transfers = {ref: rows[rid] for ref, rid in state["transfers"].items()}
+        self.filed_transfers = dict(state["filed_transfers"])
+        self.queue = list(state["queue"])
+        self.asked = state["asked"]
+        self.started = state["started"]
+        self._n = state["n"]
+
     # ---- routing ---------------------------------------------------------------
 
     def handle(self, room: str, sender: str, body: str) -> list[Post]:
@@ -154,6 +179,8 @@ class PersonalAgent:
         if kept:
             summary.append(f"Kept private: {', '.join(kept)}. The group won't hear about these.")
         out.insert(0, Post("private", " ".join(summary)))
+        if self.asked is not None:
+            self.queue.insert(0, self.asked)  # A rescan mid-question mustn't lose the question.
         out.extend(self._ask_next())
         return out
 

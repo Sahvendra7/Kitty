@@ -105,11 +105,13 @@ def start(folder: Path, trip: dict, trips_root: Path, wait_seconds: float = 45) 
         handle = (paths.logs / f"{label}.log").open("a")
         return subprocess.Popen([sys.executable, "-m", *args], cwd=ROOT, stdout=handle, stderr=handle, env=env, start_new_session=True).pid
 
-    pids = [spawn("clerk", "kitty.clerk_daemon")]
+    # The trip id on the end is unused by the program. It lets the original demo's scripts stop their own processes and leave these alone.
+    tag = trip["trip_id"]
+    pids = [spawn("clerk", "kitty.clerk_daemon", tag)]
     time.sleep(2)
     for person in people:
-        pids.append(spawn(person, "kitty.agent_runner", person))
-        pids.append(spawn(f"{person}-app", "kitty.person_app", person, str(ports["apps"][person])))
+        pids.append(spawn(person, "kitty.agent_runner", person, tag))
+        pids.append(spawn(f"{person}-app", "kitty.person_app", person, str(ports["apps"][person]), tag))
     doc = {**ports, "pids": pids}
     write_json(path, doc, 0o644)
     end = time.time() + wait_seconds

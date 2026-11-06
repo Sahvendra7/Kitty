@@ -20,11 +20,14 @@ from kitty import claims as C
 from kitty import paths as P
 from kitty import statements as S
 from kitty.agent import PersonalAgent, RulesBrain
+from kitty.llm import LlmError
 from kitty.llm_brain import LlmBrain
 from kitty.switch_client import Agent
+from kitty.trips import read_json, write_json
 
 ROOT = Path(__file__).resolve().parent.parent
 log = logging.getLogger("kitty.agent")
+MODEL_DOWN = "I can't reach the model right now, so I haven't read anything yet, and nothing was shared. Try again in a little while."
 NO_STATEMENT = "I don't have your statement yet. Add it in the Statement tab, then I can start. Nothing has been read or shared."
 GREETING_IN_APP = "Hi {name}. I'm your own agent, and I only work for you. Add your statement for {trip}, and I'll go through it with you. Nothing leaves this room unless you release it on your desk."
 GREETING = "Hi {name}. I'm your own agent, and I only work for you. Say `start` and I'll go through your statement for {trip}. Nothing leaves this room unless you release it on your desk."
@@ -47,10 +50,14 @@ def main(me: str) -> None:
 
     core = PersonalAgent(me, trip, names, directory, rows(), brain, config["owner_sender"], config["clerk_sender"], trip_doc["name"])
     agent = Agent(config["agent_id"], config["api_key"], config["name"])
+    memory_path = where.people / me / "agent_memory.json"
+    memory = read_json(memory_path) if where.in_app else None
+    if memory:
+        core.restore(memory["agent"])
     rooms = {config["private_room"]: "private", config["desk_room"]: "desk"}
     targets = {"private": config["private_room"], "desk": config["desk_room"]}
 
-    conn = agent.listen()
+    conn = agent.listen(memory["cursor"] if memory else None)
     conn.ready.wait(15)
     history = agent.result("read_context", room_id=targets["private"], limit=20)["threads"]
     if not any(t["root"]["body"].startswith(f"Hi {names[me]}. I'm your own agent") for t in history):
@@ -71,12 +78,18 @@ def main(me: str) -> None:
             continue
         try:
             posts = core.handle(room, e.sender, e.body)
+        except LlmError as exc:
+            log.error("the model call failed: %s", exc)
+            agent.say(targets["private"], MODEL_DOWN)
+            continue
         except Exception:
             log.exception("could not handle a message")
             agent.say(targets["private"], "Something went wrong on my side, and nothing was shared. Try again?")
             continue
         for post in posts:
             agent.say(targets[post.room], post.text)
+        if where.in_app:
+            write_json(memory_path, {"agent": core.to_state(), "cursor": e.raw.get("sequence")})
 
 
 if __name__ == "__main__":

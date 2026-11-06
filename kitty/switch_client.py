@@ -136,8 +136,10 @@ class Agent:
             raise RuntimeError(f"{self.name} post: {r.status_code} {r.text[:300]}")
         return r.json()["event_id"]
 
-    def listen(self) -> "Connection":
+    def listen(self, after: int | None = None) -> "Connection":
+        """`after` resumes from a saved position, so messages sent while this process was down still arrive."""
         conn = Connection(self)
+        conn.cursor = after
         conn.start()
         return conn
 

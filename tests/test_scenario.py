@@ -278,3 +278,23 @@ def test_a_line_kept_private_can_be_asked_about_again():
     assert agent.items["r4"].state == "filed"
     world.human("priya", "private", "reopen Nothing Like This")
     assert "can't find" in world.texts("private-priya")[-1]
+
+
+def test_an_agent_restarted_mid_review_carries_on_without_filing_anything_twice():
+    world = build()
+    start(world, "priya")
+    agent = world.agents["priya"]
+    asked = agent.asked
+    filed = {k for k, i in agent.items.items() if i.state == "filed"}
+    assert asked and filed
+    state = json.loads(json.dumps(agent.to_state()))  # Through JSON, as on disk.
+    fresh = PersonalAgent("priya", TRIP, NAMES, DIRECTORY, S.parse(DATA / "priya.csv"), RulesBrain(), "@human-priya", "@clerk", "the Goa trip")
+    fresh.restore(state)
+    world.agents["priya"] = fresh
+    assert fresh.asked == asked and {k for k, i in fresh.items.items() if i.state == "filed"} == filed
+    before = len(world.clerk.expenses)
+    world.human("priya", "private", "rescan")
+    assert not any(t.startswith("Rejected") for t in world.texts("desk-priya"))
+    assert len(world.clerk.expenses) == before  # A rescan finds nothing new, and files nothing twice.
+    world.human("priya", "private", "Yes, but Meera had gone to bed. Just Arjun and me.")
+    assert len(world.clerk.expenses) == before + 1

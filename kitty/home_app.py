@@ -210,7 +210,7 @@ def create_app(home: Home, port: int = PORT) -> FastAPI:
             return JSONResponse({"error": "Set-up is already running."}, status_code=409)
         return JSONResponse(home.detail(doc), status_code=202)
 
-    @app.post("/api/trips/{trip_id}/restart", status_code=202)
+    @app.post("/api/trips/{trip_id}/restart")
     def restart(trip_id: str) -> JSONResponse:
         doc = home.store.get(trip_id)
         if home.stage(doc) != "live":

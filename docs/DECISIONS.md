@@ -85,3 +85,79 @@ drops it. That adds a step to the demo, and we kept it, because the principle is
 **Decided:** 6 Nov 2026. **Status:** tested live: free text on a desk produced no rejection and no log line.
 
 The event log exists so the clerk can restart. A private note someone types on a desk has no reason to be on disk.
+
+## ADR-009: Trips made in the app get their own folder. The three-person demo keeps its old paths
+
+**Decided:** 7 Nov 2026. **Status:** tested. Three-person re-run recorded in `BUILD_JOURNEY.md`.
+
+**Problem:** every process read fixed paths and ports. In-app trips need many trips side by side, and the original demo has to stay reproducible.
+
+**Decision:** `kitty/paths.py` gives one set of paths. With `KITTY_TRIP_DIR` set, a process reads `trips/<id>/`. Without it, it reads exactly what it always read. The files inside have the same shape on both routes, so the clerk, the agents and `verify.py` have no separate code path. `setup_trip.py` stays as the command-line fallback.
+
+**Trade-off:** two ways to create a trip have to be kept in step.
+
+## ADR-010: Provisioning saves progress after every step, and shows only fixed sentences
+
+**Decided:** 7 Nov 2026. **Status:** tested with a fake that fails at each of 10 points, and live with an injected failure.
+
+**Decision:** passwords are written to disk before the call that uses them. Each finished step is recorded, and a retry skips it. A name that an earlier failed try may have taken gets a new suffix. `state/status.json`, the only thing the organiser's page reads, holds step labels and fixed codes, and never the text of a server's reply, which could hold anything. Logs get the exception's type only.
+
+If one person's step fails, the others carry on, and the group room waits until everyone is ready. If a service is unreachable, everything stops at once. A person can be removed or added until the group room exists. After that the roster is fixed, because every agent and the clerk hold it in memory.
+
+**Rejected:** rolling back on failure. Switch can't delete rooms (issue #1202), so rollback couldn't be complete. An unused account or room holds no data.
+
+## ADR-011: Each person's app needs their own single-use link, on trips made in the app
+
+**Decided:** 7 Nov 2026. **Status:** tested.
+
+**Problem:** the person apps were open local ports, fine for a stage, but anyone who could reach the port could read that person's private room.
+
+**Decision:** the organiser gets one link per person. Opening it swaps the link for an HttpOnly, SameSite=Strict cookie, named for that trip and person because cookies ignore ports. A used link opens nothing, so if the organiser or anyone else got there first, the person finds out. Making a new link ends the old session. All routes also check Host and Origin, so another website in the same browser can't drive the app.
+
+**Trade-off:** the organiser could open someone's link before they do. They'd be caught by the used link, but that's detection and not prevention. Real identity would need real accounts. The original demo has no access file and stays open, because its stage embeds the apps. Its Host and Origin checks are new.
+
+## ADR-012: A statement is checked by plain code, on its owner's side, and errors never quote it
+
+**Decided:** 7 Nov 2026. **Status:** tested.
+
+**Decision:** `kitty/statement_import.py` checks size, type, encoding, the exact header, and every field against a narrow pattern, including a masked account column, and refuses long digit runs that look like real account or card numbers. The saved file is rebuilt from the validated fields, so nothing unparsed reaches the agent. Messages name a line and a column, and never a value. The file name is checked and thrown away.
+
+**Model data flow unchanged.** Upload makes no model call and adds nothing to the prompts. The model still receives only what `statements.model_view` returns, once the person starts their review. The page's "see exactly what the model provider would get" panel calls that same function, and a test compares it with what a recording model really receives. One addition: on a non-rupee trip the amount field is named `amount_usd` or similar, so that a dollar amount isn't labelled rupees. Rupee prompts are byte-identical.
+
+**Duplicate files are detected per person, by a hash of the validated lines.** We rejected comparing across people: it would need a shared index of statement hashes, a link between private folders that exists only to catch a mistake.
+
+**After a review starts, a new file may only add lines.** Agents know lines by position, and some may already be released. So a new file must contain every earlier line, and new ones go on the end. This is also how the suggested payments arrive in the six-person run.
+
+**Synthetic only** is enforced as far as code can: a required tick-box, a masked account column, and the digit-run check. A determined person could still type in real data, and the page says not to.
+
+## ADR-013: Trips have one currency, and Kitty doesn't convert
+
+**Decided:** 7 Nov 2026. **Status:** tested without Switch for USD. The live runs used rupees only.
+
+Rupee, dollar, euro and pound, because all four have two decimals and amounts are whole minor units. The field names still say `paise`, as renaming them would touch the claim format for no user benefit. A claim in the wrong currency is refused.
+
+## ADR-014: A person can ask again about a line the model kept private
+
+**Decided:** 7 Nov 2026, while preparing the six-person run. **Status:** tested without Switch.
+
+A wrongly shared line could be dropped from the desk, but a line wrongly marked personal had no way back, so a model error would silently change who owes what. `reopen <title>` puts it back in the queue, and the app shows a button. The model proposes, and the person decides, in both directions.
+
+## ADR-015: Post-activity fairness: investigated, not built
+
+**Decided:** 7 Nov 2026. **Status:** design only. **Owner's call whether to build it.**
+
+**The ask:** someone privately says they didn't take part in an activity, and a revised split gets proposed and explicitly approved, without their explanation being exposed.
+
+**What already works:** if the payer knows at review time, they say so ("yes, but Dev skipped it"), and the split is right from the start. The six-person run does this. The gap is the case where an expense has already been released, and someone else objects.
+
+**Design that fits the architecture:**
+
+1. In their private room, Dev picks a released expense and says why, in any words. The reason stays there. It never reaches the model unless Dev's reply needs reading, and it's never in a claim.
+2. Dev's agent files a typed `share_change` claim on Dev's desk: expense id and a closed reason list of one, `did_not_take_part`. There's no free-text field, for the same reason claims have none today.
+3. Dev releases it. The group sees: "Dev asks to come off c3. Each remaining person's share would go from ₹1,800.00 to ₹2,250.00." The clerk computes this from integers.
+4. Everyone whose share rises, and the payer, each approve or refuse on their own desk, using the same sender-id check as releases. Their answers are theirs too.
+5. Only with every approval does the clerk replace the shares. One refusal leaves the original standing, and the group sees only that it wasn't agreed.
+
+**What this can't hide:** that Dev asked. Others pay more, so they're entitled to know who came off and by how much. Only the reason stays private. Making the asker anonymous would mean others approve a cost they can't assess, and on a six-person trip the changed share would reveal it anyway.
+
+**Why it's not built today:** it adds a claim type, a multi-party approval state, a new way for a released expense to change, a settled-payments edge case (what if money has already moved on the old numbers?), and matching work in `verify.py`. That touches the part of the system with the strongest evidence, close to the deadline, and the six-person run shows the common case is already handled. About a day's careful work, with tests.

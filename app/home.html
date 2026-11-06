@@ -321,7 +321,7 @@ function statusLine(p){
 }
 function board(t){
   const b=t.board;
-  if(!t.apps_up) return `<div class="banner" role="alert"><b>This trip's apps aren't running.</b>Start them again, and everything carries on from where it was.</div><div class="actions"><button class="btn" id="restart">Start the apps</button></div>`;
+  if(!t.apps_up) return `<div class="banner" role="alert"><b>This trip's apps aren't running.</b>Start them again, and everyone carries on from where they were.</div><div class="actions"><button class="btn" id="restart">Start the apps</button></div>`;
   if(!b) return `<p class="muted" style="margin-top:8px">The board isn't answering yet.</p>`;
   const counted=b.expenses.filter(e=>e.status==="released").length,c=b.trip.currency||t.currency;
   const max=Math.max(1,...b.balances.map(x=>Math.abs(x.paise)));
