@@ -136,6 +136,26 @@
    "detail": "[403, 403]"
   },
   {
+   "check": "no personal agent's bot is in the group's Mattermost channel",
+   "pass": true,
+   "detail": "['admin', 'arjun67bd', 'kitty-clerk-67bd', 'meera67bd', 'priya67bd', 'user']"
+  },
+  {
+   "check": "the clerk's bot is not in priya's private Mattermost channel",
+   "pass": true,
+   "detail": "['admin', 'priya-agent-67bd', 'priya67bd', 'user']"
+  },
+  {
+   "check": "the clerk's bot is not in arjun's private Mattermost channel",
+   "pass": true,
+   "detail": "['admin', 'arjun-agent-67bd', 'arjun67bd', 'user']"
+  },
+  {
+   "check": "the clerk's bot is not in meera's private Mattermost channel",
+   "pass": true,
+   "detail": "['admin', 'meera-agent-67bd', 'meera67bd', 'user']"
+  },
+  {
    "check": "a withdrawn payment was not counted as confirmed",
    "pass": true,
    "detail": "withdrawn ['t2'], confirmed ['t1', 't3', 't4']"

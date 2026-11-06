@@ -24,6 +24,8 @@ import sys
 import time
 from pathlib import Path
 
+import httpx
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path[:0] = [str(ROOT), str(ROOT / "scripts")]
 from kitty.switch_client import Agent, Gateway, Mattermost  # noqa: E402
@@ -52,16 +54,31 @@ def await_sender(conn, needle: str, seconds: float = 20) -> str:
     raise RuntimeError(f"never saw {needle!r}. Is the Mattermost bridge healthy?")
 
 
+def wait_for_stack(seconds: int = 240) -> tuple[Gateway, str, Mattermost]:
+    """On a first run, Switch's own setup container may still be creating the bridge and accounts."""
+    end = time.time() + seconds
+    while True:
+        try:
+            admin = Gateway(ENV["GATEWAY_ADMIN_EMAIL"], ENV["GATEWAY_ADMIN_PASSWORD"])
+            return admin, admin.default_bridge(), Mattermost(ENV["MATTERMOST_ADMIN_USER"], ENV["MATTERMOST_ADMIN_PASSWORD"])
+        except (httpx.HTTPError, RuntimeError) as exc:
+            if time.time() > end:
+                raise RuntimeError(f"Switch isn't ready after {seconds}s. Is `just run` going? Last error: {exc}") from exc
+            print("Waiting for Switch and Mattermost to finish starting...", flush=True)
+            time.sleep(5)
+
+
 def main() -> int:
     STATE.mkdir(exist_ok=True)
     run = secrets.token_hex(2)
-    admin = Gateway(ENV["GATEWAY_ADMIN_EMAIL"], ENV["GATEWAY_ADMIN_PASSWORD"])
-    bridge = admin.default_bridge()
-    mm_admin = Mattermost(ENV["MATTERMOST_ADMIN_USER"], ENV["MATTERMOST_ADMIN_PASSWORD"])
+    admin, bridge, mm_admin = wait_for_stack()
     team = ENV["MATTERMOST_TEAM_NAME"]
     # Mattermost's default is 50 members per team, and each run adds eight accounts. Past the limit,
     # agent bots silently fail to join channels and nothing is delivered (found the hard way).
-    r = mm_admin.http.put("/api/v4/config/patch", json={"TeamSettings": {"MaxUsersPerTeam": 2000}})
+    r = mm_admin.http.put("/api/v4/config/patch", json={"TeamSettings": {"MaxUsersPerTeam": 2000}, "ServiceSettings": {"EnableDesktopLandingPage": False}})
+    r.raise_for_status()
+    # Switch's auto-greeting posts a bot's @name into each new room. Kitty's agents introduce themselves.
+    r = admin.http.patch(f"/gateway/collaborations/{bridge}", json={"agent_greetings_enabled": False})
     r.raise_for_status()
 
     def person(slug: str, display: str, linked: bool = True) -> dict:

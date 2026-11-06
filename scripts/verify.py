@@ -22,7 +22,7 @@ import httpx
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from kitty import ledger as L  # noqa: E402
-from kitty.switch_client import Agent  # noqa: E402
+from kitty.switch_client import Agent, Mattermost  # noqa: E402
 
 DATA = ROOT / "data/synthetic"
 TRIP = json.loads((DATA / "trip.json").read_text())
@@ -158,6 +158,22 @@ def main() -> int:
         others = [q for q in PEOPLE if q != pid]
         codes = [ag.op("read_context", room_id=agents_cfg[q]["private_room"]).status_code for q in others]
         check(f"{pid}'s agent is refused everyone else's private room", all(c == 403 for c in codes), str(codes))
+
+    # Membership again, this time as Mattermost reports it, seen by each person's own session.
+    def mm_members(person: str, room: str) -> set[str]:
+        login = agents_cfg[person]["mattermost"]
+        mm = Mattermost(login["username"], login["password"])
+        r = mm.http.get(f"/api/v4/channels/{login['channels'][room]}/members", params={"per_page": 200})
+        r.raise_for_status()
+        ids = [m["user_id"] for m in r.json()]
+        return {u["username"] for u in mm.http.post("/api/v4/users/ids", json=ids).json()}
+
+    group_members = mm_members(next(iter(PEOPLE)), "group")
+    personal_agents = {c["name"] for c in agents_cfg.values()}
+    check("no personal agent's bot is in the group's Mattermost channel", not {u for u in group_members if any(a in u for a in personal_agents)} and clerk.name in group_members, f"{sorted(group_members)}")
+    for pid in PEOPLE:
+        members = mm_members(pid, "private")
+        check(f"the clerk's bot is not in {pid}'s private Mattermost channel", clerk.name not in members and agents_cfg[pid]["name"] in members, f"{sorted(members)}")
 
     # 5. Reversal and two-sided confirmation.
     check("a withdrawn payment was not counted as confirmed", not withdrawn_or_held & set(confirmed_ids), f"withdrawn {sorted(withdrawn_or_held)}, confirmed {confirmed_ids}")
