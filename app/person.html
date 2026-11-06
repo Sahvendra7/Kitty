@@ -147,6 +147,17 @@ async function say(room,text){
 }
 function showError(t){const e=$("err");e.textContent=t;e.hidden=!t}
 
+/* The clerk's room text carries ids such as c7 and t1, because verify.py reads them. People don't need them. */
+function plainPrivate(t){
+  return t.replace(/ To correct it, say `withdraw t\d+ payment_failed` on your desk\. Only the words "payment failed" reach the group\./," Only the words \"payment failed\" reach the group.")
+    .replace(/I re-checked t\d+, and/,"I re-checked that payment, and").replace(/The clerk asked me to re-check t\d+\./,"The clerk asked me to re-check that payment.");
+}
+function plainGroup(t){
+  return t.replace(/^\*\*t\d+ confirmed by both sides:\*\*/,"**Confirmed by both sides:**").replace(/^\*\*t\d+ NOT CONFIRMED:\*\*/,"**Not confirmed:**")
+    .replace(/^\*\*t\d+ withdrawn by (\w+)\.\*\*/,"**Withdrawn by $1.**").replace(/^\*\*t\d+\*\* /,"")
+    .replace(/^\*\*Possible conflict:\*\* c\d+ and c\d+ look/,"**Possible conflict:** two claims look")
+    .replace(/^Conflict cleared: (\w+) withdrew c\d+\. \*\*c\d+\*\* now counts: /,"Conflict cleared: $1 withdrew theirs. The other one now counts: ");
+}
 function keptPrivate(msgs){
   const kept=new Set();
   for(const m of msgs){
@@ -165,7 +176,7 @@ function privateView(d){
   if(st&&st.state==="ready") return msgs.map(m=>`<div class="bubble ${m.mine?"mine":""}">${inline(m.text)}</div>`).join("")+`<div class="asks"><button class="ask" data-say="private" data-text="start">Go through my statement</button></div>`;
   if(!msgs.length) return `<p class="lede">Your agent hasn't said hello yet. Check that it's running.</p>`;
   let html="";
-  for(const m of msgs) html+=`<div class="bubble ${m.mine?"mine":""}">${inline(m.text)}</div>`;
+  for(const m of msgs) html+=`<div class="bubble ${m.mine?"mine":""}">${inline(m.mine?m.text:plainPrivate(m.text))}</div>`;
   const lastMsg=msgs[msgs.length-1];
   if(lastMsg.mine) return html;
   const t=lastMsg.text;
@@ -182,7 +193,7 @@ function privateView(d){
   } else if(/failed and was reversed/.test(t)){
     const id=(t.match(/withdraw (t\d+)/)||[])[1];
     const open=d.desk.slips.some(x=>x.id===id&&x.kind==="transfer"&&x.state==="challenged");
-    if(id&&open) html+=`<div class="asks"><button class="ask danger" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw ${id}: the payment failed</button></div>`;
+    if(id&&open) html+=`<div class="asks"><button class="ask danger" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw it: the payment failed</button></div>`;
     else html+=`<div class="asks"><button class="ask quiet" data-say="private" data-text="rescan">Check my statement again</button></div>`;
   } else if(/Check your desk|on your desk|Your desk has/.test(t)){
     html+=`<div class="asks"><button class="ask quiet" data-go="desk">Open your desk</button><button class="ask quiet" data-say="private" data-text="rescan">Check my statement again</button></div>`;
@@ -245,7 +256,7 @@ function groupView(d){
       const big=/Everyone's square/.test(f.text),bad=/NOT CONFIRMED|Possible conflict/.test(f.text);
       const who=f.mine||f.from?"":"";
       const isHuman=!/^\*\*|^Kitty is open|^Suggested|^Nothing to settle|^Refused|^Conflict|^\d+ expenses|^No released/.test(f.text);
-      html+=`<div class="note ${big?"big":""} ${bad?"bad":""} ${isHuman?"mine":""}">${isHuman?`${esc(f.from)}: `:""}${inline(f.text)}${who}</div>`;
+      html+=`<div class="note ${big?"big":""} ${bad?"bad":""} ${isHuman?"mine":""}">${isHuman?`${esc(f.from)}: `:""}${inline(isHuman?f.text:plainGroup(f.text))}${who}</div>`;
     }
   }
   return html;

@@ -2,15 +2,15 @@
  "model": "claude-haiku-5-5",
  "runs": 3,
  "lines_scored": 48,
- "tp": 16,
+ "tp": 19,
  "fp": 0,
  "fn": 0,
- "tn": 19,
- "unclear_shared": 8,
- "unclear_personal": 5,
+ "tn": 20,
+ "unclear_shared": 5,
+ "unclear_personal": 4,
  "missing": 0,
  "precision_shared_when_decided": 1.0,
- "recall_shared_without_asking": 0.667,
+ "recall_shared_without_asking": 0.792,
  "wrong_personal_would_lose_money": 0,
  "wrong_shared_still_needs_release": 0,
  "detail": [
@@ -40,7 +40,7 @@
    "person": "priya",
    "line": "FISHERMANS WHARF CANDOLIM",
    "truth": "shared",
-   "guess": "unclear"
+   "guess": "shared"
   },
   {
    "run": 0,
@@ -110,7 +110,7 @@
    "person": "meera",
    "line": "CAFE CHAI CANDOLIM",
    "truth": "personal",
-   "guess": "unclear"
+   "guess": "personal"
   },
   {
    "run": 0,
@@ -222,7 +222,7 @@
    "person": "meera",
    "line": "CAFE CHAI CANDOLIM",
    "truth": "personal",
-   "guess": "personal"
+   "guess": "unclear"
   },
   {
    "run": 1,
@@ -292,7 +292,7 @@
    "person": "arjun",
    "line": "GRANDE ISLAND WATERSPORTS",
    "truth": "shared",
-   "guess": "unclear"
+   "guess": "shared"
   },
   {
    "run": 2,
@@ -320,7 +320,7 @@
    "person": "meera",
    "line": "BIG BAZAAR MAPUSA",
    "truth": "shared",
-   "guess": "unclear"
+   "guess": "shared"
   },
   {
    "run": 2,
@@ -334,7 +334,7 @@
    "person": "meera",
    "line": "CAFE CHAI CANDOLIM",
    "truth": "personal",
-   "guess": "unclear"
+   "guess": "personal"
   },
   {
    "run": 2,

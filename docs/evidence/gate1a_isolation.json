@@ -1,6 +1,6 @@
 {
  "switch_commit": "fa933012b",
- "run": "4d6c9b",
+ "run": "d8af14",
  "results": [
   {
    "check": "three separate non-admin owners exist",
@@ -100,12 +100,12 @@
   {
    "check": "event carries a server-set sender id",
    "pass": true,
-   "detail": "@switch-agent-69fd4a4b:localhost"
+   "detail": "@switch-agent-eb253c23:localhost"
   },
   {
    "check": "event names its room",
    "pass": true,
-   "detail": "11f65343-940f-4c0d-82ed-a4f6d6746acf"
+   "detail": "edd2732c-e1f2-4c6a-bca6-0ba94a2de80c"
   },
   {
    "check": "clerk posts the claim to the group room",
@@ -140,7 +140,7 @@
   {
    "check": "typed name cannot change the server-set sender",
    "pass": true,
-   "detail": "@switch-agent-69fd4a4b:localhost"
+   "detail": "@switch-agent-eb253c23:localhost"
   }
  ]
 }

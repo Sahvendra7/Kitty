@@ -354,3 +354,29 @@ def test_sample_file_is_valid_and_in_trip():
     accepted = SI.validate(text.encode())
     trip = C.Trip("t", date(2026, 10, 16), date(2026, 10, 19), ("a", "b"))
     assert SI.summary(accepted, trip, {})["in_trip"] == 3
+
+
+def test_a_failed_model_call_logs_a_code_and_never_its_output(monkeypatch):
+    import subprocess
+
+    from kitty import llm
+
+    class Failed:
+        returncode = 1
+        stdout = ""
+        stderr = "[claude-code:unrecognized_model] prompt was CANARY-STAY 18000"
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: Failed())
+    with pytest.raises(llm.LlmError) as err:
+        llm.complete("system", "CANARY-STAY")
+    assert "CANARY" not in str(err.value) and "unrecognized_model" in str(err.value)
+
+    class Errored:
+        returncode = 0
+        stderr = ""
+        stdout = json.dumps({"is_error": True, "result": "could not process CANARY-STAY"})
+
+    monkeypatch.setattr(subprocess, "run", lambda *a, **k: Errored())
+    with pytest.raises(llm.LlmError) as err:
+        llm.complete("system", "CANARY-STAY")
+    assert "CANARY" not in str(err.value)

@@ -36,7 +36,7 @@ CLERK_HELLO = "Kitty clerk here. Claims wait on this desk until you release them
 ERRORS = {
     "switch_unreachable": "Kitty can't reach Switch. Check that it's running, then try again.",
     "mattermost_unreachable": "Kitty can't reach Mattermost. Check that it's running, then try again.",
-    "timed_out": "That took too long, and it may just be busy. Try again in a moment.",
+    "timed_out": "That took too long, and Switch or Mattermost may still be starting. Try again in a moment.",
     "service_refused": "Switch refused this step. Trying again is safe, because nothing is created twice.",
     "service_error": "Switch hit a problem on its side. Try again in a moment.",
     "start_failed": "The accounts are ready, but the trip's apps didn't start. Check logs in the trip's folder, then try again.",
@@ -129,6 +129,8 @@ class SwitchBackend:
         except httpx.HTTPStatusError as exc:
             if not _exists(exc):
                 raise
+        except RuntimeError as exc:
+            raise TimeoutError("the bridge's directory never listed this account") from exc
 
     def registration_key(self, creds: dict) -> str:
         return Gateway(creds["email"], creds["password"]).registration_key("kitty")

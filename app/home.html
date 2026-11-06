@@ -305,7 +305,7 @@ function drawBuilding(t){
   const unique=[...new Set(failed.map(s=>s.error.message))];
   $("main").innerHTML=`<div class="make"><div>
     <h1 style="font-size:clamp(30px,5vw,44px)">${t.state==="failed"?"Set-up stopped partway.":`Opening ${esc(t.name)}.`}</h1>
-    <p class="muted" style="margin-top:8px">${t.state==="failed"?"What's already built is safe, and trying again carries on from here.":"This takes a few minutes. You can leave this page, and it keeps going."}</p>
+    <p class="muted" style="margin-top:8px">${t.state==="failed"?"What's already built is safe, and trying again carries on from here.":"This usually takes about a minute. You can leave this page, and it keeps going."}</p>
     ${t.state==="failed"?`<div class="banner" role="alert">${unique.map(m=>`<b>${esc(m)}</b>`).join("")}</div><div class="actions"><button class="btn" id="retry" ${t.running?"disabled":""}>Try again</button></div>`:""}
     <div class="build">${before.map(line).join("")}${t.people.map(row).join("")}<div style="border-top:1.5px solid var(--rule);padding-top:6px">${after.map(line).join("")}</div></div>
     </div>${chit(t,{ticks:true})}</div>`;

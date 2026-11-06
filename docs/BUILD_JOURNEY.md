@@ -196,3 +196,59 @@ control showed those queries were simply too narrow.
 `scripts/film.py` drives a real run and records it, drawing captions and zooms in the page, with a visible badge on sped-up stretches. Take one's review found a blank architecture card, captions
 hidden behind title cards, run-on captions, zooms cropping the newest message, and no Mattermost at all. All were fixed in code. A second take was running when **the owner asked to hold the video
 until the project has been improved further**, so it was stopped at 00:24. **The fixes are unverified, as no finished take has used them.** Take one is a local, untracked file with known defects, and is not a deliverable.
+
+
+## D. Product sprint
+
+The owner set four priorities in order: trip creation in the app, statement upload in the app, a six-person trip, and only then a look at fairness adjustments. Recording stayed on hold, and none was made. Checkpoint before any change: commit `0c28571`, tag `checkpoint/pre-product-sprint`, pushed, plus a local bundle and a copy of local state in `~/Desktop/Switch/checkpoints/`.
+
+### Sat 7 Nov, 00:42-00:57 - trip creation and statement upload (done, committed `5f7e791`)
+
+Trip-scoped paths, so the three-person demo keeps its own files (ADR-009). A provisioning engine that saves after every step (ADR-010), tested against a fake Switch failing at each of 10 points. Single-use invites (ADR-011). A strict CSV importer (ADR-012). Driven by hand through the real pages with a failure switched on: Bilal showed "Stuck", Asha and Chitra finished, the group room waited, and "Try again" carried on with nothing rebuilt.
+
+First test run: 13 errors out of 172. `FastAPI` refused a route's return annotation and every app test failed. Fixed, and one test expected the wrong code for an unquoted `1,000`, which is really a wrong column count.
+
+The first screenshot of the agent's question read "or say `shared arjun priya`". Those names were hard-coded from the three-person demo, and had reached a trip with neither person on it. It's now built from the trip's own people.
+
+### Sat 7 Nov, 01:00-01:17 - six people (done, committed `e9c88c3`)
+
+Numbers worked by hand first: `data/synthetic/six/expected.md`. No-network tests caught two of our own mistakes in the tests: seven counted claims, not six, and a re-asked dinner answered as "shared".
+
+**First live run: stalled, with one message lost.** Chitra's `release c4` reached Mattermost and never reached Switch. It isn't in Switch's record of the room, the clerk never saw it, and nothing in Switch's log explains it. Posting it again worked. We suspected the short-lived connections from set-up expiring at that exact second, and measured it: 648 messages across six desks, 324 right after opening and 324 a minute later, none lost. So that theory has no support, and **the cause is unknown**. It's been seen once in about 700 messages. We didn't add a silent retry inside the product. The chit now says "Sending", and after 12 seconds says that it didn't go through and pressing again is safe, which is true because the clerk refuses repeats. `six_person.py` counts every resend and prints the count. It has been 0 on all the runs since.
+
+**Second run: the verifier failed 58 of 60, and it was right to.** The story finished and the board was correct, but `verify.py` recomputed Esha with her dinner missing. Its parser hadn't been taught "Conflict cleared ... now counts". We fixed the parser, not the check. Re-verifying then produced 429s: after repeated 403s, Switch answers "refused repeatedly". Our first fix, waiting and retrying, made it worse, since retries extend the penalty, and hung for minutes. A 429 with exactly that wording and no data now counts as a refusal and is displayed as `403-again`. Any other 429 fails.
+
+Negative control: we planted `RAINTREE RESTAURANT MADIKERI` in the group room from Esha's account, and verify failed 60 of 61, naming those words.
+
+### Sat 7 Nov, 01:18-01:30 - real model: one clean run, then a stall
+
+Run 1 was clean, 61 of 61. The model filed the rafting trip for all six, so the scripted person dropped the chit and said Dev skipped it. This is the product working: only a person knows that.
+
+Run 2 stalled because of our script, not the product. The model read "that one's already covered by someone else's claim, so personal" as unsure, which is fair, and the script wouldn't say the same thing twice. It now answers the way a person would, using the words the agent offers.
+
+### Sat 7 Nov, 01:30-02:41 - stopped
+
+The next attempt failed with `unrecognized_model` from the CLI: `claude-haiku-5-5` had worked twelve minutes earlier. The owner's account hit its usage limit in this period, and the sprint paused until it reset. We infer those are connected, but haven't proven it. The same id worked through Kitty's code path after the reset.
+
+That failure exposed two real weaknesses. The agent said only "Something went wrong", and a failed model call put up to 300 characters of the CLI's output into the log, which could have quoted a prompt. Now the person gets a plain message and a "Try again" button, and the log gets a code only.
+
+### Sat 7 Nov, 02:43-02:56 - evidence (done, committed `6bd29b1` and after)
+
+| Run | Result |
+|---|---|
+| Six people, real model, three in a row | 3 of 3, 61 of 61 each, balances equal to the hand-worked numbers, no resends, about 83 s of story and 40 s of set-up each |
+| Six people, every process stopped mid-trip, Bilal releasing a payment while they were down | Finished, 61 of 61 |
+| Three people, real model, three in a row, after all of the above | 3 of 3, 37 of 37. Same check count as before the sprint |
+| Attack on the model | 8 of 8 |
+| Isolation, real people, attacks on the clerk | 28 of 28, 26 of 26, 10 of 10 |
+| Model score | 48 judgments: 39 correct, 9 asked, 0 wrong (first run: 35, 13, 0). Same small sample |
+
+The restart test first needed agents to remember their place, as they kept it in memory only. They now save it after each message on app-made trips, and both agents and the clerk resume from a saved position. Writing that test also found an older bug: a `rescan` during a question lost the question. Fixed.
+
+Also added: `reopen <title>`, because a line the model wrongly kept private had no way back (ADR-014).
+
+### Sat 7 Nov, 03:03 - we took our own stack down
+
+Cleaning up a test server, we ran `lsof -ti tcp:7001 | xargs kill`. That matches every process with any connection on the port, not just the listener. Docker's log shows its backend exiting in that same second, 03:03:20, and Docker then stopped, with Mattermost and Postgres. We didn't see the list of processes before it was killed, so the link is by timing, but it's strong, and it was a careless command. It should have been filtered to `-sTCP:LISTEN`, and checked before killing.
+
+Docker and both containers restarted fine, with data intact. Switch's own process stayed up but kept its Mattermost bridge stopped ("Bridge is not running"), so new trips failed at the account step. While tracing this, an edit script of ours also corrupted `kitty/provision.py`, because of an empty slice. Tests caught it at once, and we restored it from git.

@@ -192,9 +192,29 @@ So: every negative test needs a positive control.
 
 **With the model really running,** the attack test passes 8 of 8: zero tools, zero tool calls, secret not leaked. The positive control is the striking part. Given only `Read`, run from Meera's folder, the same model read the file in Arjun's folder. A working directory and a tool list wouldn't have protected her. Having no tools does.
 
-**How good is the model at this?** Across 3 runs of 16 lines, it made 48 judgments: 35 correct decisions, 13 where it asked the person, and none wrong. It asks about different lines on different runs, so our scripted test people had to answer whatever came up. That's a small sample on data we wrote and labelled ourselves, so it says the demo works and not much more.
+**How good is the model at this?** Across 3 runs of 16 lines, it made 48 judgments. The first scoring gave 35 correct decisions, 13 where it asked the person, and none wrong. A later scoring gave 39, 9 and none. It asks about different lines on different runs, so our scripted test people had to answer whatever came up. That's a small sample on data we wrote and labelled ourselves, so it says the demo works and not much more.
 
-## 11. What we learned
+## 11. From a script to something six people can use
+
+The first version needed a command to create a trip, and worked with three people. Making it a product found more than we expected.
+
+**Provisioning has to survive failing halfway.** Each person is a Switch owner, a Mattermost account linked by that account's own session, a registered agent, two rooms, and sender ids learned by watching real posts. Any of those can fail, and Switch can't delete a room (issue #1202), so rollback isn't available. What worked: write each password down before the call that uses it, save after every step, and on retry skip what's done. One person's failure doesn't stop the others, and the group room waits. If you build on Switch, plan for resuming rather than undoing.
+
+**Don't show a server's error text to a user.** It could hold anything. Our status file has fixed codes and sentences only, and a test plants a password in a failure and checks that it never comes out.
+
+**Validate a statement without quoting it.** A CSV error normally says what was wrong with what. Ours says "Line 3, txn_time: use a 24-hour time like 20:15", and never repeats a value, so errors can be logged and shown safely.
+
+**Show people exactly what the model provider gets.** Before anything is sent, a person can open the exact lines. It calls the same function the agent uses, and a test compares the two against what a recording model really receives. It also shows something uncomfortable: a personal pharmacy purchase in the trip's dates is in there, because that's how the model tells it apart.
+
+**Six people found things three didn't.**
+
+- Two people's statements showed the same dinner. The clerk held both until one dropped theirs, and our verifier had no idea how to read that. It failed 58 of 60 with the board correct, and it was right to complain. It was missing a rule, so we taught it the rule and didn't relax the check.
+- The model filed a rafting trip for all six. It can't know Dev skipped it. The owner reads the chit, drops it, and says so, which is the design. A wrong "shared" could already be fixed that way, but a wrong "personal" had no way back, so we added one.
+- One message in about 700 reached Mattermost and never reached Switch, and we still don't know why. A theory we liked died when we measured it: 648 more messages, none lost. So the app now shows "Sending", and says when it's safe to press again, rather than pretending this can't happen.
+
+**The results:** three real-model runs in a row with six people, each with verify at 61 of 61 and balances matching numbers we worked out by hand first. A run with every process stopped mid-trip and a release sent while they were down also finished clean. The original three-person story still passes 37 of 37. It's a small test, on statements we wrote ourselves.
+
+## 12. What we learned
 
 - **Test the boundary before building on it.** The test changed our architecture on day one.
 - **Put limits in the server, then in code, and last in prompts.** We ended up with no prompt-based security at all.
@@ -202,14 +222,14 @@ So: every negative test needs a positive control.
 - **Asking a person is a feature.** "Yes, but Meera had gone to bed" is the best line in the demo, and no statement contains it.
 - **Read the server log first.** A retry would have papered over a 50-member limit.
 
-## 12. Try it
+## 13. Try it
 
 `[GAP: repository link. The repository is private at the time of drafting]`
 `[GAP: demo video link]`
 
-The no-model tests run in under a second with `uv sync && PYTHONPATH=. uv run pytest`. The full setup is in the README.
+The no-model tests run in about two seconds with `uv sync && uv run pytest`. The full setup is in the README. Once Switch is running, `uv run python -m kitty.home_app` opens the app at <http://127.0.0.1:7000>.
 
-**What's missing, plainly:** real bank connections, multiple currencies, a screen for setting up a trip, running on separate machines, and any evidence that people want this. A real version could read statements on each person's own device, so the host never holds them, and pre-check reversals before anyone has to claim anything.
+**What's missing, plainly:** real bank connections, converting between currencies, real accounts instead of invite links, an organiser login, adding someone after the trip opens, changing a split after release, running on separate machines, and any evidence that people want this. A real version could read statements on each person's own device, so the host never holds them, and pre-check reversals before anyone has to claim anything.
 
 Thanks to the Switch team for a server whose boundaries held up when we attacked them, and to the author of Airlock for proving the path.
 
@@ -226,4 +246,5 @@ Thanks to the Switch team for a server whose boundaries held up when we attacked
 | Mattermost channel view, to show this is real team chat | Done: `docs/assets/mattermost-group.png`, `mattermost-meera-desk.png` |
 | Verify output | Done: `docs/evidence/verify_output_real_model.json` |
 | Demo video | **Not recorded. On hold until the owner says so** |
-| Real-model screenshots | **Needed** |
+| App screenshots, from a real-model six-person run | Done: `docs/assets/app/` |
+| Older three-person screenshots | The Stage and board shots still need retaking from a real-model run |

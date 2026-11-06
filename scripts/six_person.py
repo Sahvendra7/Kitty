@@ -55,6 +55,41 @@ def log(text: str) -> None:
     print(f"[{time.strftime('%H:%M:%S')}] {text}", flush=True)
 
 
+class Shots:
+    """Stills of the real pages during a real run, in a throwaway headless Chrome. It never records video."""
+
+    def __init__(self, out: str | None) -> None:
+        self.out = Path(out) if out else None
+        self.browser = None
+
+    def take(self, name: str, url: str, width: int = 1440, height: int = 900, person: "Person | None" = None, js: str = "", settle: float = 1.5) -> None:
+        if not self.out:
+            return
+        if self.browser is None:
+            sys.path.insert(0, str(ROOT / "scripts"))
+            from capture import Browser
+
+            self.browser = Browser(1440, 900)
+        b = self.browser
+        b.send("Emulation.setDeviceMetricsOverride", width=width, height=height, deviceScaleFactor=2 if width < 600 else 1, mobile=False)
+        if person is not None:
+            for key, value in person.http.cookies.items():
+                b.send("Network.setCookie", name=key, value=value, domain="127.0.0.1", path="/", httpOnly=True, sameSite="Strict")
+        b.goto(url, settle=settle)
+        if js:
+            b.send("Runtime.evaluate", expression=f"(async()=>{{{js}}})()", awaitPromise=True)
+            time.sleep(settle)
+        b.shot(self.out / f"{name}.png")
+
+    def phone(self, name: str, person: "Person", tab: str = "", js: str = "", height: int = 860) -> None:
+        pick = f"document.querySelector('nav button[data-t={tab}]').click();await new Promise(r=>setTimeout(r,400));" if tab else ""
+        self.take(name, str(person.http.base_url), 430, height, person, pick + js)
+
+    def close(self) -> None:
+        if self.browser:
+            self.browser.close()
+
+
 LOST: list[str] = []  # Messages a person had to send again because nothing came back. Reported, not hidden.
 
 
@@ -182,17 +217,26 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--leave-unsettled", action="store_true", help="Stop before the final payments, to look around.")
     ap.add_argument("--restart-midway", action="store_true", help="Stop every process mid-trip, send a release while they're down, then start them again.")
+    ap.add_argument("--shots", help="Save stills of the pages to this folder, for the README and blog.")
     args = ap.parse_args()
+    shots = Shots(args.shots)
     home = httpx.Client(base_url=HOME, timeout=30)
     began = time.time()
     log("Scripted people, through the same routes the pages use.")
+    shots.take("app-home", HOME + "/")
+    fill = "const set=(n,v)=>{const i=document.querySelector(`#tripForm [name=${n}]`);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))};" + "".join(f"set('{k}','{TRIP[k]}');" for k in ("name", "start", "end"))
+    shots.take("app-new-trip", HOME + "/trips/new", js=fill)
     trip = home.post("/api/trips", json={k: TRIP[k] for k in ("name", "start", "end", "currency")}).json()
     tid = trip["id"]
     log(f"trip {tid}")
     for p in TRIP["people"]:
         r = home.post(f"/api/trips/{tid}/people", json=p)
         assert r.status_code == 201, r.text
+    shots.take("app-add-people", f"{HOME}/trips/{tid}")
+    shots.take("app-ready-to-open", f"{HOME}/trips/{tid}", js="document.getElementById('toReview').click();")
     assert home.post(f"/api/trips/{tid}/open").status_code == 202
+    time.sleep(12)
+    shots.take("app-setting-up", f"{HOME}/trips/{tid}")
     while True:
         detail = home.get(f"/api/trips/{tid}").json()
         if detail["state"] in ("live", "failed") and not detail["running"]:
@@ -205,6 +249,7 @@ def main() -> int:
     board_url = detail["board_url"]
     people = {p["name"]: Person(p["name"], int(re.search(r":(\d+)/", p["invite_url"]).group(1)), p["invite_url"][p["invite_url"].index("/join"):]) for p in detail["people"]}
 
+    shots.take("app-trip-open", f"{HOME}/trips/{tid}")
     # Isolation at the app's door.
     for p in people.values():
         check(p.http.get("/api/feed").status_code == 401, f"{p.name}'s app refuses anyone without their invite")
@@ -217,6 +262,9 @@ def main() -> int:
     check(borrowed.get("/api/feed").status_code == 401, "Asha's session doesn't open Bilal's app")
 
     # Statements.
+    shots.phone("app-statement-add", asha)
+    bad_upload = "const a=document.getElementById('attest');a.click();const f=document.getElementById('file');const dt=new DataTransfer();dt.items.add(new File(['" + "txn_date,txn_time,narration,ref,debit,credit,balance,account\\n2026-13-16,10:00,SOME SHOP,C1,10.00,,,1234567812345678\\n2026-10-16,99:00,SOME CAFE,C2,1.00,2.00,,XXXXXX1234\\n" + "'],'mine.csv',{type:'text/csv'}));f.files=dt.files;f.dispatchEvent(new Event('change',{bubbles:true}));await new Promise(r=>setTimeout(r,800));"
+    shots.phone("app-statement-errors", asha, js=bad_upload)
     bad = (DATA / "asha.csv").read_text().replace("XXXXXX2101", "1234567812345678", 1)
     r = asha.upload(bad)
     check(r.status_code == 422 and "1234567812345678" not in r.text, "a bad file is refused, and its content isn't echoed back")
@@ -225,6 +273,7 @@ def main() -> int:
         check(r.status_code == 200 and r.json()["status"] == "accepted", f"{p.name}'s statement accepted: {r.json().get('summary')}")
     r = asha.upload((DATA / "asha.csv").read_text())
     check(r.json()["status"] == "duplicate", "the same file twice is noticed")
+    shots.phone("app-statement-ready", people["Chitra"], js="const d=document.getElementById('pv');d.open=true;await new Promise(r=>setTimeout(r,900));document.getElementById('pv').scrollIntoView();", height=1000)
     detail = home.get(f"/api/trips/{tid}").json()
     check(all(p["joined"] and p["statement_added"] for p in detail["people"]), "the organiser sees all six joined, with statements added")
 
@@ -236,10 +285,14 @@ def main() -> int:
         reply = p.wait("the agent's reply", lambda d: next((m["text"] for m in d["private"] if not m["mine"] and (m["text"].startswith("I read ") or "can't reach the model" in m["text"] or "went wrong" in m["text"])), None), 420)
         if not reply.startswith("I read "):
             raise RuntimeError(f"{p.name}'s agent couldn't reach the model. Is the account within its usage limit?")
+    if args.shots:
+        people["Chitra"].wait("a question", lambda d: d["private"] and "Was this shared" in d["private"][-1]["text"], 60)
+        shots.phone("app-agent-asks", people["Chitra"], "private")
     for p in people.values():
         p.answer_questions()
     for p in people.values():
         p.fix_desk()
+    shots.phone("app-desk", people["Esha"], "desk")
     corrected = sum(len(p.corrected) for p in people.values())
     log(f"chits people had to correct: {corrected}")
 
@@ -251,6 +304,8 @@ def main() -> int:
     dinner = next(s for s in farhan.slips() if s["kind"] == "expense" and s["amount"] == "₹6,300.00")
     check(dinner["state"] == "conflict", "Farhan's chit shows the conflict")
     check(board(board_url)["held_count"] >= 0 and "Esha" in {e["payer"] for e in board(board_url)["expenses"] if e["status"] == "conflict_hold"}, "the board holds both until one is dropped")
+    shots.phone("app-conflict", farhan, "desk")
+    shots.phone("app-group-conflict", farhan, "group")
     farhan.dropped_dinner = True
     farhan.act("desk", f"drop {dinner['id']}", "conflict cleared", lambda d: any("Conflict cleared" in x.get("text", "") for x in d["group"]))
     farhan.answer_questions()
@@ -285,6 +340,8 @@ def main() -> int:
     check(answer["received"] is False, "Chitra's agent finds nothing, because it never arrived")
     chitra.act("desk", f"release {td}", "the dispute", lambda d: any(f"{td} NOT CONFIRMED" in x.get("text", "") for x in d["group"]))
     dev.wait("the reversal", lambda d: any("failed and was reversed" in m["text"] for m in d["private"]))
+    shots.take("app-board-dispute", board_url)
+    shots.phone("app-reversal", dev, "private")
     group = dev.feed()["group"]
     check(not any("reversed" in x.get("text", "").lower() and "CANARY" in x.get("text", "") for x in group), "the group hears nothing about Dev's reversal")
     dev.act("desk", f"withdraw {td} payment_failed", "the withdrawal", lambda d: any(f"{td} withdrawn by" in x.get("text", "") for x in d["group"]))
@@ -294,6 +351,9 @@ def main() -> int:
     check(now == EXPECTED, "balances match the hand-worked numbers exactly")
     chitra.act("group", "balances", "balances", lambda d: any(x.get("text", "").startswith("| Person") for x in d["group"]))
     chitra.act("group", "settle", "settle", lambda d: any(x.get("text", "").startswith("Suggested payments") for x in d["group"]))
+    shots.take("app-board-balances", board_url, height=1100)
+    shots.take("app-trip-settling", f"{HOME}/trips/{tid}", height=1000)
+    shots.take("app-trip-phone", f"{HOME}/trips/{tid}", 430, 1000)
     if args.leave_unsettled:
         log(f"left unsettled. Trip folder: {folder}")
         print(f"TRIP_DIR={folder}")
@@ -322,6 +382,9 @@ def main() -> int:
     asha.wait("the end", lambda d: any("Everyone's square" in x.get("text", "") for x in d["group"]))
     final = board(board_url)
     check(all(b["paise"] == 0 for b in final["balances"]) and L.settle({b["name"]: b["paise"] for b in final["balances"]}) == [], "everyone's square")
+
+    shots.take("app-board-square", board_url, height=1100)
+    shots.close()
 
     # The same words, looked for where they should never be.
     words = set()

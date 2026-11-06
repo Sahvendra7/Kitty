@@ -8,7 +8,7 @@
   {
    "check": "group room did not change",
    "pass": true,
-   "detail": "30 messages"
+   "detail": "29 messages"
   },
   {
    "check": "a well-formed claim is held on the desk, not published",
@@ -48,7 +48,7 @@
   {
    "check": "verify detects a merchant name planted in the group room",
    "pass": true,
-   "detail": "FAIL  no statement text in group room  [87 terms, 34 messages, FOUND: ['JEWELLERS', 'TANISHQ']]"
+   "detail": "FAIL  no statement text in group room  [87 terms, 33 messages, FOUND: ['JEWELLERS', 'TANISHQ']]"
   }
  ]
 }
