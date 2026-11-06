@@ -29,7 +29,7 @@ sys.path[:0] = [str(ROOT), str(ROOT / "scripts")]
 from kitty.switch_client import Agent, Gateway, Mattermost  # noqa: E402
 from switch_env import load  # noqa: E402
 
-ENV = load(ROOT.parent / "switch-src" / ".env")
+ENV = load(Path(os.environ.get("SWITCH_SRC", ROOT.parent / "switch-src")) / ".env")
 TRIP = json.loads((ROOT / "data/synthetic/trip.json").read_text())
 STATE = ROOT / "state"
 

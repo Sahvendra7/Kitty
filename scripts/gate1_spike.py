@@ -8,6 +8,7 @@ records the real HTTP status. Nothing is inferred from prompts or from the UI.
 from __future__ import annotations
 
 import json
+import os
 import secrets
 import sys
 import threading
@@ -23,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).parent))
 from switch_env import load  # noqa: E402
 
 ROOT = Path(__file__).resolve().parent.parent
-ENV = load(ROOT.parent / "switch-src" / ".env")
+ENV = load(Path(os.environ.get("SWITCH_SRC", ROOT.parent / "switch-src")) / ".env")
 BASE = "http://localhost:8000"
 RUN = secrets.token_hex(3)
 results: list[tuple[str, bool, str]] = []

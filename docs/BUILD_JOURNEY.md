@@ -153,3 +153,15 @@ Full flow driven through the apps: withdraw, synthetic payments, re-scan, releas
 Read the official rules at this point. Best Blog is judged on "clarity, accuracy, and how much it helps a first-time Switch user",
 so the blog has to teach setup, not only tell the story. Submission needs a repo, demo video and README. **Open question for the
 owner:** judges ask whether someone can "clone the repo and reproduce it", and our repo is private.
+
+### Fri 6 Nov, about 23:45 - README, privacy doc, blog draft, diagram, eval script (written)
+
+Blog sections that depend on a real model are marked `[GAP]` rather than filled in. `scripts/eval_agent.py` is written and has **not run**.
+
+## Status at this point
+
+| | |
+|---|---|
+| **Done and run** | Switch from source, Gate 1A/1B/1D, clerk, ledger, parser, agent logic, person apps, board, verify, full story live with the no-model brain |
+| **Written, not yet run** | `LlmBrain`, `eval_agent.py`, Gate 1C's attack on a live model. All blocked on the Claude CLI login |
+| **Not started** | Demo video, clean-clone test, Mattermost screenshots, final field re-check |

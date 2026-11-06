@@ -11,6 +11,7 @@ Proves the human side of the boundary with real Mattermost accounts and real sen
 from __future__ import annotations
 
 import json
+import os
 import queue
 import secrets
 import sys
@@ -25,7 +26,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 from kitty.switch_client import Agent, Gateway, Mattermost  # noqa: E402
 from switch_env import load  # noqa: E402
 
-ENV = load(ROOT.parent / "switch-src" / ".env")
+ENV = load(Path(os.environ.get("SWITCH_SRC", ROOT.parent / "switch-src")) / ".env")
 RUN = secrets.token_hex(3)
 results: list[tuple[str, bool, str]] = []
 

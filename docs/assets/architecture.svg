@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 620" font-family="Mukta, system-ui, sans-serif" role="img" aria-label="Kitty architecture: each person has a private room and a desk. The clerk is in every desk and the group room, and is refused private rooms. Personal agents are refused the group room.">
+<rect width="1000" height="620" fill="#FFFFFF"/>
+<style>.t{font-size:15px;fill:#10272B}.h{font-size:18px;font-weight:700;fill:#10272B}.w{font-size:15px;fill:#E4F3EF}.wh{font-size:18px;font-weight:700;fill:#FFFFFF}.no{font-size:14px;font-weight:600;fill:#C8175D}.s{font-size:13px;fill:#4A6367}</style>
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#10272B"/></marker></defs>
+<rect x="30" y="30" width="940" height="90" rx="8" fill="#F2A81D"/>
+<text class="h" x="50" y="62">goa-trip: the group room</text>
+<text class="t" x="50" y="86">Priya, Arjun, Meera and the clerk. Only owner-released claims: date, amount, category, who shared.</text>
+<text class="t" x="50" y="107">No personal agent is a member. Switch answers 403.</text>
+<rect x="340" y="165" width="320" height="82" rx="8" fill="#10272B"/>
+<text class="wh" x="360" y="197">kitty-clerk: ordinary code, no LLM</text>
+<text class="w" x="360" y="221">Validates, holds until released, matches</text>
+<text class="w" x="360" y="240" font-size="14">transfers, does the sums in integer paise</text>
+<line x1="500" y1="120" x2="500" y2="165" stroke="#10272B" stroke-width="2" marker-start="url(#a)"/>
+<g id="p">
+<rect x="30" y="300" width="290" height="92" rx="4" fill="#E4F3EF" stroke="#16505A" stroke-width="1.5"/>
+<text class="h" x="46" y="330">meera-desk</text>
+<text class="t" x="46" y="354">Meera, her agent, the clerk</text>
+<text class="t" x="46" y="375">Typed claims wait for her release</text>
+<rect x="30" y="432" width="290" height="92" rx="8" fill="#0E3B43"/>
+<text class="wh" x="46" y="462">meera-private</text>
+<text class="w" x="46" y="486">Meera and her agent only</text>
+<text class="w" x="46" y="507">"Zomato, 11 PM, ₹850. Shared?"</text>
+<rect x="30" y="552" width="290" height="46" rx="8" fill="#FFFFFF" stroke="#10272B" stroke-width="1.5"/>
+<text class="t" x="46" y="573">Runner holds the key. Model has no tools.</text>
+<text class="s" x="46" y="590">Statement stripped by plain code first</text>
+<line x1="175" y1="432" x2="175" y2="392" stroke="#10272B" stroke-width="2" marker-end="url(#a)"/>
+<text class="s" x="184" y="417">validated claims only</text>
+<line x1="175" y1="552" x2="175" y2="524" stroke="#10272B" stroke-width="2" marker-start="url(#a)" marker-end="url(#a)"/>
+</g>
+<rect x="680" y="300" width="290" height="92" rx="4" fill="#E4F3EF" stroke="#16505A" stroke-width="1.5"/>
+<text class="h" x="696" y="330">arjun-desk</text>
+<text class="t" x="696" y="354">Arjun, his agent, the clerk</text>
+<text class="t" x="696" y="375">"Did ₹1,500 reach you?" Yes or no</text>
+<rect x="680" y="432" width="290" height="92" rx="8" fill="#0E3B43"/>
+<text class="wh" x="696" y="462">arjun-private</text>
+<text class="w" x="696" y="486">Arjun and his agent only</text>
+<text class="w" x="696" y="507">Merchant names stay here</text>
+<rect x="680" y="552" width="290" height="46" rx="8" fill="#FFFFFF" stroke="#10272B" stroke-width="1.5"/>
+<text class="t" x="696" y="573">Runner holds the key. Model has no tools.</text>
+<text class="s" x="696" y="590">Statement stripped by plain code first</text>
+<line x1="825" y1="432" x2="825" y2="392" stroke="#10272B" stroke-width="2" marker-end="url(#a)"/>
+<text class="s" x="834" y="417">validated claims only</text>
+<line x1="825" y1="552" x2="825" y2="524" stroke="#10272B" stroke-width="2" marker-start="url(#a)" marker-end="url(#a)"/>
+<path d="M340 225 C 260 240, 200 260, 175 300" fill="none" stroke="#10272B" stroke-width="2" marker-start="url(#a)" marker-end="url(#a)"/>
+<path d="M660 225 C 740 240, 800 260, 825 300" fill="none" stroke="#10272B" stroke-width="2" marker-start="url(#a)" marker-end="url(#a)"/>
+<rect x="358" y="300" width="284" height="224" rx="8" fill="#FFFFFF" stroke="#C8175D" stroke-width="1.5" stroke-dasharray="6 5"/>
+<text class="no" x="376" y="330">Refused by the Switch server</text>
+<text class="t" x="376" y="358">Clerk to any private room: 403</text>
+<text class="t" x="376" y="384">Agent to the group room: 403</text>
+<text class="t" x="376" y="410">Agent to another person's rooms: 403</text>
+<text class="t" x="376" y="436">Agent inviting itself into any of these: 403</text>
+<text class="no" x="376" y="470">Refused by the clerk</text>
+<text class="t" x="376" y="497">An agent typing "release"</text>
+<text class="t" x="376" y="517" font-size="14">Anyone else releasing your claim</text>
+</svg>
