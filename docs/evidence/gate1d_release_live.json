@@ -1,0 +1,54 @@
+{
+ "results": [
+  {
+   "check": "malformed claims rejected on the live desk",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "check": "group room did not change",
+   "pass": true,
+   "detail": "30 messages"
+  },
+  {
+   "check": "a well-formed claim is held on the desk, not published",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "check": "DENIED: the agent itself typing release c9",
+   "pass": true,
+   "detail": "still unpublished"
+  },
+  {
+   "check": "the refusal is visible on the desk",
+   "pass": true,
+   "detail": "Refused: Meera's agent can't do that. Only Meera can."
+  },
+  {
+   "check": "DENIED: Arjun typing release c9 in the group room",
+   "pass": true,
+   "detail": "still unpublished"
+  },
+  {
+   "check": "DENIED: Arjun typing release c9 on his own desk",
+   "pass": true,
+   "detail": "still unpublished"
+  },
+  {
+   "check": "Meera's own release publishes c9",
+   "pass": true,
+   "detail": "**c9** ₹777.00 · food · 11 Oct · paid by Meera · Meera ₹388.50, Arjun ₹388.50"
+  },
+  {
+   "check": "no attack text reached the group room",
+   "pass": true,
+   "detail": ""
+  },
+  {
+   "check": "verify detects a merchant name planted in the group room",
+   "pass": true,
+   "detail": "FAIL  no statement text in group room  [87 terms, 34 messages, FOUND: ['JEWELLERS', 'TANISHQ']]"
+  }
+ ]
+}

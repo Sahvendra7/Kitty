@@ -41,7 +41,7 @@ Mattermost and Postgres on a 16 GB laptop), `just run`.
 `GET /health` returned `{"status":"ok"}`. The one-shot `setup` container then registered the bundled
 Mattermost as the default bridge and linked `admin@switch.local` to a Mattermost account.
 
-### Fri 6 Nov, 23:20-23:45 - Gate 1A: isolation between separately owned agents (done)
+### Fri 6 Nov, 23:12-23:20 - Gate 1A: isolation between separately owned agents (done)
 
 `scripts/gate1_spike.py` creates three non-admin owners through the Gateway, each with their own
 registration key, then attacks the room boundary. Evidence: `docs/evidence/gate1a_isolation.json`.
@@ -58,14 +58,14 @@ Failed approaches, kept because they taught us something:
 3. **The clerk not seeing its own relay** failed a check. Agents do not get echoes of their own posts.
    We now assert on `read_context`.
 
-### Fri 6 Nov, 23:45 - design change found by testing: the clerk must leave private rooms
+### Fri 6 Nov, about 23:18 - design change found by testing: the clerk must leave private rooms
 
 The research plan put `kitty-clerk` in every private room. Switch's documented behaviour is that all
 agents in a room read all of it, and the spike confirmed the clerk can `read_context` a private room it
 belongs to. So the clerk would have received merchant names from the "Zomato, 11 PM" conversation,
 which breaks the requirement that it never does. See ADR-002 in `docs/DECISIONS.md`.
 
-### Sat 7 Nov, about 00:00 - Gate 1B and 1C
+### Fri 6 Nov, by 23:22 - Gate 1B and 1C
 
 **1B, real people (done, 26/26).** `scripts/gate1b_humans.py` makes real Mattermost accounts, links each to
 its own Switch owner by that account's own session token, and uses the two-room layout. The clerk gets 403
@@ -82,3 +82,49 @@ tool calls* and *canary absent*, and those passes were hollow: the model replied
 control is what exposed this. It reads the same file with `Read` enabled and should find the canary, and it
 did not. The standalone CLI on this Mac is not logged in, because the desktop app holds its own auth. The script
 now exits as INCONCLUSIVE unless the model really ran. **Blocked on the owner running `claude auth login`.**
+
+### Fri 6 Nov, 23:22 - correction to this journal
+
+The three headings above first carried times I estimated while writing (23:45, about 00:00). `date` then read
+23:22, and the first commit landed at about that time. They are corrected above to what the clock supports. From here
+on, stamps come from running `date`.
+
+### Fri 6 Nov, 23:22 - deterministic core (done)
+
+`kitty/claims.py`, `kitty/ledger.py`, `kitty/clerk.py`, `tests/test_core.py`. 53 tests, 0.5 s, no Switch and no LLM.
+
+One failure on the first run: IDs shared a counter, so the first transfer after an expense was `t2`, not `t1`. Fixed
+with one counter per prefix.
+
+### Fri 6 Nov, 23:27 - statements, private agent, whole story on a fake Switch (done, no model)
+
+`kitty/statements.py`, `kitty/agent.py`, `kitty/llm_brain.py`, `tests/test_scenario.py`. 68 tests in under a second.
+
+The expected-balances test was worked out by hand before being compared with the code, and that found a real bug: the
+no-model brain's exclusion regex read "Yes, but Meera had gone to bed. Just Arjun and me." as excluding Arjun as well,
+so Priya carried the whole Zomato bill. The fix limits an exclusion to one clause.
+
+The numbers show why the signature moment matters. Arjun ends up **owed** ₹391.67. If Meera's failed ₹1,500 had counted,
+he would have **owed** ₹1,108.33. A failed payment would have flipped who owes whom.
+
+Decision recorded here: the first pass looks only at outgoing money. Incoming lines are opened only when a dispute makes
+them necessary, which keeps them out of the model prompt entirely. This is also why the failed payment gets claimed at
+all: a production version could pre-check reversals on the payer's side.
+
+### Fri 6 Nov, 23:29-23:31 - first live end-to-end run, verifier, Gate 1D (done)
+
+`scripts/setup_trip.py` built a full trip in one command in under two minutes. `scripts/play_story.py` then played all three
+people through real Mattermost accounts, with the no-model `RulesBrain`. It ended on `Everyone's square.` The first live run
+worked with no code changes, which we credit to testing the whole story on a fake that enforces room membership.
+
+**The verifier's first run was mostly hollow.** It printed 21/24, and most passes meant nothing: the parser read `messages` where
+the API returns `root` and `replies`, so it scanned 0 messages and found no leaks. Same trap as Gate 1C. Verify now fails if it
+parses no lines, or if any room has nothing to scan.
+
+Then 33/33. To prove it can fail, `gate1d_release_live.py` planted `TANISHQ GOA JEWELLERS` in the group room and required verify to
+fail. It did: `FOUND: ['JEWELLERS', 'TANISHQ']`. That run also attacked the live clerk with malformed claims, an agent typing its
+own release, and Arjun releasing Meera's claim from two rooms. All refused, 10/10. Evidence in `docs/evidence/`.
+
+**Gate 1 decision: PASS, with one open item.** Multiple owners, isolation, clerk relay and release enforcement are all demonstrated
+live. Gate 1C's live attack on the model is still open because the CLI is not logged in. We continue because the model's zero-tools
+state is reported by the CLI itself, and because the whole flow also runs with no model at all.

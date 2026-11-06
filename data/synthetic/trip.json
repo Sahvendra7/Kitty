@@ -1,0 +1,12 @@
+{
+  "trip_id": "goa-2026",
+  "name": "Goa trip",
+  "start": "2026-10-09",
+  "end": "2026-10-12",
+  "people": {
+    "priya": {"name": "Priya", "statement_name": "PRIYA S"},
+    "arjun": {"name": "Arjun", "statement_name": "ARJUN K"},
+    "meera": {"name": "Meera", "statement_name": "MEERA R"}
+  },
+  "synthetic_notice": "All statements are invented. No real person, account or transaction."
+}

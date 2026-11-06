@@ -1,0 +1,6 @@
+{
+  "_comment": "Human-labelled truth for the demo story. Scores the model's unassisted guesses.",
+  "priya": {"AIRBNB*GOA VILLA 84213": "shared", "TANISHQ GOA JEWELLERS CANARY-GIFT-PRIYA": "personal", "ZOMATO*ORD 8812": "shared", "FISHERMANS WHARF CANDOLIM": "shared", "APOLLO PHARMACY CANARY-PHARMACY-PRIYA": "personal", "NETFLIX.COM SUBSCRIPTION": "personal"},
+  "arjun": {"GOA2WHEELS SCOOTER RENTAL": "shared", "GRANDE ISLAND WATERSPORTS": "shared", "TITOS CLUB BAGA": "personal", "SPOTIFY INDIA": "personal", "JIO PREPAID RECHARGE CANARY-MOBILE-ARJUN": "personal"},
+  "meera": {"BIG BAZAAR MAPUSA": "shared", "HP PETROL PUMP CALANGUTE": "shared", "CAFE CHAI CANDOLIM": "personal", "MARTINS CORNER BETALBATIM": "shared", "MYNTRA FASHION CANARY-MYNTRA-MEERA": "personal"}
+}
