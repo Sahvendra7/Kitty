@@ -1,0 +1,409 @@
+{
+ "balances": {
+  "asha": 0,
+  "bilal": 0,
+  "chitra": 0,
+  "dev": 0,
+  "esha": 0,
+  "farhan": 0
+ },
+ "brain_calls": [
+  [
+   "classify",
+   [
+    {
+     "amount_rupees": 24000.0,
+     "date": "2026-10-16",
+     "narration": "COORG HERITAGE HOMESTAY ####",
+     "row_id": "r2",
+     "time": "08:30"
+    },
+    {
+     "amount_rupees": 1299.0,
+     "date": "2026-10-17",
+     "narration": "NYKAA COSMETICS CANARY-NYKAA-ASHA",
+     "row_id": "r3",
+     "time": "11:00"
+    }
+   ],
+   "Asha",
+   "Coorg weekend"
+  ],
+  [
+   "classify",
+   [
+    {
+     "amount_rupees": 12500.0,
+     "date": "2026-10-16",
+     "narration": "ZOOMCAR SELF DRIVE HIRE",
+     "row_id": "r2",
+     "time": "07:00"
+    },
+    {
+     "amount_rupees": 119.0,
+     "date": "2026-10-17",
+     "narration": "SPOTIFY INDIA",
+     "row_id": "r3",
+     "time": "09:15"
+    }
+   ],
+   "Bilal",
+   "Coorg weekend"
+  ],
+  [
+   "classify",
+   [
+    {
+     "amount_rupees": 9000.0,
+     "date": "2026-10-17",
+     "narration": "BARAPOLE RIVER RAFTING",
+     "row_id": "r2",
+     "time": "10:30"
+    },
+    {
+     "amount_rupees": 1100.0,
+     "date": "2026-10-18",
+     "narration": "SWIGGY ORDER ####",
+     "row_id": "r3",
+     "time": "23:30"
+    },
+    {
+     "amount_rupees": 380.0,
+     "date": "2026-10-19",
+     "narration": "APOLLO PHARMACY CANARY-PHARMACY-CHITRA",
+     "row_id": "r4",
+     "time": "09:30"
+    }
+   ],
+   "Chitra",
+   "Coorg weekend"
+  ],
+  [
+   "read_answer",
+   "BARAPOLE RIVER RAFTING, 10:30 AM, ₹9,000. Was this shared with the group?",
+   "Yes, but not Dev. Everyone else went rafting.",
+   {
+    "asha": "Asha",
+    "bilal": "Bilal",
+    "chitra": "Chitra",
+    "dev": "Dev",
+    "esha": "Esha",
+    "farhan": "Farhan"
+   }
+  ],
+  [
+   "read_answer",
+   "SWIGGY ORDER, 11:30 PM, ₹1,100. Was this shared with the group?",
+   "Yes, but not Asha or Bilal or Dev or Farhan. Just Esha and me.",
+   {
+    "asha": "Asha",
+    "bilal": "Bilal",
+    "chitra": "Chitra",
+    "dev": "Dev",
+    "esha": "Esha",
+    "farhan": "Farhan"
+   }
+  ],
+  [
+   "classify",
+   [
+    {
+     "amount_rupees": 3600.0,
+     "date": "2026-10-16",
+     "narration": "BIG BASKET GROCERIES MADIKERI",
+     "row_id": "r2",
+     "time": "18:00"
+    },
+    {
+     "amount_rupees": 2499.0,
+     "date": "2026-10-18",
+     "narration": "MYNTRA FASHION CANARY-MYNTRA-DEV",
+     "row_id": "r5",
+     "time": "12:00"
+    }
+   ],
+   "Dev",
+   "Coorg weekend"
+  ],
+  [
+   "classify",
+   [
+    {
+     "amount_rupees": 6300.0,
+     "date": "2026-10-17",
+     "narration": "RAINTREE RESTAURANT MADIKERI",
+     "row_id": "r2",
+     "time": "21:00"
+    },
+    {
+     "amount_rupees": 2400.0,
+     "date": "2026-10-18",
+     "narration": "HP PETROL PUMP MADIKERI",
+     "row_id": "r3",
+     "time": "16:00"
+    },
+    {
+     "amount_rupees": 299.0,
+     "date": "2026-10-18",
+     "narration": "JIO PREPAID RECHARGE CANARY-MOBILE-ESHA",
+     "row_id": "r4",
+     "time": "17:30"
+    }
+   ],
+   "Esha",
+   "Coorg weekend"
+  ],
+  [
+   "classify",
+   [
+    {
+     "amount_rupees": 6300.0,
+     "date": "2026-10-17",
+     "narration": "RAINTREE RESTAURANT MADIKERI",
+     "row_id": "r2",
+     "time": "21:02"
+    },
+    {
+     "amount_rupees": 180.0,
+     "date": "2026-10-19",
+     "narration": "CAFE COFFEE DAY SOLO",
+     "row_id": "r3",
+     "time": "08:00"
+    },
+    {
+     "amount_rupees": 1800.0,
+     "date": "2026-10-19",
+     "narration": "COORG COFFEE ESTATE GROUP TOUR",
+     "row_id": "r4",
+     "time": "11:30"
+    }
+   ],
+   "Farhan",
+   "Coorg weekend"
+  ]
+ ],
+ "rooms": {
+  "desk-asha": [
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"a1\", \"trip_id\": \"coorg-six\", \"owner_id\": \"asha\", \"payer_id\": \"asha\", \"date\": \"2026-10-16\", \"amount_paise\": 2400000, \"currency\": \"INR\", \"category\": \"other\", \"participant_ids\": [\"asha\", \"bilal\", \"chitra\", \"dev\", \"esha\", \"farhan\"], \"shares\": {\"asha\": 400000, \"bilal\": 400000, \"chitra\": 400000, \"dev\": 400000, \"esha\": 400000, \"farhan\": 400000}}",
+   "**c1** ready [ref a1]: ₹24,000.00 · other · 16 Oct · paid by Asha · Asha ₹4,000.00, Bilal ₹4,000.00, Chitra ₹4,000.00, Dev ₹4,000.00, Esha ₹4,000.00, Farhan ₹4,000.00\nReply `release c1` to share it with the group, or `drop c1`.",
+   "release c1",
+   "c1 released.",
+   "KITTY_CHECK t1 from=bilal amount_paise=400000 date=2026-10-18",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer_answer\", \"ref\": \"a2\", \"trip_id\": \"coorg-six\", \"owner_id\": \"asha\", \"transfer_id\": \"t1\", \"received\": true}",
+   "Your agent found that t1 (₹4,000.00 from Bilal) reached you.\nReply `release t1` to send that answer, or `drop t1` to keep it private.",
+   "release t1",
+   "Answer for t1 sent.",
+   "KITTY_CHECK t3 from=farhan amount_paise=843333 date=2026-10-19",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer_answer\", \"ref\": \"a3\", \"trip_id\": \"coorg-six\", \"owner_id\": \"asha\", \"transfer_id\": \"t3\", \"received\": true}",
+   "Your agent found that t3 (₹8,433.33 from Farhan) reached you.\nReply `release t3` to send that answer, or `drop t3` to keep it private.",
+   "release t3",
+   "Answer for t3 sent.",
+   "KITTY_CHECK t6 from=chitra amount_paise=68333 date=2026-10-19",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer_answer\", \"ref\": \"a4\", \"trip_id\": \"coorg-six\", \"owner_id\": \"asha\", \"transfer_id\": \"t6\", \"received\": true}",
+   "Your agent found that t6 (₹683.33 from Chitra) reached you.\nReply `release t6` to send that answer, or `drop t6` to keep it private.",
+   "release t6",
+   "Answer for t6 sent.",
+   "KITTY_CHECK t7 from=esha amount_paise=65000 date=2026-10-19",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer_answer\", \"ref\": \"a5\", \"trip_id\": \"coorg-six\", \"owner_id\": \"asha\", \"transfer_id\": \"t7\", \"received\": true}",
+   "Your agent found that t7 (₹650.00 from Esha) reached you.\nReply `release t7` to send that answer, or `drop t7` to keep it private.",
+   "release t7",
+   "Answer for t7 sent."
+  ],
+  "desk-bilal": [
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer\", \"ref\": \"b1\", \"trip_id\": \"coorg-six\", \"owner_id\": \"bilal\", \"from_id\": \"bilal\", \"to_id\": \"asha\", \"date\": \"2026-10-18\", \"amount_paise\": 400000, \"currency\": \"INR\"}",
+   "**t1** ready [ref b1]: you paid Asha ₹4,000.00 on 18 Oct.\nReply `release t1` to tell the group, or `drop t1`.",
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"b2\", \"trip_id\": \"coorg-six\", \"owner_id\": \"bilal\", \"payer_id\": \"bilal\", \"date\": \"2026-10-16\", \"amount_paise\": 1250000, \"currency\": \"INR\", \"category\": \"other\", \"participant_ids\": [\"asha\", \"bilal\", \"chitra\", \"dev\", \"esha\", \"farhan\"], \"shares\": {\"asha\": 208334, \"bilal\": 208334, \"chitra\": 208333, \"dev\": 208333, \"esha\": 208333, \"farhan\": 208333}}",
+   "**c2** ready [ref b2]: ₹12,500.00 · other · 16 Oct · paid by Bilal · Asha ₹2,083.34, Bilal ₹2,083.34, Chitra ₹2,083.33, Dev ₹2,083.33, Esha ₹2,083.33, Farhan ₹2,083.33\nReply `release c2` to share it with the group, or `drop c2`.",
+   "release c2",
+   "c2 released.",
+   "release t1",
+   "t1 released.",
+   "KITTY_CHECK t4 from=dev amount_paise=483333 date=2026-10-19",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer_answer\", \"ref\": \"b3\", \"trip_id\": \"coorg-six\", \"owner_id\": \"bilal\", \"transfer_id\": \"t4\", \"received\": true}",
+   "Your agent found that t4 (₹4,833.33 from Dev) reached you.\nReply `release t4` to send that answer, or `drop t4` to keep it private.",
+   "release t4",
+   "Answer for t4 sent.",
+   "KITTY_CHECK t5 from=esha amount_paise=143333 date=2026-10-19",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer_answer\", \"ref\": \"b4\", \"trip_id\": \"coorg-six\", \"owner_id\": \"bilal\", \"transfer_id\": \"t5\", \"received\": true}",
+   "Your agent found that t5 (₹1,433.33 from Esha) reached you.\nReply `release t5` to send that answer, or `drop t5` to keep it private.",
+   "release t5",
+   "Answer for t5 sent."
+  ],
+  "desk-chitra": [
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"c1\", \"trip_id\": \"coorg-six\", \"owner_id\": \"chitra\", \"payer_id\": \"chitra\", \"date\": \"2026-10-17\", \"amount_paise\": 900000, \"currency\": \"INR\", \"category\": \"other\", \"participant_ids\": [\"asha\", \"bilal\", \"chitra\", \"esha\", \"farhan\"], \"shares\": {\"asha\": 180000, \"bilal\": 180000, \"chitra\": 180000, \"esha\": 180000, \"farhan\": 180000}}",
+   "**c3** ready [ref c1]: ₹9,000.00 · other · 17 Oct · paid by Chitra · Asha ₹1,800.00, Bilal ₹1,800.00, Chitra ₹1,800.00, Esha ₹1,800.00, Farhan ₹1,800.00\nReply `release c3` to share it with the group, or `drop c3`.",
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"c2\", \"trip_id\": \"coorg-six\", \"owner_id\": \"chitra\", \"payer_id\": \"chitra\", \"date\": \"2026-10-18\", \"amount_paise\": 110000, \"currency\": \"INR\", \"category\": \"other\", \"participant_ids\": [\"chitra\", \"esha\"], \"shares\": {\"chitra\": 55000, \"esha\": 55000}}",
+   "**c4** ready [ref c2]: ₹1,100.00 · other · 18 Oct · paid by Chitra · Chitra ₹550.00, Esha ₹550.00\nReply `release c4` to share it with the group, or `drop c4`.",
+   "release c3",
+   "c3 released.",
+   "release c4",
+   "c4 released.",
+   "KITTY_CHECK t2 from=dev amount_paise=200000 date=2026-10-17",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer_answer\", \"ref\": \"c3\", \"trip_id\": \"coorg-six\", \"owner_id\": \"chitra\", \"transfer_id\": \"t2\", \"received\": false}",
+   "Your agent found that t2 (₹2,000.00 from Dev) did not reach you.\nReply `release t2` to send that answer, or `drop t2` to keep it private.",
+   "release t2",
+   "Answer for t2 sent.",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer\", \"ref\": \"c4\", \"trip_id\": \"coorg-six\", \"owner_id\": \"chitra\", \"from_id\": \"chitra\", \"to_id\": \"asha\", \"date\": \"2026-10-19\", \"amount_paise\": 68333, \"currency\": \"INR\"}",
+   "**t6** ready [ref c4]: you paid Asha ₹683.33 on 19 Oct.\nReply `release t6` to tell the group, or `drop t6`.",
+   "release t6",
+   "t6 released."
+  ],
+  "desk-dev": [
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer\", \"ref\": \"d1\", \"trip_id\": \"coorg-six\", \"owner_id\": \"dev\", \"from_id\": \"dev\", \"to_id\": \"chitra\", \"date\": \"2026-10-17\", \"amount_paise\": 200000, \"currency\": \"INR\"}",
+   "**t2** ready [ref d1]: you paid Chitra ₹2,000.00 on 17 Oct.\nReply `release t2` to tell the group, or `drop t2`.",
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"d2\", \"trip_id\": \"coorg-six\", \"owner_id\": \"dev\", \"payer_id\": \"dev\", \"date\": \"2026-10-16\", \"amount_paise\": 360000, \"currency\": \"INR\", \"category\": \"other\", \"participant_ids\": [\"asha\", \"bilal\", \"chitra\", \"dev\", \"esha\", \"farhan\"], \"shares\": {\"asha\": 60000, \"bilal\": 60000, \"chitra\": 60000, \"dev\": 60000, \"esha\": 60000, \"farhan\": 60000}}",
+   "**c5** ready [ref d2]: ₹3,600.00 · other · 16 Oct · paid by Dev · Asha ₹600.00, Bilal ₹600.00, Chitra ₹600.00, Dev ₹600.00, Esha ₹600.00, Farhan ₹600.00\nReply `release c5` to share it with the group, or `drop c5`.",
+   "release c5",
+   "c5 released.",
+   "release t2",
+   "t2 released.",
+   "KITTY_RECHECK t2",
+   "withdraw t2 payment_failed",
+   "t2 withdrawn.",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer\", \"ref\": \"d3\", \"trip_id\": \"coorg-six\", \"owner_id\": \"dev\", \"from_id\": \"dev\", \"to_id\": \"bilal\", \"date\": \"2026-10-19\", \"amount_paise\": 483333, \"currency\": \"INR\"}",
+   "**t4** ready [ref d3]: you paid Bilal ₹4,833.33 on 19 Oct.\nReply `release t4` to tell the group, or `drop t4`.",
+   "release t4",
+   "t4 released."
+  ],
+  "desk-esha": [
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"e1\", \"trip_id\": \"coorg-six\", \"owner_id\": \"esha\", \"payer_id\": \"esha\", \"date\": \"2026-10-18\", \"amount_paise\": 240000, \"currency\": \"INR\", \"category\": \"fuel\", \"participant_ids\": [\"asha\", \"bilal\", \"chitra\", \"dev\", \"esha\", \"farhan\"], \"shares\": {\"asha\": 40000, \"bilal\": 40000, \"chitra\": 40000, \"dev\": 40000, \"esha\": 40000, \"farhan\": 40000}}",
+   "**c6** ready [ref e1]: ₹2,400.00 · fuel · 18 Oct · paid by Esha · Asha ₹400.00, Bilal ₹400.00, Chitra ₹400.00, Dev ₹400.00, Esha ₹400.00, Farhan ₹400.00\nReply `release c6` to share it with the group, or `drop c6`.",
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"e2\", \"trip_id\": \"coorg-six\", \"owner_id\": \"esha\", \"payer_id\": \"esha\", \"date\": \"2026-10-17\", \"amount_paise\": 630000, \"currency\": \"INR\", \"category\": \"other\", \"participant_ids\": [\"asha\", \"bilal\", \"chitra\", \"dev\", \"esha\", \"farhan\"], \"shares\": {\"asha\": 105000, \"bilal\": 105000, \"chitra\": 105000, \"dev\": 105000, \"esha\": 105000, \"farhan\": 105000}}",
+   "**c7** ready [ref e2]: ₹6,300.00 · other · 17 Oct · paid by Esha · Asha ₹1,050.00, Bilal ₹1,050.00, Chitra ₹1,050.00, Dev ₹1,050.00, Esha ₹1,050.00, Farhan ₹1,050.00\nReply `release c7` to share it with the group, or `drop c7`.",
+   "release c6",
+   "c6 released.",
+   "release c7",
+   "c7 released.",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer\", \"ref\": \"e3\", \"trip_id\": \"coorg-six\", \"owner_id\": \"esha\", \"from_id\": \"esha\", \"to_id\": \"bilal\", \"date\": \"2026-10-19\", \"amount_paise\": 143333, \"currency\": \"INR\"}",
+   "**t5** ready [ref e3]: you paid Bilal ₹1,433.33 on 19 Oct.\nReply `release t5` to tell the group, or `drop t5`.",
+   "release t5",
+   "t5 released.",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer\", \"ref\": \"e4\", \"trip_id\": \"coorg-six\", \"owner_id\": \"esha\", \"from_id\": \"esha\", \"to_id\": \"asha\", \"date\": \"2026-10-19\", \"amount_paise\": 65000, \"currency\": \"INR\"}",
+   "**t7** ready [ref e4]: you paid Asha ₹650.00 on 19 Oct.\nReply `release t7` to tell the group, or `drop t7`.",
+   "release t7",
+   "t7 released."
+  ],
+  "desk-farhan": [
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"f1\", \"trip_id\": \"coorg-six\", \"owner_id\": \"farhan\", \"payer_id\": \"farhan\", \"date\": \"2026-10-17\", \"amount_paise\": 630000, \"currency\": \"INR\", \"category\": \"other\", \"participant_ids\": [\"asha\", \"bilal\", \"chitra\", \"dev\", \"esha\", \"farhan\"], \"shares\": {\"asha\": 105000, \"bilal\": 105000, \"chitra\": 105000, \"dev\": 105000, \"esha\": 105000, \"farhan\": 105000}}",
+   "**c8** ready [ref f1]: ₹6,300.00 · other · 17 Oct · paid by Farhan · Asha ₹1,050.00, Bilal ₹1,050.00, Chitra ₹1,050.00, Dev ₹1,050.00, Esha ₹1,050.00, Farhan ₹1,050.00\nReply `release c8` to share it with the group, or `drop c8`.",
+   "KITTY/1 {\"v\": 1, \"type\": \"expense\", \"ref\": \"f2\", \"trip_id\": \"coorg-six\", \"owner_id\": \"farhan\", \"payer_id\": \"farhan\", \"date\": \"2026-10-19\", \"amount_paise\": 180000, \"currency\": \"INR\", \"category\": \"other\", \"participant_ids\": [\"asha\", \"bilal\", \"chitra\", \"dev\", \"esha\", \"farhan\"], \"shares\": {\"asha\": 30000, \"bilal\": 30000, \"chitra\": 30000, \"dev\": 30000, \"esha\": 30000, \"farhan\": 30000}}",
+   "**c9** ready [ref f2]: ₹1,800.00 · other · 19 Oct · paid by Farhan · Asha ₹300.00, Bilal ₹300.00, Chitra ₹300.00, Dev ₹300.00, Esha ₹300.00, Farhan ₹300.00\nReply `release c9` to share it with the group, or `drop c9`.",
+   "release c8",
+   "c8 released.",
+   "release c9",
+   "c9 released.",
+   "drop c8",
+   "c8 dropped.",
+   "KITTY/1 {\"v\": 1, \"type\": \"transfer\", \"ref\": \"f3\", \"trip_id\": \"coorg-six\", \"owner_id\": \"farhan\", \"from_id\": \"farhan\", \"to_id\": \"asha\", \"date\": \"2026-10-19\", \"amount_paise\": 843333, \"currency\": \"INR\"}",
+   "**t3** ready [ref f3]: you paid Asha ₹8,433.33 on 19 Oct.\nReply `release t3` to tell the group, or `drop t3`.",
+   "release t3",
+   "t3 released."
+  ],
+  "group": [
+   "**c1** ₹24,000.00 · other · 16 Oct · paid by Asha · Asha ₹4,000.00, Bilal ₹4,000.00, Chitra ₹4,000.00, Dev ₹4,000.00, Esha ₹4,000.00, Farhan ₹4,000.00",
+   "**c2** ₹12,500.00 · other · 16 Oct · paid by Bilal · Asha ₹2,083.34, Bilal ₹2,083.34, Chitra ₹2,083.33, Dev ₹2,083.33, Esha ₹2,083.33, Farhan ₹2,083.33",
+   "**c3** ₹9,000.00 · other · 17 Oct · paid by Chitra · Asha ₹1,800.00, Bilal ₹1,800.00, Chitra ₹1,800.00, Esha ₹1,800.00, Farhan ₹1,800.00",
+   "**c4** ₹1,100.00 · other · 18 Oct · paid by Chitra · Chitra ₹550.00, Esha ₹550.00",
+   "**c5** ₹3,600.00 · other · 16 Oct · paid by Dev · Asha ₹600.00, Bilal ₹600.00, Chitra ₹600.00, Dev ₹600.00, Esha ₹600.00, Farhan ₹600.00",
+   "**c6** ₹2,400.00 · fuel · 18 Oct · paid by Esha · Asha ₹400.00, Bilal ₹400.00, Chitra ₹400.00, Dev ₹400.00, Esha ₹400.00, Farhan ₹400.00",
+   "**c7** ₹6,300.00 · other · 17 Oct · paid by Esha · Asha ₹1,050.00, Bilal ₹1,050.00, Chitra ₹1,050.00, Dev ₹1,050.00, Esha ₹1,050.00, Farhan ₹1,050.00",
+   "**Possible conflict:** c7 and c8 look like one expense paid by two people (₹6,300.00, other, 17 Oct). Neither counts until one owner drops theirs.",
+   "**c9** ₹1,800.00 · other · 19 Oct · paid by Farhan · Asha ₹300.00, Bilal ₹300.00, Chitra ₹300.00, Dev ₹300.00, Esha ₹300.00, Farhan ₹300.00",
+   "Conflict cleared: Farhan withdrew c8. **c7** now counts: ₹6,300.00 · other · 17 Oct · paid by Esha · Asha ₹1,050.00, Bilal ₹1,050.00, Chitra ₹1,050.00, Dev ₹1,050.00, Esha ₹1,050.00, Farhan ₹1,050.00",
+   "**t1** Bilal says they paid Asha ₹4,000.00 on 18 Oct. Not counted until Asha confirms.",
+   "**t1 confirmed by both sides:** Bilal paid Asha ₹4,000.00.",
+   "**t2** Dev says they paid Chitra ₹2,000.00 on 17 Oct. Not counted until Chitra confirms.",
+   "**t2 NOT CONFIRMED:** Dev says they paid Chitra ₹2,000.00. Chitra's side shows nothing. Both agents are re-checking privately. No statement is shared.",
+   "**t2 withdrawn by Dev.** The payment failed and never arrived. It was never counted, so balances don't change. Neither statement left anyone's side.",
+   "**t3** Farhan says they paid Asha ₹8,433.33 on 19 Oct. Not counted until Asha confirms.",
+   "**t3 confirmed by both sides:** Farhan paid Asha ₹8,433.33.",
+   "**t4** Dev says they paid Bilal ₹4,833.33 on 19 Oct. Not counted until Bilal confirms.",
+   "**t4 confirmed by both sides:** Dev paid Bilal ₹4,833.33.",
+   "**t5** Esha says they paid Bilal ₹1,433.33 on 19 Oct. Not counted until Bilal confirms.",
+   "**t5 confirmed by both sides:** Esha paid Bilal ₹1,433.33.",
+   "**t6** Chitra says they paid Asha ₹683.33 on 19 Oct. Not counted until Asha confirms.",
+   "**t6 confirmed by both sides:** Chitra paid Asha ₹683.33.",
+   "**t7** Esha says they paid Asha ₹650.00 on 19 Oct. Not counted until Asha confirms.",
+   "**t7 confirmed by both sides:** Esha paid Asha ₹650.00.",
+   "**Everyone's square.** Every balance is zero, and every payment was confirmed by both sides."
+  ],
+  "private-asha": [
+   "I read 3 lines from your statement for Coorg weekend.",
+   "COORG HERITAGE HOMESTAY, 8:30 AM, ₹24,000. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared bilal chitra`.",
+   "shared",
+   "Filed COORG HERITAGE HOMESTAY for Asha, Bilal, Chitra, Dev, Esha, Farhan. It's on your desk, and the merchant name stays here.",
+   "NYKAA COSMETICS CANARY-N, 11 AM, ₹1,299. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared bilal chitra`.",
+   "personal",
+   "Got it. NYKAA COSMETICS CANARY-N stays private.",
+   "That's everything for now. Check your desk to release what you're happy to share.",
+   "Bilal says they paid you ₹4,000.00. I found it on your statement: 18 Oct, 2:10 PM. Your desk has the answer. Only yes or no goes to the clerk.",
+   "Farhan says they paid you ₹8,433.33. I found it on your statement: 19 Oct, 8 PM. Your desk has the answer. Only yes or no goes to the clerk.",
+   "Chitra says they paid you ₹683.33. I found it on your statement: 19 Oct, 8:03 PM. Your desk has the answer. Only yes or no goes to the clerk.",
+   "Esha says they paid you ₹650.00. I found it on your statement: 19 Oct, 8:04 PM. Your desk has the answer. Only yes or no goes to the clerk."
+  ],
+  "private-bilal": [
+   "I read 3 lines from your statement for Coorg weekend. Put 1 on your desk for you to release. Kept private: Spotify. The group won't hear about these.",
+   "ZOOMCAR SELF DRIVE HIRE, 7 AM, ₹12,500. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared asha chitra`.",
+   "shared",
+   "Filed ZOOMCAR SELF DRIVE HIRE for Asha, Bilal, Chitra, Dev, Esha, Farhan. It's on your desk, and the merchant name stays here.",
+   "That's everything for now. Check your desk to release what you're happy to share.",
+   "Dev says they paid you ₹4,833.33. I found it on your statement: 19 Oct, 8:01 PM. Your desk has the answer. Only yes or no goes to the clerk.",
+   "Esha says they paid you ₹1,433.33. I found it on your statement: 19 Oct, 8:02 PM. Your desk has the answer. Only yes or no goes to the clerk."
+  ],
+  "private-chitra": [
+   "I read 3 lines from your statement for Coorg weekend. Kept private: Pharmacy. The group won't hear about these.",
+   "BARAPOLE RIVER RAFTING, 10:30 AM, ₹9,000. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared asha bilal`.",
+   "Yes, but not Dev. Everyone else went rafting.",
+   "Filed BARAPOLE RIVER RAFTING for Asha, Bilal, Chitra, Esha, Farhan. It's on your desk, and the merchant name stays here.",
+   "SWIGGY ORDER, 11:30 PM, ₹1,100. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared asha bilal`.",
+   "Yes, but not Asha or Bilal or Dev or Farhan. Just Esha and me.",
+   "Filed SWIGGY ORDER for Chitra, Esha. It's on your desk, and the merchant name stays here.",
+   "That's everything for now. Check your desk to release what you're happy to share.",
+   "Dev says they paid you ₹2,000.00 around 17 Oct. I looked, and nothing like that reached you. Your desk has the answer. Only yes or no goes to the clerk.",
+   "rescan",
+   "I read 4 lines from your statement for Coorg weekend. Put 1 on your desk for you to release.",
+   "That's everything for now. Check your desk to release what you're happy to share."
+  ],
+  "private-dev": [
+   "I read 4 lines from your statement for Coorg weekend. Put 1 on your desk for you to release. Kept private: Myntra. The group won't hear about these.",
+   "BIG BASKET GROCERIES MAD, 6 PM, ₹3,600. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared asha bilal`.",
+   "shared",
+   "Filed BIG BASKET GROCERIES MAD for Asha, Bilal, Chitra, Dev, Esha, Farhan. It's on your desk, and the merchant name stays here.",
+   "That's everything for now. Check your desk to release what you're happy to share.",
+   "I re-checked t2, and I think I've found it. Your ₹2,000.00 left at 8:05 PM on 17 Oct, then came back at 8:09 PM, same reference. **The payment failed and was reversed. Chitra never got it.** To correct it, say `withdraw t2 payment_failed` on your desk. Only the words \"payment failed\" reach the group.",
+   "rescan",
+   "I read 5 lines from your statement for Coorg weekend. Put 1 on your desk for you to release.",
+   "That's everything for now. Check your desk to release what you're happy to share."
+  ],
+  "private-esha": [
+   "I read 3 lines from your statement for Coorg weekend. Put 1 on your desk for you to release. Kept private: Phone recharge. The group won't hear about these.",
+   "RAINTREE RESTAURANT MADI, 9 PM, ₹6,300. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared asha bilal`.",
+   "shared",
+   "Filed RAINTREE RESTAURANT MADI for Asha, Bilal, Chitra, Dev, Esha, Farhan. It's on your desk, and the merchant name stays here.",
+   "That's everything for now. Check your desk to release what you're happy to share.",
+   "rescan",
+   "I read 4 lines from your statement for Coorg weekend. Put 1 on your desk for you to release.",
+   "That's everything for now. Check your desk to release what you're happy to share.",
+   "rescan",
+   "I read 5 lines from your statement for Coorg weekend. Put 1 on your desk for you to release.",
+   "That's everything for now. Check your desk to release what you're happy to share."
+  ],
+  "private-farhan": [
+   "I read 3 lines from your statement for Coorg weekend. Kept private: Café. The group won't hear about these.",
+   "RAINTREE RESTAURANT MADI, 9:02 PM, ₹6,300. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared asha bilal`.",
+   "shared",
+   "Filed RAINTREE RESTAURANT MADI for Asha, Bilal, Chitra, Dev, Esha, Farhan. It's on your desk, and the merchant name stays here.",
+   "COORG COFFEE ESTATE GROU, 11:30 AM, ₹1,800. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared asha bilal`.",
+   "shared",
+   "Filed COORG COFFEE ESTATE GROU for Asha, Bilal, Chitra, Dev, Esha, Farhan. It's on your desk, and the merchant name stays here.",
+   "That's everything for now. Check your desk to release what you're happy to share.",
+   "RAINTREE RESTAURANT MADI, 9:02 PM, ₹6,300. Was this shared with the group?\nTell me in your own words, or say `personal`, `shared`, or `shared asha bilal`.",
+   "personal",
+   "Got it. RAINTREE RESTAURANT MADI stays private.",
+   "That's everything for now. Check your desk to release what you're happy to share.",
+   "rescan",
+   "I read 4 lines from your statement for Coorg weekend. Put 1 on your desk for you to release.",
+   "That's everything for now. Check your desk to release what you're happy to share."
+  ]
+ }
+}
