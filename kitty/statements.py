@@ -72,9 +72,10 @@ def outgoing_transfers(rows: list[Row], directory: dict[str, str]) -> list[tuple
     return [(r, who) for r in rows if r.is_debit and (who := counterparty(r, directory)) is not None]
 
 
-def model_view(row: Row) -> dict:
+def model_view(row: Row, currency: str = "INR") -> dict:
     """The line as a model may see it. Long digit runs are masked."""
-    return {"row_id": row.row_id, "date": row.day.isoformat(), "time": row.time, "narration": LONG_DIGITS.sub("####", row.narration), "amount_rupees": row.debit / 100}
+    key = "amount_rupees" if currency == "INR" else f"amount_{currency.lower()}"
+    return {"row_id": row.row_id, "date": row.day.isoformat(), "time": row.time, "narration": LONG_DIGITS.sub("####", row.narration), key: row.debit / 100}
 
 
 def find_credit(rows: list[Row], amount: int, around: date, from_person: str, directory: dict[str, str], slack_days: int = 2) -> Row | None:

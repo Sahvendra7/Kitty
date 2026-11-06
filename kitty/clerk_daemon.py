@@ -1,6 +1,6 @@
 """Connects the clerk's state machine to Switch and serves the public trip board.
 
-Reads state/clerk.json and data/synthetic/trip.json, and nothing else. It has no path to any
+Reads its own clerk.json and the trip file, and nothing else. It has no path to any
 statement, and Switch refuses it entry to private rooms.
 
 Only messages that can change state are written to the event log. Anything else on a desk is never
@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import queue
 import re
 import threading
@@ -21,6 +22,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
 from kitty import claims as C
+from kitty import paths as P
 from kitty.clerk import Clerk, Person
 from kitty.switch_client import Agent
 
@@ -31,7 +33,7 @@ RELEVANT = re.compile(r"^\s*(release|drop|withdraw|balances|settle|status)\b", r
 
 
 def build_clerk(config: dict, trip_doc: dict) -> Clerk:
-    trip = C.Trip(trip_doc["trip_id"], date.fromisoformat(trip_doc["start"]), date.fromisoformat(trip_doc["end"]), tuple(trip_doc["people"]))
+    trip = C.Trip(trip_doc["trip_id"], date.fromisoformat(trip_doc["start"]), date.fromisoformat(trip_doc["end"]), tuple(trip_doc["people"]), trip_doc.get("currency", C.CURRENCY))
     people = {pid: Person(**p) for pid, p in config["people"].items()}
     return Clerk(trip, people, config["group_room"])
 
@@ -45,7 +47,7 @@ def board(clerk: Clerk, trip_doc: dict) -> dict:
     with CLERK_LOCK:
         name = {p: clerk.people[p].name for p in clerk.people}
         return {
-            "trip": {"name": trip_doc["name"], "start": trip_doc["start"], "end": trip_doc["end"]},
+            "trip": {"name": trip_doc["name"], "start": trip_doc["start"], "end": trip_doc["end"], "currency": clerk.trip.currency},
             "people": [{"id": p, "name": name[p]} for p in clerk.trip.participants],
             "expenses": [
                 {"id": r.id, "date": r.claim.date.isoformat(), "amount_paise": r.claim.amount_paise, "category": r.claim.category, "payer": name[r.claim.payer_id], "shares": [{"name": name[p], "paise": v} for p, v in r.claim.shares], "status": r.status}
@@ -69,9 +71,11 @@ def clerk_plan(clerk: Clerk, name: dict) -> list[dict]:
 
 def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(name)s %(levelname)s %(message)s")
-    state = ROOT / "state"
+    where = P.current()
+    state = where.state
+    port = int(os.environ.get("KITTY_BOARD_PORT", "7100"))
     config = json.loads((state / "clerk.json").read_text())
-    trip_doc = json.loads((ROOT / "data/synthetic/trip.json").read_text())
+    trip_doc = json.loads(where.trip_json.read_text())
     clerk = build_clerk(config, trip_doc)
     agent = Agent(config["agent_id"], config["api_key"], config["name"])
 
@@ -106,11 +110,11 @@ def main() -> None:
     def stage() -> FileResponse:
         return FileResponse(ROOT / "app" / "stage.html")
 
-    threading.Thread(target=lambda: uvicorn.run(app, host="127.0.0.1", port=7100, log_level="warning"), daemon=True).start()
+    threading.Thread(target=lambda: uvicorn.run(app, host="127.0.0.1", port=port, log_level="warning"), daemon=True).start()
 
     conn = agent.listen()
     conn.ready.wait(15)
-    log.info("clerk %s listening. Board at http://127.0.0.1:7100", agent.name)
+    log.info("clerk %s listening. Board at http://127.0.0.1:%d", agent.name, port)
     while True:
         try:
             e = conn.events.get(timeout=1)

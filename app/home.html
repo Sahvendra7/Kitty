@@ -1,0 +1,349 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --monsoon:#0E3B43; --monsoon-2:#16505A; --glass:#E4F3EF; --glass-2:#CFE8E1;
+  --marigold:#F2A81D; --marigold-soft:#FFF1CF; --marigold-deep:#B97A06; --hibiscus:#C8175D;
+  --ink:#10272B; --ink-2:#4A6367; --rule:rgba(16,39,43,.16); --white:#FFFFFF;
+  --display:"Baloo 2","Mukta",system-ui,sans-serif; --body:"Mukta",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+html{background:var(--marigold-soft)}
+body{font:400 17px/1.5 var(--body);color:var(--ink);background:var(--marigold-soft);min-height:100vh;display:flex;flex-direction:column}
+button,input,select{font:inherit;color:inherit}
+a{color:inherit}
+:focus-visible{outline:3px solid var(--monsoon);outline-offset:2px}
+.top{background:var(--marigold);padding:12px clamp(16px,4vw,40px);display:flex;align-items:baseline;justify-content:space-between;gap:16px}
+.logo{font:800 28px/1 var(--display);text-decoration:none}
+.top a.back{font-weight:600;text-decoration:none}
+.top a.back:hover{text-decoration:underline}
+main{flex:1;width:100%;max-width:1080px;margin:0 auto;padding:clamp(20px,4vw,44px) clamp(16px,4vw,40px) 56px}
+h1{font:800 clamp(34px,6vw,58px)/1.04 var(--display);letter-spacing:-.01em}
+h2{font:700 24px/1.2 var(--display)}
+h3{font:600 19px/1.25 var(--display)}
+.muted{color:var(--ink-2)}
+.lede{font-size:clamp(18px,2.2vw,21px);max-width:34em;margin-top:12px}
+
+/* Buttons */
+.btn{border:0;border-radius:10px;padding:11px 20px;font-weight:600;cursor:pointer;background:var(--marigold);color:var(--ink);text-decoration:none;display:inline-block;text-align:center}
+.btn:hover{background:#ffba33}
+.btn.quiet{background:transparent;box-shadow:inset 0 0 0 1.5px var(--ink)}
+.btn.quiet:hover{background:rgba(16,39,43,.06)}
+.btn.small{padding:6px 12px;font-size:15px;border-radius:8px}
+.btn.dark{background:var(--monsoon);color:var(--white)}
+.btn.dark:hover{background:var(--monsoon-2)}
+.btn[disabled]{opacity:.5;cursor:not-allowed}
+.linkish{border:0;background:none;padding:0;cursor:pointer;font-weight:600;text-decoration:underline;color:inherit}
+
+/* The three rooms, in the colours the rest of the product uses for them. */
+.rooms{margin-top:36px;display:grid;gap:0;max-width:640px}
+.room{padding:16px 20px}
+.room b{font:700 20px/1.2 var(--display);display:block}
+.room.you{background:var(--monsoon);color:var(--glass)} .room.you b{color:var(--white)}
+.room.desk{background:var(--white);margin:0 22px}
+.room.grp{background:var(--marigold);margin:0 44px}
+.cta{margin-top:28px;display:flex;gap:12px;flex-wrap:wrap}
+
+/* Your trips */
+.trips{margin-top:32px;border-top:1.5px solid var(--rule)}
+.trip-row{display:grid;grid-template-columns:1fr auto;gap:2px 16px;padding:14px 0;border-bottom:1.5px solid var(--rule);text-decoration:none;align-items:baseline}
+.trip-row:hover b{text-decoration:underline}
+.trip-row b{font:700 21px/1.2 var(--display)}
+.trip-row small{grid-column:1;color:var(--ink-2);font-size:15px}
+.trip-row em{grid-column:2;grid-row:1/3;font-style:normal;font-weight:600;font-size:15px;align-self:center}
+.trip-row em.failed{color:var(--hibiscus)}
+
+/* Making a trip: the form, and the chit it fills in. */
+.make{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:clamp(24px,5vw,56px);align-items:start;margin-top:8px}
+.steps{list-style:none;padding:0;display:flex;gap:6px;font-weight:600;font-size:15px;color:var(--ink-2);margin-bottom:14px;flex-wrap:wrap}
+.steps li::after{content:"/";margin-left:6px;color:var(--rule)}
+.steps li:last-child::after{content:""}
+.steps li[aria-current]{color:var(--ink)}
+form.stack{display:grid;gap:18px;margin-top:20px;max-width:30em}
+label{display:block;font-weight:600}
+.hint{display:block;font-weight:400;color:var(--ink-2);font-size:15px}
+input[type=text],input[type=date]{width:100%;margin-top:5px;padding:10px 12px;border:1.5px solid var(--ink-2);border-radius:8px;background:var(--white);min-height:44px}
+input[aria-invalid=true]{border-color:var(--hibiscus);box-shadow:inset 0 0 0 1px var(--hibiscus)}
+.field-error{color:var(--hibiscus);font-weight:500;font-size:15px;display:block;margin-top:4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.coins{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px;border:0;padding:0}
+.coins legend{font-weight:600;padding:0;margin-bottom:6px}
+.coins label{position:relative;display:grid;place-items:center;padding:8px 2px;border-radius:8px;box-shadow:inset 0 0 0 1.5px var(--ink-2);cursor:pointer;background:var(--white);font-weight:500;font-size:15px;line-height:1.2;text-align:center}
+.coins label b{font:700 21px/1 var(--display)}
+.coins input{position:absolute;opacity:0;inset:0;cursor:pointer}
+.coins label:has(input:checked){background:var(--monsoon);color:var(--white);box-shadow:none}
+.coins label:has(input:focus-visible){outline:3px solid var(--monsoon);outline-offset:2px}
+.actions{display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-top:22px}
+.addrow{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:start;margin-top:20px}
+.addrow .btn{margin-top:27px;min-height:44px}
+.banner{padding:12px 16px;margin-top:18px;background:var(--white);box-shadow:inset 5px 0 0 var(--hibiscus)}
+.banner b{display:block}
+
+/* The chit: a torn top edge, because chits are what travel in Kitty. */
+.chit{position:sticky;top:20px;background:var(--white);padding:24px 20px 20px;
+  --t:7px;-webkit-mask:conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/calc(2*var(--t)) 51% repeat-x,linear-gradient(#000 0 0) bottom/100% 50% no-repeat;mask:conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/calc(2*var(--t)) 51% repeat-x,linear-gradient(#000 0 0) bottom/100% 50% no-repeat}
+.chit h2{font-size:26px;overflow-wrap:anywhere}
+.chit h2.blank{color:var(--ink-2);font-weight:500}
+.chit .when{color:var(--ink-2);margin-top:2px}
+.chit ul{list-style:none;padding:0;margin-top:14px;border-top:1.5px dashed var(--rule)}
+.chit li{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;border-bottom:1.5px dashed var(--rule);overflow-wrap:anywhere}
+.chit li b{font:600 18px/1.2 var(--display)}
+.chit li small{color:var(--ink-2);font-size:13.5px;display:block;font-family:var(--body);font-weight:400}
+.chit .empty{padding:14px 0 2px;color:var(--ink-2)}
+.chit .tick{flex:none;font-weight:600;font-size:14px}
+.chit .tick.ok{color:var(--monsoon-2)}
+.chit .tick.bad{color:var(--hibiscus)}
+
+/* What happens next */
+.next{margin-top:18px;list-style:none;padding:0;max-width:34em}
+.next li{padding:10px 0;border-top:1.5px solid var(--rule)}
+
+/* Setting up */
+.build{margin-top:22px;max-width:36em}
+.build h3{margin-top:20px}
+.who{display:grid;grid-template-columns:minmax(70px,auto) 1fr;gap:4px 14px;padding:12px 0;border-top:1.5px solid var(--rule);align-items:center}
+.who b{font:600 19px/1.2 var(--display)}
+.pips{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.pip{height:10px;background:rgba(16,39,43,.1)}
+.pip.done{background:var(--monsoon-2)}
+.pip.running{background:var(--marigold);animation:breathe 1s ease-in-out infinite alternate}
+.pip.failed{background:var(--hibiscus)}
+@keyframes breathe{from{opacity:.45}to{opacity:1}}
+.who small{grid-column:2;color:var(--ink-2);font-size:15px}
+.who small.bad{color:var(--hibiscus);font-weight:500}
+.tripwide{padding:6px 0;display:flex;gap:10px;align-items:baseline}
+.dot{flex:none;width:10px;height:10px;background:rgba(16,39,43,.16);align-self:center}
+.dot.done{background:var(--monsoon-2)} .dot.running{background:var(--marigold);animation:breathe 1s ease-in-out infinite alternate} .dot.failed{background:var(--hibiscus)}
+
+/* An open trip */
+.trip-head{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap;align-items:end}
+.sections{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(28px,5vw,56px);margin-top:28px;align-items:start}
+.person{padding:14px 0;border-top:1.5px solid var(--rule);display:grid;grid-template-columns:42px 1fr;gap:0 12px}
+.badge{width:42px;height:42px;display:grid;place-items:center;font:700 19px/1 var(--display);grid-row:span 2;background:var(--glass-2)}
+.person.ready .badge{background:var(--monsoon);color:var(--white)}
+.person b{font:600 20px/1.2 var(--display)}
+.person .state{color:var(--ink-2);font-size:15.5px}
+.person .do{grid-column:2;display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center}
+.bar-row{display:grid;grid-template-columns:minmax(64px,auto) 1fr auto;gap:10px;align-items:center;padding:7px 0}
+.bar-row b{font:600 17px/1.2 var(--display)}
+.track{position:relative;height:18px}
+.track::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;background:var(--ink-2)}
+.fill{position:absolute;top:2px;height:14px}
+.fill.owed{left:50%;background:var(--marigold)} .fill.owes{right:50%;background:var(--monsoon-2)}
+.val{font-variant-numeric:tabular-nums;font-weight:600;font-size:15px;text-align:right;white-space:nowrap}
+.plan{list-style:none;padding:0;margin-top:8px}
+.plan li{padding:6px 0;border-top:1.5px solid var(--rule)}
+.privacy-note{margin-top:30px;color:var(--ink-2);font-size:15px;max-width:44em}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--ink);color:var(--white);padding:9px 16px;border-radius:8px;font-weight:500;max-width:calc(100vw - 32px)}
+@media (max-width:860px){
+  .make,.sections{grid-template-columns:1fr}
+  .make .chit{position:static}
+}
+@media (max-width:520px){
+  .addrow{grid-template-columns:1fr}.addrow .btn{margin-top:0}
+  .room.desk{margin:0 10px}.room.grp{margin:0 20px}
+  .bar-row{grid-template-columns:minmax(58px,auto) 1fr}.val{grid-column:1/-1;text-align:left}
+}
+@media (prefers-reduced-motion:reduce){.pip.running,.dot.running{animation:none}}
+</style>
+</head>
+<body>
+<div class="top"><a class="logo" href="/" data-link>Kitty</a><a class="back" href="/" data-link id="backlink" hidden>Your trips</a></div>
+<main id="main" tabindex="-1" aria-live="polite"></main>
+<div class="toast" id="toast" role="status" hidden></div>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const dm=d=>d?new Date(d+"T12:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short"}):"";
+const dmy=d=>d?new Date(d+"T12:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short",year:"numeric"}):"";
+const SYMBOL={INR:"₹",USD:"$",EUR:"€",GBP:"£"},COINS={INR:"Rupee",USD:"Dollar",EUR:"Euro",GBP:"Pound"};
+const money=(p,c)=>{const n=Math.abs(p),w=Math.floor(n/100),f=String(n%100).padStart(2,"0");return (p<0?"-":"")+SYMBOL[c]+w.toLocaleString(c==="INR"?"en-IN":"en-US")+"."+f};
+const STATE={idle:"Not opened yet",running:"Setting up",failed:"Needs a retry",live:"Open"};
+let view={name:"home"},timer=null,lastDraw="",errors={},form={},personForm={};
+
+async function api(path,opts={}){
+  const r=await fetch(path,{...opts,headers:opts.body?{"Content-Type":"application/json"}:{},body:opts.body?JSON.stringify(opts.body):undefined});
+  let body={};try{body=await r.json()}catch(e){}
+  return {ok:r.ok,status:r.status,body};
+}
+function toast(t){const e=$("toast");e.textContent=t;e.hidden=false;clearTimeout(e._t);e._t=setTimeout(()=>e.hidden=true,2600)}
+function go(path,replace){history[replace?"replaceState":"pushState"]({}, "",path);route()}
+function route(){
+  clearInterval(timer);lastDraw="";errors={};
+  const m=location.pathname.match(/^\/trips\/([a-z0-9-]+)$/);
+  $("backlink").hidden=location.pathname==="/";
+  if(location.pathname==="/trips/new"){view={name:"new"};form={currency:"INR",create_key:crypto.randomUUID()};drawNew()}
+  else if(m){view={name:"trip",id:m[1]};loadTrip();timer=setInterval(loadTrip,1200)}
+  else{view={name:"home"};loadHome()}
+  window.scrollTo(0,0);
+}
+document.addEventListener("click",e=>{const a=e.target.closest("[data-link]");if(a){e.preventDefault();go(a.getAttribute("href"))}});
+window.addEventListener("popstate",route);
+
+/* ---- first screen ---- */
+async function loadHome(){
+  const {body}=await api("/api/trips");const trips=body.trips||[];
+  $("main").innerHTML=`
+    <h1>Settle up a trip. Keep your bank statement to yourself.</h1>
+    <p class="lede">Everyone's own agent reads their own statement. The group sees only the expenses each person chooses to release, and Kitty works out who owes whom.</p>
+    <div class="rooms" aria-label="How Kitty keeps things apart">
+      <div class="room you"><b>Just you</b>Your statement and your agent. Nobody else gets in.</div>
+      <div class="room desk"><b>Your desk</b>What your agent found, waiting for you to release or drop it.</div>
+      <div class="room grp"><b>The group</b>Date, amount, category, who shared it. No merchant names.</div>
+    </div>
+    <div class="cta"><a class="btn" href="/trips/new" data-link>Start a trip</a></div>
+    ${trips.length?`<h2 style="margin-top:44px">Your trips</h2><div class="trips" style="margin-top:10px">${trips.map(t=>`<a class="trip-row" href="/trips/${esc(t.id)}" data-link><b>${esc(t.name)}</b><small>${dm(t.start)} to ${dm(t.end)}. ${t.people.length?esc(t.people.join(", ")):"Nobody added yet"}.</small><em class="${t.state==="failed"?"failed":""}">${STATE[t.state]||""}</em></a>`).join("")}</div>`:""}`;
+}
+
+/* ---- the chit ---- */
+function chit(t,opts={}){
+  const people=t.people||[];const c=t.currency;
+  return `<aside class="chit" aria-label="This trip so far">
+    <h2 class="${t.name?"":"blank"}">${esc(t.name||"Your trip")}</h2>
+    <p class="when">${t.start?`${dmy(t.start)}${t.end?` to ${dmy(t.end)}`:""}`:"Dates to come"}${c?`. ${esc(COINS[c]||c)}s (${SYMBOL[c]||""}).`:""}</p>
+    ${people.length?`<ul>${people.map(p=>`<li><span><b>${esc(p.name)}</b><small>${esc(p.statement_name||"")}</small></span>${opts.ticks?tick(p):""}</li>`).join("")}</ul>`:`<p class="empty">Nobody here yet.</p>`}
+  </aside>`;
+}
+function tick(p){
+  if(p.failed) return `<span class="tick bad">Stuck</span>`;
+  if(p.steps_total&&p.steps_done===p.steps_total) return `<span class="tick ok">Ready</span>`;
+  return p.steps_done?`<span class="tick muted">${p.steps_done} of ${p.steps_total}</span>`:"";
+}
+const stepsNav=n=>`<ol class="steps" aria-label="Steps">${["Trip","People","Open it"].map((s,i)=>`<li ${i===n?'aria-current="step"':""}>${i+1}. ${s}</li>`).join("")}</ol>`;
+const fieldError=k=>errors[k]?`<span class="field-error" id="err-${k}">${esc(errors[k])}</span>`:"";
+const invalid=k=>errors[k]?`aria-invalid="true" aria-describedby="err-${k}"`:"";
+
+/* ---- step 1 ---- */
+function drawNew(){
+  $("main").innerHTML=`<div class="make"><div>${stepsNav(0)}<h1 style="font-size:clamp(30px,5vw,44px)">Where did you all go?</h1>
+    <form class="stack" id="tripForm" novalidate>
+      <label>Trip name<input type="text" name="name" maxlength="40" value="${esc(form.name)}" autocomplete="off" placeholder="Coorg long weekend" ${invalid("name")}>${fieldError("name")}</label>
+      <div class="two"><label>First day<input type="date" name="start" value="${esc(form.start)}" ${invalid("start")}>${fieldError("start")}</label><label>Last day<input type="date" name="end" value="${esc(form.end)}" ${invalid("end")}>${fieldError("end")}</label></div>
+      <fieldset class="coins"><legend>Currency everyone paid in</legend>${Object.keys(SYMBOL).map(c=>`<label><input type="radio" name="currency" value="${c}" ${form.currency===c?"checked":""}><b>${SYMBOL[c]}</b>${c}</label>`).join("")}</fieldset>${fieldError("currency")}
+      <p class="hint">Kitty doesn't convert currencies, so everyone's statement needs to be in this one.</p>
+      <div class="actions"><button class="btn">Continue to people</button><a class="btn quiet" href="/" data-link>Cancel</a></div>
+    </form></div>${chit(form)}</div>`;
+  const f=$("tripForm");
+  f.addEventListener("input",()=>{const d=new FormData(f);form={...form,name:d.get("name"),start:d.get("start"),end:d.get("end"),currency:d.get("currency")};const c=document.querySelector(".chit");c.outerHTML=chit(form)});
+  f.addEventListener("submit",async e=>{e.preventDefault();const r=await api("/api/trips",{method:"POST",body:form});
+    if(r.ok){go(`/trips/${r.body.id}`)}else{errors=r.body.fields||{};if(!r.body.fields)toast(r.body.error||"Couldn't save that. Try again.");drawNew();document.querySelector("[aria-invalid=true]")?.focus()}});
+  f.querySelector("input").focus();
+}
+
+/* ---- a trip, whatever state it's in ---- */
+async function loadTrip(){
+  const id=view.id;
+  const r=await api(`/api/trips/${id}`);
+  if(view.id!==id) return;
+  if(!r.ok){clearInterval(timer);$("main").innerHTML=`<h1>There's no such trip.</h1><div class="cta"><a class="btn" href="/" data-link>See your trips</a></div>`;return}
+  const s=JSON.stringify(r.body)+JSON.stringify(errors);
+  if(s===lastDraw) return;
+  // Don't redraw over someone who's typing.
+  if(document.activeElement&&document.activeElement.matches("input[type=text]")&&lastDraw&&r.body.state!=="running"&&view.step!=="review"){return}
+  lastDraw=s;drawTrip(r.body);
+}
+function drawTrip(t){
+  if(t.state==="idle"&&view.step!=="review") return drawPeople(t);
+  if(t.state==="idle") return drawReview(t);
+  if(t.state==="live") return drawLive(t);
+  return drawBuilding(t);
+}
+
+/* ---- step 2 ---- */
+function drawPeople(t){
+  const n=t.people.length;
+  $("main").innerHTML=`<div class="make"><div>${stepsNav(1)}<h1 style="font-size:clamp(30px,5vw,44px)">Who was on the trip?</h1>
+    <p class="muted" style="margin-top:8px">Each person gets their own private agent and rooms. Add ${n<t.limits.min?`at least ${t.limits.min}`:`up to ${t.limits.max}`}.</p>
+    <form id="personForm" novalidate><div class="addrow">
+      <label>Name the group sees<input type="text" name="name" maxlength="14" autocomplete="off" value="${esc(personForm.name)}" placeholder="Asha" ${invalid("name")}>${fieldError("name")}</label>
+      <label>Name on their payments<input type="text" name="statement_name" maxlength="30" autocomplete="off" value="${esc(personForm.statement_name)}" placeholder="ASHA M" ${invalid("statement_name")}>${fieldError("statement_name")}</label>
+      <button class="btn dark">Add</button></div>
+      <p class="hint" style="margin-top:6px">Kitty uses the second name to spot payments between friends, like UPI/DR/ASHA M. Leave it empty to use the first name.</p></form>
+    ${n?`<ul class="next" style="margin-top:22px">${t.people.map(p=>`<li style="display:flex;justify-content:space-between;gap:12px;align-items:center"><span><b style="font:600 19px var(--display)">${esc(p.name)}</b> <span class="muted">${esc(p.statement_name)}</span></span><button class="linkish" data-remove="${esc(p.id)}" aria-label="Remove ${esc(p.name)}">Remove</button></li>`).join("")}</ul>`:""}
+    <div class="actions"><button class="btn" id="toReview" ${n<t.limits.min?"disabled":""}>Continue</button><button class="btn quiet" id="deleteTrip">Delete this trip</button></div>
+    </div>${chit(t)}</div>`;
+  const f=$("personForm");
+  f.addEventListener("input",()=>{const d=new FormData(f);personForm={name:d.get("name"),statement_name:d.get("statement_name")}});
+  f.addEventListener("submit",async e=>{e.preventDefault();const r=await api(`/api/trips/${t.id}/people`,{method:"POST",body:personForm});
+    if(r.ok){personForm={};errors={};drawPeople(r.body);lastDraw=JSON.stringify(r.body)+"{}";document.querySelector("#personForm input").focus()}
+    else{errors=r.body.fields||{};if(!r.body.fields)toast(r.body.error||"Couldn't add them. Try again.");drawPeople(t);document.querySelector("[aria-invalid=true]")?.focus()}});
+  $("toReview").onclick=()=>{view.step="review";lastDraw="";drawReview(t)};
+  $("deleteTrip").onclick=async()=>{await api(`/api/trips/${t.id}`,{method:"DELETE"});go("/")};
+  document.querySelectorAll("[data-remove]").forEach(b=>b.onclick=async()=>{const r=await api(`/api/trips/${t.id}/people/${b.dataset.remove}`,{method:"DELETE"});if(r.ok){drawPeople(r.body);lastDraw=""}});
+}
+
+/* ---- step 3 ---- */
+function drawReview(t){
+  $("main").innerHTML=`<div class="make"><div>${stepsNav(2)}<h1 style="font-size:clamp(30px,5vw,44px)">Ready to open ${esc(t.name)}?</h1>
+    <ul class="next"><li>Kitty makes ${t.people.length} separate accounts, each with its own private agent, private room and desk.</li>
+    <li>You get one invite link per person. Each link opens once, and only that person's own app.</li>
+    <li>Everyone adds their own made-up statement. You won't see any of it.</li>
+    <li>Once the group room opens, this trip's people and dates are fixed.</li></ul>
+    <div class="actions"><button class="btn" id="openTrip">Open the trip</button><button class="btn quiet" id="backPeople">Back to people</button></div></div>${chit(t)}</div>`;
+  $("backPeople").onclick=()=>{view.step="";lastDraw="";drawPeople(t)};
+  $("openTrip").onclick=async e=>{e.target.disabled=true;e.target.textContent="Opening";const r=await api(`/api/trips/${t.id}/open`,{method:"POST"});
+    if(!r.ok&&r.status!==409){toast(r.body.error||"Couldn't open the trip. Try again.");e.target.disabled=false;e.target.textContent="Open the trip";return}
+    view.step="";lastDraw="";loadTrip()};
+}
+
+/* ---- setting up, and when it sticks ---- */
+function drawBuilding(t){
+  const steps=t.provision.steps,failed=steps.filter(s=>s.state==="failed"),running=steps.find(s=>s.state==="running");
+  const wide=steps.filter(s=>!s.person);
+  const row=p=>{const mine=steps.filter(s=>s.person===p.id),cur=mine.find(s=>["running","failed"].includes(s.state));
+    return `<div class="who"><b>${esc(p.name)}</b><div class="pips" role="img" aria-label="${p.steps_done} of ${p.steps_total} steps done">${mine.map(s=>`<i class="pip ${s.state}"></i>`).join("")}</div><small class="${cur&&cur.state==="failed"?"bad":""}">${cur?esc(cur.label):p.steps_done===p.steps_total?"Ready":"Waiting"}</small>
+    ${p.failed&&t.editable?`<small style="grid-column:2"><button class="linkish" data-remove="${esc(p.id)}">Remove ${esc(p.name)} from the trip</button></small>`:""}</div>`};
+  const before=wide.filter(s=>["connect","clerk"].includes(s.id)),after=wide.filter(s=>!["connect","clerk"].includes(s.id));
+  const line=s=>`<div class="tripwide"><i class="dot ${s.state}"></i><span>${esc(s.label)}</span></div>`;
+  const unique=[...new Set(failed.map(s=>s.error.message))];
+  $("main").innerHTML=`<div class="make"><div>
+    <h1 style="font-size:clamp(30px,5vw,44px)">${t.state==="failed"?"Set-up stopped partway.":`Opening ${esc(t.name)}.`}</h1>
+    <p class="muted" style="margin-top:8px">${t.state==="failed"?"What's already built is safe, and trying again carries on from here.":"This takes a few minutes. You can leave this page, and it keeps going."}</p>
+    ${t.state==="failed"?`<div class="banner" role="alert">${unique.map(m=>`<b>${esc(m)}</b>`).join("")}</div><div class="actions"><button class="btn" id="retry" ${t.running?"disabled":""}>Try again</button></div>`:""}
+    <div class="build">${before.map(line).join("")}${t.people.map(row).join("")}<div style="border-top:1.5px solid var(--rule);padding-top:6px">${after.map(line).join("")}</div></div>
+    </div>${chit(t,{ticks:true})}</div>`;
+  const b=$("retry");if(b)b.onclick=async()=>{b.disabled=true;await api(`/api/trips/${t.id}/open`,{method:"POST"});lastDraw="";loadTrip()};
+  document.querySelectorAll("[data-remove]").forEach(x=>x.onclick=async()=>{const r=await api(`/api/trips/${t.id}/people/${x.dataset.remove}`,{method:"DELETE"});if(!r.ok)toast(r.body.error||"Couldn't remove them.");lastDraw="";loadTrip()});
+}
+
+/* ---- an open trip ---- */
+function statusLine(p){
+  if(p.statement_added) return "Joined, and added a statement.";
+  if(p.joined) return "Joined. No statement yet.";
+  return "Hasn't opened their invite yet.";
+}
+function board(t){
+  const b=t.board;
+  if(!t.apps_up) return `<div class="banner" role="alert"><b>This trip's apps aren't running.</b>Start them again, and everything carries on from where it was.</div><div class="actions"><button class="btn" id="restart">Start the apps</button></div>`;
+  if(!b) return `<p class="muted" style="margin-top:8px">The board isn't answering yet.</p>`;
+  const counted=b.expenses.filter(e=>e.status==="released").length,c=b.trip.currency||t.currency;
+  const max=Math.max(1,...b.balances.map(x=>Math.abs(x.paise)));
+  const square=counted&&b.balances.every(x=>x.paise===0);
+  return `<p class="muted" style="margin-top:4px">${square?"Everyone's square.":counted?`${counted} expense${counted===1?"":"s"} counted so far.`:"Nothing counted yet. Expenses appear once their owners release them."}</p>
+    <div style="margin-top:10px">${b.balances.map(x=>{const w=Math.abs(x.paise)/max*48;return `<div class="bar-row"><b>${esc(x.name)}</b><div class="track"><i class="fill ${x.paise<0?"owes":"owed"}" style="width:${w}%"></i></div><span class="val">${counted?(x.paise===0?"square":`${money(Math.abs(x.paise),c)} ${x.paise<0?"owes":"is owed"}`):""}</span></div>`}).join("")}</div>
+    ${b.plan.length?`<h3 style="margin-top:18px">Payments that would settle it</h3><ul class="plan">${b.plan.map(p=>`<li>${esc(p.from)} pays ${esc(p.to)} <b>${money(p.paise,c)}</b></li>`).join("")}</ul>`:""}
+    <div class="actions"><a class="btn quiet small" href="${esc(t.board_url)}" target="_blank" rel="noopener">Open the full trip board</a></div>`;
+}
+function drawLive(t){
+  const ready=t.people.filter(p=>p.statement_added).length;
+  $("main").innerHTML=`<div class="trip-head"><div><h1>${esc(t.name)}</h1><p class="muted" style="margin-top:4px">${dmy(t.start)} to ${dmy(t.end)}. ${ready} of ${t.people.length} statements added.</p></div></div>
+    <div class="sections"><section aria-labelledby="ppl"><h2 id="ppl">Who's in</h2><p class="muted" style="margin:2px 0 10px">Send each person their own link. It opens once, and only their app.</p>
+    ${t.people.map(p=>`<div class="person ${p.statement_added?"ready":""}"><span class="badge" aria-hidden="true">${esc(p.name[0])}</span><b>${esc(p.name)}</b><span class="state">${statusLine(p)}</span>
+      <div class="do">${p.invite_url?`<button class="btn small" data-copy="${esc(p.invite_url)}" data-who="${esc(p.name)}">Copy ${esc(p.name)}'s link</button><a class="btn small quiet" href="${esc(p.invite_url)}" target="_blank" rel="noopener">Open as ${esc(p.name)}</a>`:""}${p.app_url?`<a class="btn small quiet" href="${esc(p.app_url)}" target="_blank" rel="noopener">Open ${esc(p.name)}'s app</a>`:""}${p.joined&&t.apps_up?`<button class="linkish" style="font-size:15px" data-invite="${esc(p.id)}">Make a new link</button>`:""}</div></div>`).join("")}
+    </section><section aria-labelledby="st"><h2 id="st">Where everyone stands</h2>${board(t)}</section></div>
+    <p class="privacy-note">You can see who has joined and who has added a statement. You can't see what's in anyone's statement. Opening someone's app on this laptop uses their one-time link, so they'd find it already used. All data here is made up.</p>`;
+  document.querySelectorAll("[data-copy]").forEach(b=>b.onclick=async()=>{try{await navigator.clipboard.writeText(b.dataset.copy);toast(`${b.dataset.who}'s link copied.`)}catch(e){prompt("Copy this link:",b.dataset.copy)}});
+  document.querySelectorAll("[data-invite]").forEach(b=>b.onclick=async()=>{if(!confirm("Make a new link? The old link and any open session stop working."))return;const r=await api(`/api/trips/${t.id}/people/${b.dataset.invite}/invite`,{method:"POST"});if(r.ok){toast("New link made.");lastDraw="";drawLive(r.body)}});
+  const rs=$("restart");if(rs)rs.onclick=async()=>{rs.disabled=true;rs.textContent="Starting";await api(`/api/trips/${t.id}/restart`,{method:"POST"});lastDraw="";loadTrip()};
+}
+route();
+</script>
+</body>
+</html>

@@ -16,6 +16,8 @@ from datetime import date
 PREFIX = "KITTY/1 "
 CATEGORIES = ("stay", "travel", "food", "groceries", "fuel", "activity", "shopping", "other")
 CURRENCY = "INR"
+# Two-decimal currencies only, because amounts are whole minor units. One trip uses one currency, and Kitty never converts.
+CURRENCIES = {"INR": "₹", "USD": "$", "EUR": "€", "GBP": "£"}
 MAX_AMOUNT_PAISE = 100_000_000  # ₹10,00,000
 REF = re.compile(r"^[a-z0-9]{1,12}$")
 CLAIM_ID = re.compile(r"^[ct][0-9]{1,6}$")
@@ -36,6 +38,7 @@ class Trip:
     start: date
     end: date
     participants: tuple[str, ...]
+    currency: str = CURRENCY
 
 
 @dataclass(frozen=True)
@@ -141,7 +144,7 @@ def _expense(obj: dict, trip: Trip, desk_owner: str) -> Expense:
     if payer != desk_owner:
         raise ClaimError("payer_not_owner")
     amount = _amount(obj["amount_paise"])
-    if obj["currency"] != CURRENCY:
+    if obj["currency"] != trip.currency:
         raise ClaimError("bad_currency")
     if obj["category"] not in CATEGORIES:
         raise ClaimError("bad_category")
@@ -159,7 +162,7 @@ def _expense(obj: dict, trip: Trip, desk_owner: str) -> Expense:
         shares.append((pid, value))
     if sum(v for _, v in shares) != amount:
         raise ClaimError("shares_do_not_sum")
-    return Expense(_ref(obj["ref"]), trip.trip_id, desk_owner, payer, _trip_date(obj["date"], trip), amount, CURRENCY, obj["category"], tuple(shares))
+    return Expense(_ref(obj["ref"]), trip.trip_id, desk_owner, payer, _trip_date(obj["date"], trip), amount, trip.currency, obj["category"], tuple(shares))
 
 
 def _transfer(obj: dict, trip: Trip, desk_owner: str) -> Transfer:
@@ -170,9 +173,9 @@ def _transfer(obj: dict, trip: Trip, desk_owner: str) -> Transfer:
         raise ClaimError("payer_not_owner")
     if sender == receiver:
         raise ClaimError("self_transfer")
-    if obj["currency"] != CURRENCY:
+    if obj["currency"] != trip.currency:
         raise ClaimError("bad_currency")
-    return Transfer(_ref(obj["ref"]), trip.trip_id, desk_owner, sender, receiver, _trip_date(obj["date"], trip), _amount(obj["amount_paise"]), CURRENCY)
+    return Transfer(_ref(obj["ref"]), trip.trip_id, desk_owner, sender, receiver, _trip_date(obj["date"], trip), _amount(obj["amount_paise"]), trip.currency)
 
 
 def _answer(obj: dict, trip: Trip, desk_owner: str) -> TransferAnswer:
@@ -216,8 +219,15 @@ def even_shares(amount_paise: int, participants: list[str]) -> dict[str, int]:
 
 
 def rupees(paise: int) -> str:
-    sign = "-" if paise < 0 else ""
-    whole, frac = divmod(abs(paise), 100)
+    return money(paise, "INR")
+
+
+def money(minor: int, currency: str = CURRENCY) -> str:
+    """Integer minor units to display text. Rupees group in lakhs; the others group in thousands."""
+    sign = "-" if minor < 0 else ""
+    whole, frac = divmod(abs(minor), 100)
+    if currency != "INR":
+        return f"{sign}{CURRENCIES[currency]}{whole:,}.{frac:02d}"
     text = str(whole)
     if len(text) > 3:
         head, tail = text[:-3], text[-3:]

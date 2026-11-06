@@ -79,7 +79,33 @@ pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.4 ui-monospace,Menlo
 .note table{width:100%;border-collapse:collapse;margin-top:2px}.note td{padding:2px 0}.note td:nth-child(2){text-align:right;font-variant-numeric:tabular-nums;font-weight:600}.note td:nth-child(3){padding-left:10px;color:var(--ink-2)}
 .quick{display:flex;gap:8px;margin-bottom:10px}
 
+/* Your statement: a teal room, like the private one, because it stays with you. */
+body[data-tab=statement] .who{background:var(--monsoon-2);color:var(--glass)}
+.sheet{background:var(--white);color:var(--ink);padding:18px 16px;margin:0 0 14px}
+.sheet h2{font:700 24px/1.15 var(--display)}
+.sheet p{margin-top:6px}
+.drop{display:block;margin-top:14px;padding:22px 14px;text-align:center;box-shadow:inset 0 0 0 2px var(--ink-2);cursor:pointer;background:var(--glass);font-weight:600}
+.drop.over{background:var(--marigold-soft);box-shadow:inset 0 0 0 2px var(--marigold)}
+.drop small{display:block;font-weight:400;color:var(--ink-2)}
+.drop input{position:absolute;opacity:0;width:1px;height:1px}
+.drop:focus-within{outline:3px solid var(--marigold);outline-offset:2px}
+.attest{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-weight:500}
+.attest input{width:20px;height:20px;margin-top:3px;flex:none}
+.problems{margin-top:12px;padding:10px 12px;background:#fdeef4;box-shadow:inset 4px 0 0 var(--hibiscus);font-size:15px}
+.problems b{display:block}
+.problems ul{margin:4px 0 0;padding-left:18px}
+.okline{margin-top:12px;padding:10px 12px;background:var(--glass);box-shadow:inset 4px 0 0 var(--monsoon-2);font-weight:500}
+.where{display:grid;grid-template-columns:1fr auto;gap:0 12px;margin-top:12px;font-size:16px}
+.where h3{grid-column:1/-1;font:600 18px/1.2 var(--display);margin-top:12px;padding-bottom:4px;border-bottom:1.5px solid rgba(16,39,43,.16)}
+.where span{padding:3px 0}.where span:nth-of-type(even){text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.sheet .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.linkish{border:0;background:none;padding:0;font-weight:600;text-decoration:underline;cursor:pointer;color:inherit}
+.preview{margin-top:12px;color:var(--ink-2);font-size:14px}
+.preview summary{font-size:15px}
 nav{display:grid;grid-template-columns:repeat(3,1fr);background:var(--ink)}
+nav.four{grid-template-columns:repeat(4,1fr)}
+nav button[data-t=statement][aria-current=page]{background:var(--glass)}
+@media (max-width:380px){nav button{font-size:14px}}
 nav button{border:0;background:none;color:var(--glass);padding:11px 2px 12px;cursor:pointer;font-weight:600;position:relative}
 nav button[aria-current=page]{color:var(--ink)}
 nav button[data-t=private][aria-current=page]{background:var(--glass)}
@@ -96,18 +122,20 @@ nav i{font-style:normal;display:inline-block;min-width:19px;margin-left:5px;bord
 <div class="error" id="err" hidden></div>
 <main id="main" tabindex="-1"></main>
 <form id="form" autocomplete="off"><input id="input" aria-label="Message your agent" placeholder="Tell your agent"><button>Send</button></form>
-<nav aria-label="Rooms">
+<nav aria-label="Rooms" id="nav">
+  <button data-t="statement" hidden>Statement</button>
   <button data-t="private">Just you</button>
   <button data-t="desk">Your desk<i id="count" hidden></i></button>
   <button data-t="group">The group</button>
 </nav>
 <script>
-const WHO={private:"Only you and your agent are here. The clerk can't get in.",desk:"You, your agent and the clerk. Nothing goes further until you release it.",group:"Everyone on the trip can see this."};
+const WHO={statement:"Only you can see this. Your friends and the clerk never get your file.",private:"Only you and your agent are here. The clerk can't get in.",desk:"You, your agent and the clerk. Nothing goes further until you release it.",group:"Everyone on the trip can see this."};
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const inline=s=>esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`(.+?)`/g,"<code>$1</code>");
-let lastCount=0,tab="private",data=null,last="",picked=new Set(),dropping=null;
-try{tab=sessionStorage.getItem("tab")||tab}catch(e){}
+let lastCount=0,tab="private",data=null,last="",picked=new Set(),dropping=null,tabChosen=false;
+let up={busy:false,problems:[],total:0,note:"",attested:false},preview=null,previewOpen=false,replacing=false;
+try{const t=sessionStorage.getItem("tab");if(t){tab=t;tabChosen=true}}catch(e){}
 
 async function say(room,text){
   const r=await fetch("/api/say",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room,text})});
@@ -118,6 +146,9 @@ function showError(t){const e=$("err");e.textContent=t;e.hidden=!t}
 
 function privateView(d){
   const msgs=d.private;
+  const st=d.statement;
+  if(st&&st.state==="none") return (msgs.length?`<div class="bubble">${inline(msgs[msgs.length-1].text)}</div>`:"")+`<div class="asks"><button class="ask" data-go="statement">Add my statement</button></div>`;
+  if(st&&st.state==="ready") return msgs.map(m=>`<div class="bubble ${m.mine?"mine":""}">${inline(m.text)}</div>`).join("")+`<div class="asks"><button class="ask" data-say="private" data-text="start">Go through my statement</button></div>`;
   if(!msgs.length) return `<p class="lede">Your agent hasn't said hello yet. Check that it's running.</p>`;
   let html="";
   for(const m of msgs) html+=`<div class="bubble ${m.mine?"mine":""}">${inline(m.text)}</div>`;
@@ -156,8 +187,9 @@ function chit(s){
   if(s.state==="waiting"){
     acts=`<div class="acts"><button class="btn go" data-release="${id}">${s.kind==="answer"?"Send this answer":"Release to the group"}</button><button class="btn no" data-say="desk" data-text="drop ${id}">${s.kind==="answer"?"Keep private":"Drop"}</button></div>`;
   }else{
-    state={released:s.kind==="transfer"?"Released. Waiting for the other side.":"Released to the group.",dropped:"Dropped. The group never saw it.",sent:"Answer sent.",kept:"Kept private.",confirmed:"Confirmed by both sides.",challenged:"Not confirmed. Your agent is re-checking privately.",withdrawn:"Withdrawn."}[s.state]||s.state;
-    cls+=s.state==="challenged"?" alert":" done";
+    state={released:s.kind==="transfer"?"Released. Waiting for the other side.":"Released to the group.",dropped:"Dropped. The group never saw it.",sent:"Answer sent.",kept:"Kept private.",confirmed:"Confirmed by both sides.",challenged:"Not confirmed. Your agent is re-checking privately.",withdrawn:"Withdrawn.",conflict:"Possible conflict with someone else's claim. It doesn't count until one of you drops theirs."}[s.state]||s.state;
+    cls+=s.state==="challenged"||s.state==="conflict"?" alert":" done";
+    if(s.state==="conflict") acts=`<div class="acts" style="margin-top:10px"><button class="btn warn" data-say="desk" data-text="drop ${id}">Drop mine</button></div>`;
     if(s.state==="challenged") acts=`<div class="acts" style="margin-top:10px"><button class="btn warn" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw: the payment failed</button></div>`;
   }
   if(dropping===id) cls+=" dropping";
@@ -196,19 +228,84 @@ function groupView(d){
   return html;
 }
 
+const DROPZONE=()=>`<label class="drop" id="drop"><input type="file" id="file" accept=".csv,text/csv">${up.busy?"Checking your file":"Choose your CSV file"}<small>or drop it here. Up to 256 KB.</small></label>
+  <label class="attest"><input type="checkbox" id="attest" ${up.attested?"checked":""}><span>This is a made-up statement, not a real one.</span></label>
+  ${up.problems.length?`<div class="problems" role="alert"><b>${up.total>1?`Kitty found ${up.total} things to fix.`:"Kitty couldn't use that file."} Nothing was saved.</b><ul>${up.problems.map(p=>`<li>${esc(p.message)}</li>`).join("")}</ul>${up.total>up.problems.length?`<p>And ${up.total-up.problems.length} more like these.</p>`:""}</div>`:""}`;
+function statementView(d){
+  const st=d.statement;
+  const note=up.note?`<div class="okline" role="status">${esc(up.note)}</div>`:"";
+  if(st.state==="none"){
+    return `<div class="sheet"><h2>Add your statement for ${esc(d.trip)}</h2><p>Use a CSV file with made-up transactions. Kitty checks it right here, then keeps it in your own folder.</p>${DROPZONE()}
+    <p style="margin-top:12px"><a href="/api/statement/sample">Download a made-up example</a>, with this trip's dates.</p>
+    <details><summary>What the file needs</summary><pre>txn_date,txn_time,narration,ref,debit,credit,balance,account
+2026-10-16,20:15,SOME RESTAURANT,C1001,1250.50,,,XXXXXX1234</pre><p>Each line has a debit or a credit. Dates look like 2026-10-16, and the account has to be masked. Your organiser sees that you added a statement, and nothing from it.</p></details></div>`;
+  }
+  const s=st.summary;
+  const counts=`<div class="where">
+    <h3>Stays on this laptop</h3>
+    <span>Outside the trip dates</span><span>${s.outside_trip}</span>
+    <span>Payments to friends</span><span>${s.payments_to_friends}</span>
+    <span>Money coming in</span><span>${s.incoming}</span>
+    <h3>Goes to the model provider, when you start</h3>
+    <span>Spending during the trip, with long numbers masked</span><span>${s.spending}</span>
+  </div>`;
+  const pv=`<details class="preview" id="pv" ${previewOpen?"open":""}><summary>See exactly what the model provider would get</summary>${preview?`<pre>${esc(preview.map(l=>JSON.stringify(l)).join("\n")||"Nothing.")}</pre><p>Your first name and the trip's name go with these. Your replies to your agent's questions go too, if it needs help reading them. Balances, account numbers and references never go.</p>`:"<p>Loading.</p>"}</details>`;
+  if(st.state==="ready"){
+    return `<div class="sheet"><h2>Your file is ready</h2><p>${s.lines} lines read, and ${s.in_trip} of them are from the trip. Nothing has left your side yet.</p>${note}${counts}${pv}
+    <div class="acts"><button class="btn go" data-say-start>Go through my statement</button></div></div>
+    <div class="sheet"><h2 style="font-size:20px">Wrong file?</h2><p>Adding another file replaces this one.</p>${DROPZONE()}<p style="margin-top:12px"><button class="linkish" id="removeFile">Remove this file</button></p></div>`;
+  }
+  return `<div class="sheet"><h2>Your agent has this statement</h2><p>${s.lines} lines read, and ${s.in_trip} of them are from the trip.</p>${note}${counts}${pv}
+    <div class="acts"><button class="btn no" data-say="private" data-text="rescan">Check for new lines</button></div></div>
+    <div class="sheet"><h2 style="font-size:20px">Add later transactions</h2><p>Add a newer export that still has all these lines, and your agent keeps its place.</p>${DROPZONE()}</div>`;
+}
+async function uploadFile(file){
+  up={...up,problems:[],total:0,note:""};
+  if(!up.attested){up.problems=[{message:"Tick the box to confirm this is a made-up statement."}];up.total=1;render();return}
+  up.busy=true;render();
+  try{
+    const r=await fetch("/api/statement",{method:"POST",headers:{"Content-Type":"text/csv","X-Filename":encodeURIComponent(file.name),"X-Kitty-Synthetic":"yes"},body:file});
+    const j=await r.json();
+    up.busy=false;
+    if(r.ok){
+      up.note=j.status==="duplicate"?j.message:j.status==="added_lines"?`Added ${j.added} new line${j.added===1?"":"s"}. Choose Check for new lines when you're ready.`:j.status==="replaced"?"Your new file replaced the old one.":"Your file passed every check.";
+      up.attested=false;preview=null;await loadPreview();
+    }else{up.problems=j.problems||[{message:j.error||"Kitty couldn't use that file."}];up.total=j.total||up.problems.length}
+  }catch(e){up.busy=false;up.problems=[{message:"The file didn't reach Kitty. Check that this app is still running, then try again."}];up.total=1}
+  last="";await poll();render();
+}
+async function loadPreview(){try{const r=await fetch("/api/statement/model-preview");if(r.ok)preview=(await r.json()).lines}catch(e){}}
+
 function render(){
   if(!data) return;
   const d=data;
   $("name").textContent=d.me.name;$("trip").textContent=d.trip;document.title=`${d.me.name}: Kitty`;
+  const inApp=!!d.in_app;
+  document.querySelector('nav button[data-t=statement]').hidden=!inApp;
+  $("nav").classList.toggle("four",inApp);
+  if(inApp&&!tabChosen){tab=d.statement&&d.statement.state==="reviewing"?"private":"statement";tabChosen=true}
   document.body.dataset.tab=tab;$("who").textContent=WHO[tab];
-  $("form").hidden=tab!=="private";
+  $("form").hidden=tab!=="private"||(inApp&&d.statement.state!=="reviewing");
   document.querySelectorAll("nav button").forEach(b=>b.dataset.t===tab?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
   const waiting=d.desk.slips.filter(s=>s.state==="waiting").length;
   $("count").hidden=!waiting;$("count").textContent=waiting;
   const main=$("main");const nearEnd=main.scrollHeight-main.scrollTop-main.clientHeight<80;
-  main.innerHTML=tab==="private"?privateView(d):tab==="desk"?deskView(d):groupView(d);
+  main.innerHTML=tab==="statement"&&inApp?statementView(d):tab==="private"?privateView(d):tab==="desk"?deskView(d):groupView(d);
+  if(tab==="statement"&&inApp) wireStatement();
   if(tab==="private"&&(nearEnd||lastCount!==d.private.length)) main.scrollTop=main.scrollHeight;
   lastCount=d.private.length;
+}
+function wireStatement(){
+  const file=$("file"),drop=$("drop"),att=$("attest"),pv=$("pv"),rm=$("removeFile");
+  if(att) att.onchange=()=>{up.attested=att.checked;if(up.problems.length===1&&att.checked&&/Tick the box/.test(up.problems[0].message)){up.problems=[];up.total=0;render()}};
+  if(file) file.onchange=()=>{if(file.files[0]) uploadFile(file.files[0])};
+  if(drop){
+    drop.ondragover=e=>{e.preventDefault();drop.classList.add("over")};
+    drop.ondragleave=()=>drop.classList.remove("over");
+    drop.ondrop=e=>{e.preventDefault();drop.classList.remove("over");if(e.dataTransfer.files[0]) uploadFile(e.dataTransfer.files[0])};
+  }
+  if(pv) pv.ontoggle=async()=>{previewOpen=pv.open;if(pv.open&&!preview){await loadPreview();render()}};
+  if(rm) rm.onclick=async()=>{await fetch("/api/statement",{method:"DELETE"});up.note="";preview=null;last="";poll()};
 }
 async function poll(){
   try{
@@ -221,9 +318,10 @@ async function poll(){
 }
 document.addEventListener("click",e=>{
   const b=e.target.closest("button");if(!b)return;
-  if(b.dataset.t){tab=b.dataset.t;try{sessionStorage.setItem("tab",tab)}catch(_){}render();$("main").scrollTop=tab==="private"?1e6:0;return}
+  if(b.dataset.t){tabChosen=true;tab=b.dataset.t;try{sessionStorage.setItem("tab",tab)}catch(_){}render();$("main").scrollTop=tab==="private"?1e6:0;return}
   if(b.dataset.go){tab=b.dataset.go;try{sessionStorage.setItem("tab",tab)}catch(_){}render();return}
-  if(b.dataset.say){say(b.dataset.say,b.dataset.text);return}
+  if("sayStart" in b.dataset){tab="private";try{sessionStorage.setItem("tab",tab)}catch(_){}say("private","start");render();return}
+  if(b.dataset.say){if(b.dataset.say==="private"&&tab==="statement"){tab="private";try{sessionStorage.setItem("tab",tab)}catch(_){}}say(b.dataset.say,b.dataset.text);render();return}
   if(b.dataset.pick){picked.has(b.dataset.pick)?picked.delete(b.dataset.pick):picked.add(b.dataset.pick);render();return}
   if("share" in b.dataset){const list=[...picked].join(" ");picked.clear();say("private",`shared ${list}`);return}
   if(b.dataset.release){

@@ -100,6 +100,9 @@ class Clerk:
     def _name(self, pid: str) -> str:
         return self.people[pid].name
 
+    def _money(self, minor: int) -> str:
+        return C.money(minor, self.trip.currency)
+
     def _log(self, action: str, **fields: object) -> None:
         self.audit.append({"action": action, "at": self.now(), **fields})
 
@@ -143,7 +146,7 @@ class Clerk:
         tid = self._next("t")
         self.transfers[tid] = TransferRecord(tid, item)
         self._log("held", id=tid, owner=owner.id)
-        return [Post(owner.desk_room, f"**{tid}** ready [ref {item.ref}]: you paid {self._name(item.to_id)} {C.rupees(item.amount_paise)} on {day_month(item.date)}.\nReply `release {tid}` to tell the group, or `drop {tid}`.")]
+        return [Post(owner.desk_room, f"**{tid}** ready [ref {item.ref}]: you paid {self._name(item.to_id)} {self._money(item.amount_paise)} on {day_month(item.date)}.\nReply `release {tid}` to tell the group, or `drop {tid}`.")]
 
     def _propose_answer(self, owner: Person, item: C.TransferAnswer) -> list[Post]:
         rec = self.transfers.get(item.transfer_id)
@@ -153,7 +156,7 @@ class Clerk:
         rec.answer = item.received
         rec.answer_status = "held"
         said = "reached you" if item.received else "did not reach you"
-        return [Post(owner.desk_room, f"Your agent found that {rec.id} ({C.rupees(rec.claim.amount_paise)} from {self._name(rec.claim.from_id)}) {said}.\nReply `release {rec.id}` to send that answer, or `drop {rec.id}` to keep it private.")]
+        return [Post(owner.desk_room, f"Your agent found that {rec.id} ({self._money(rec.claim.amount_paise)} from {self._name(rec.claim.from_id)}) {said}.\nReply `release {rec.id}` to send that answer, or `drop {rec.id}` to keep it private.")]
 
     # ---- from the owner: the only source of approval ----------------------------------------
 
@@ -191,7 +194,7 @@ class Clerk:
             rec.status, rec.conflict_with = "conflict_hold", conflict.id
             conflict.status, conflict.conflict_with = "conflict_hold", rec.id
             self._log("conflict", ids=[rec.id, conflict.id])
-            posts.append(Post(self.group_room, f"**Possible conflict:** {conflict.id} and {rec.id} look like one expense paid by two people ({C.rupees(rec.claim.amount_paise)}, {rec.claim.category}, {day_month(rec.claim.date)}). Neither counts until one owner drops theirs."))
+            posts.append(Post(self.group_room, f"**Possible conflict:** {conflict.id} and {rec.id} look like one expense paid by two people ({self._money(rec.claim.amount_paise)}, {rec.claim.category}, {day_month(rec.claim.date)}). Neither counts until one owner drops theirs."))
             return posts
         rec.status = "released"
         self._log("released", id=rec.id, by=owner.id)
@@ -216,7 +219,7 @@ class Clerk:
         receiver = self.people[rec.claim.to_id]
         return [
             Post(owner.desk_room, f"{rec.id} released."),
-            Post(self.group_room, f"**{rec.id}** {self._name(rec.claim.from_id)} says they paid {receiver.name} {C.rupees(rec.claim.amount_paise)} on {day_month(rec.claim.date)}. Not counted until {receiver.name} confirms."),
+            Post(self.group_room, f"**{rec.id}** {self._name(rec.claim.from_id)} says they paid {receiver.name} {self._money(rec.claim.amount_paise)} on {day_month(rec.claim.date)}. Not counted until {receiver.name} confirms."),
             Post(receiver.desk_room, f"KITTY_CHECK {rec.id} from={rec.claim.from_id} amount_paise={rec.claim.amount_paise} date={rec.claim.date.isoformat()}"),
         ]
 
@@ -229,14 +232,14 @@ class Clerk:
             self._log("confirmed", id=rec.id)
             return [
                 Post(owner.desk_room, f"Answer for {rec.id} sent."),
-                Post(self.group_room, f"**{rec.id} confirmed by both sides:** {payer.name} paid {owner.name} {C.rupees(rec.claim.amount_paise)}."),
+                Post(self.group_room, f"**{rec.id} confirmed by both sides:** {payer.name} paid {owner.name} {self._money(rec.claim.amount_paise)}."),
                 *self._square_check(),
             ]
         rec.status = "challenged"
         self._log("challenged", id=rec.id)
         return [
             Post(owner.desk_room, f"Answer for {rec.id} sent."),
-            Post(self.group_room, f"**{rec.id} NOT CONFIRMED:** {payer.name} says they paid {owner.name} {C.rupees(rec.claim.amount_paise)}. {owner.name}'s side shows nothing. Both agents are re-checking privately. No statement is shared."),
+            Post(self.group_room, f"**{rec.id} NOT CONFIRMED:** {payer.name} says they paid {owner.name} {self._money(rec.claim.amount_paise)}. {owner.name}'s side shows nothing. Both agents are re-checking privately. No statement is shared."),
             Post(payer.desk_room, f"KITTY_RECHECK {rec.id}"),
         ]
 
@@ -324,7 +327,7 @@ class Clerk:
 
     def balances_text(self) -> str:
         net = self.balances()
-        rows = "\n".join(f"| {self._name(p)} | {C.rupees(v)} | {'is owed' if v > 0 else 'owes' if v < 0 else 'square'} |" for p, v in net.items())
+        rows = "\n".join(f"| {self._name(p)} | {self._money(v)} | {'is owed' if v > 0 else 'owes' if v < 0 else 'square'} |" for p, v in net.items())
         pending = [r for r in self.transfers.values() if r.status in ("awaiting_receiver", "challenged")]
         note = f"\n\n{len(pending)} payment(s) still unconfirmed, and not counted." if pending else ""
         return f"| Person | Balance | |\n|---|---:|---|\n{rows}{note}"
@@ -333,12 +336,12 @@ class Clerk:
         plan = L.settle(self.balances())
         if not plan:
             return "Nothing to settle. Everyone's square." if self.lines() else "No released expenses yet."
-        rows = "\n".join(f"- {self._name(p.from_id)} pays {self._name(p.to_id)} **{C.rupees(p.amount_paise)}**" for p in plan)
+        rows = "\n".join(f"- {self._name(p.from_id)} pays {self._name(p.to_id)} **{self._money(p.amount_paise)}**" for p in plan)
         return f"Suggested payments ({len(plan)}):\n{rows}\n\nKitty never moves money. Each payment counts once both people's sides confirm it."
 
     def status_text(self) -> str:
         return f"{sum(r.status == 'released' for r in self.expenses.values())} expenses counted, {sum(r.status == 'confirmed' for r in self.transfers.values())} payments confirmed, {len(self.open_items())} open."
 
     def _expense_line(self, claim: C.Expense) -> str:
-        shares = ", ".join(f"{self._name(p)} {C.rupees(v)}" for p, v in claim.shares)
-        return f"{C.rupees(claim.amount_paise)} · {claim.category} · {day_month(claim.date)} · paid by {self._name(claim.payer_id)} · {shares}"
+        shares = ", ".join(f"{self._name(p)} {self._money(v)}" for p, v in claim.shares)
+        return f"{self._money(claim.amount_paise)} · {claim.category} · {day_month(claim.date)} · paid by {self._name(claim.payer_id)} · {shares}"

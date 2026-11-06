@@ -59,7 +59,7 @@ STOPWORDS = {"it", "was", "with", "and", "the", "just", "only", "shared", "yes",
 CARD_REF = re.compile(r"^\*\*([ct][0-9]+)\*\* ready \[ref ([a-z0-9]+)\]")
 CHECK = re.compile(r"^KITTY_CHECK (t[0-9]+) from=([a-z0-9_-]+) amount_paise=([0-9]+) date=(\d{4}-\d{2}-\d{2})$")
 RECHECK = re.compile(r"^KITTY_RECHECK (t[0-9]+)$")
-CUSTOM_SHARE = re.compile(r"([a-zA-Z]+)\s*[=:]\s*₹?\s*([0-9]+(?:\.[0-9]{1,2})?)")
+CUSTOM_SHARE = re.compile(r"([a-zA-Z]+)\s*[=:]\s*[₹$€£]?\s*([0-9]+(?:\.[0-9]{1,2})?)")
 
 
 def fmt_time(hhmm: str) -> str:
@@ -107,6 +107,9 @@ class PersonalAgent:
     def window(self) -> list[S.Row]:
         return S.in_window(self.rows, self.trip.start, self.trip.end)
 
+    def _money(self, minor: int) -> str:
+        return C.money(minor, self.trip.currency)
+
     def _ref(self) -> str:
         self._n += 1
         return f"{self.me[:1]}{self._n}"
@@ -127,7 +130,7 @@ class PersonalAgent:
         filed = 0
         if spend:
             valid = {r.row_id: r for r in spend}
-            guesses = self._validated(self.brain.classify([S.model_view(r) for r in spend], self.names[self.me], self.trip_name), valid)
+            guesses = self._validated(self.brain.classify([S.model_view(r, self.trip.currency) for r in spend], self.names[self.me], self.trip_name), valid)
             for r in spend:
                 g = guesses.get(r.row_id) or Guess(r.row_id, "unclear", "other", r.narration.split("*")[0].title()[:24])
                 item = Item(r, g.title, g.category)
@@ -169,7 +172,7 @@ class PersonalAgent:
     # ---- questions ---------------------------------------------------------------
 
     def _question(self, item: Item) -> str:
-        return f"{item.title}, {fmt_time(item.row.time)}, {C.rupees(item.row.debit).removesuffix('.00')}. Was this shared with the group?"
+        return f"{item.title}, {fmt_time(item.row.time)}, {self._money(item.row.debit).removesuffix('.00')}. Was this shared with the group?"
 
     def _ask_next(self) -> list[Post]:
         self.asked = None
@@ -262,12 +265,12 @@ class PersonalAgent:
         item.ref = self._ref()
         return Post("desk", C.PREFIX + json.dumps({
             "v": 1, "type": "expense", "ref": item.ref, "trip_id": self.trip.trip_id, "owner_id": self.me, "payer_id": self.me,
-            "date": item.row.day.isoformat(), "amount_paise": item.row.debit, "currency": C.CURRENCY, "category": item.category,
+            "date": item.row.day.isoformat(), "amount_paise": item.row.debit, "currency": self.trip.currency, "category": item.category,
             "participant_ids": [p for p, _ in final], "shares": {p: v for p, v in final},
         }, ensure_ascii=False))
 
     def _transfer_claim(self, ref: str, to: str, row: S.Row) -> str:
-        return C.PREFIX + json.dumps({"v": 1, "type": "transfer", "ref": ref, "trip_id": self.trip.trip_id, "owner_id": self.me, "from_id": self.me, "to_id": to, "date": row.day.isoformat(), "amount_paise": row.debit, "currency": C.CURRENCY})
+        return C.PREFIX + json.dumps({"v": 1, "type": "transfer", "ref": ref, "trip_id": self.trip.trip_id, "owner_id": self.me, "from_id": self.me, "to_id": to, "date": row.day.isoformat(), "amount_paise": row.debit, "currency": self.trip.currency})
 
     # ---- messages from the clerk -------------------------------------------------------
 
@@ -293,7 +296,7 @@ class PersonalAgent:
         hit = S.find_credit(self.rows, amount, around, sender, self.directory)
         ref = self._ref()
         answer = C.PREFIX + json.dumps({"v": 1, "type": "transfer_answer", "ref": ref, "trip_id": self.trip.trip_id, "owner_id": self.me, "transfer_id": tid, "received": hit is not None})
-        who, money = self.names.get(sender, sender), C.rupees(amount)
+        who, money = self.names.get(sender, sender), self._money(amount)
         if hit is not None:
             note = f"{who} says they paid you {money}. I found it on your statement: {hit.day:%d %b}, {fmt_time(hit.time)}. Your desk has the answer. Only yes or no goes to the clerk."
         else:
@@ -307,8 +310,8 @@ class PersonalAgent:
             return []
         reversal = S.find_reversal(self.rows, row)
         if reversal is None:
-            return [Post("private", f"The clerk asked me to re-check {tid}. I can see your {C.rupees(row.debit)} debit on {row.day:%d %b} and no refund, so on your side the money left. You two may want to talk. Nothing else is shared.")]
-        return [Post("private", f"I re-checked {tid}, and I think I've found it. Your {C.rupees(row.debit)} left at {fmt_time(row.time)} on {row.day:%d %b}, then came back at {fmt_time(reversal.time)}, same reference. **The payment failed and was reversed. {self.names[self._to(row)]} never got it.** To correct it, say `withdraw {tid} payment_failed` on your desk. Only the words \"payment failed\" reach the group.")]
+            return [Post("private", f"The clerk asked me to re-check {tid}. I can see your {self._money(row.debit)} debit on {row.day:%d %b} and no refund, so on your side the money left. You two may want to talk. Nothing else is shared.")]
+        return [Post("private", f"I re-checked {tid}, and I think I've found it. Your {self._money(row.debit)} left at {fmt_time(row.time)} on {row.day:%d %b}, then came back at {fmt_time(reversal.time)}, same reference. **The payment failed and was reversed. {self.names[self._to(row)]} never got it.** To correct it, say `withdraw {tid} payment_failed` on your desk. Only the words \"payment failed\" reach the group.")]
 
     def _to(self, row: S.Row) -> str:
         return S.counterparty(row, self.directory) or self.me

@@ -16,4 +16,5 @@ dev = ["pytest>=8", "hypothesis>=4"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 markers = ["live: needs a running Switch stack (excluded by default)"]
+pythonpath = ["."]
 addopts = "-m 'not live'"
