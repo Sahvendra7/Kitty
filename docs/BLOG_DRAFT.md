@@ -25,14 +25,14 @@ The obvious design is one assistant that reads everyone's statements and works o
 We wanted three different things, with three different kinds of trust:
 
 - **A personal agent per person.** It reads one statement and works for one person. It asks "Zomato, 11 PM, ₹850. Was this shared?" because only Priya knows that Meera had gone to bed.
-- **A clerk that isn't an LLM.** Money arithmetic and "who approved this" shouldn't be probabilistic. It's about 300 lines of ordinary Python with integer paise.
+- **A clerk that isn't an LLM.** Money arithmetic and "who approved this" shouldn't be probabilistic. It's about 350 lines of ordinary Python with integer paise.
 - **A group room** that holds only what people have approved.
 
 What makes this work is that the walls between them aren't instructions. They're enforced by a server. That's what Switch gives you, so that's the first thing we tested.
 
 ## 3. Running Switch with more than one owner
 
-The first thing to know: a local server run by Switch Console has one owner, and all its agents belong to you. That's fine for most projects. For separately owned agents, run from source. [Airlock](https://github.com/martinvibes/airlock) showed this route works on a Mac, and it saved us hours.
+The first thing to know: a local server run by Switch Console has one owner, and all its agents belong to you. That's fine for most projects. For separately owned agents, run from source. [Airlock](https://github.com/martinvibes/airlock) reported this route working on a Mac, and we followed it.
 
 ```bash
 git clone https://github.com/sandbox-quantum/switch.git switch-src
@@ -111,7 +111,7 @@ To link a Mattermost account to its owner, post to `/gateway/collaborations/{bri
 
 ## 6. The bug that looked like flakiness
 
-Our third setup run failed: a person's message never arrived. It had worked twice. We nearly added a retry. The server log told a different story, and its first error was:
+Our third setup run failed: a person's message never arrived. It had worked twice, so a retry looked like the obvious fix. The server log told a different story, and its first error was:
 
 ```
 Unable to create the new team membership because the team has reached the limit of members
@@ -199,7 +199,7 @@ So: every negative test needs a positive control.
 - **Put limits in the server, then in code, and last in prompts.** We ended up with no prompt-based security at all.
 - **Let the model propose and let code decide.** The model is good at "`ZOMATO*ORD 8812` might be shared, better ask". It has no business doing arithmetic or holding a key.
 - **Asking a person is a feature.** "Yes, but Meera had gone to bed" is the best line in the demo, and no statement contains it.
-- **Read the server log first.** We nearly papered over a 50-member limit with a retry.
+- **Read the server log first.** A retry would have papered over a 50-member limit.
 
 ## 12. Try it
 
