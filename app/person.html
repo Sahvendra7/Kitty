@@ -25,7 +25,7 @@ header span{font-size:14px;opacity:.75}
 
 /* Who can see this: the one line that is always true, and always visible. */
 .who{padding:8px 18px;font-size:14px;line-height:1.3;font-weight:500}
-main{flex:1;overflow-y:auto;padding:14px 14px 18px;scroll-behavior:smooth}
+main{flex:1;overflow-y:auto;padding:14px 14px 18px}
 body[data-tab=private]{background:var(--monsoon)} body[data-tab=private] .who{background:var(--monsoon-2);color:var(--glass)}
 body[data-tab=desk]{background:var(--monsoon)} body[data-tab=desk] .who{background:var(--glass-2);color:var(--ink)} body[data-tab=desk] main{background:var(--glass)}
 body[data-tab=group]{background:var(--monsoon)} body[data-tab=group] .who{background:var(--marigold);color:var(--ink)} body[data-tab=group] main{background:var(--marigold-soft)}
@@ -106,7 +106,7 @@ const WHO={private:"Only you and your agent are here. The clerk can't get in.",d
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const inline=s=>esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`(.+?)`/g,"<code>$1</code>");
-let tab="private",data=null,last="",picked=new Set(),dropping=null;
+let lastCount=0,tab="private",data=null,last="",picked=new Set(),dropping=null;
 try{tab=sessionStorage.getItem("tab")||tab}catch(e){}
 
 async function say(room,text){
@@ -207,7 +207,8 @@ function render(){
   $("count").hidden=!waiting;$("count").textContent=waiting;
   const main=$("main");const nearEnd=main.scrollHeight-main.scrollTop-main.clientHeight<80;
   main.innerHTML=tab==="private"?privateView(d):tab==="desk"?deskView(d):groupView(d);
-  if(tab==="private"&&nearEnd) main.scrollTop=main.scrollHeight;
+  if(tab==="private"&&(nearEnd||lastCount!==d.private.length)) main.scrollTop=main.scrollHeight;
+  lastCount=d.private.length;
 }
 async function poll(){
   try{
@@ -230,6 +231,11 @@ document.addEventListener("click",e=>{
     const delay=matchMedia("(prefers-reduced-motion:reduce)").matches?0:500;
     setTimeout(()=>{dropping=null;say("desk",`release ${id}`)},delay);
   }
+});
+// The demo stage can change which tab is showing, and nothing else.
+window.addEventListener("message",e=>{
+  if(e.origin!=="http://127.0.0.1:7100"||!e.data||!["private","desk","group"].includes(e.data.kittyTab))return;
+  tab=e.data.kittyTab;render();$("main").scrollTop=tab==="private"?$("main").scrollHeight:0;
 });
 $("form").addEventListener("submit",e=>{e.preventDefault();const v=$("input").value.trim();if(!v)return;$("input").value="";say("private",v)});
 poll();setInterval(poll,900);

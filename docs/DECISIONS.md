@@ -34,7 +34,7 @@ it unstored and unrelayed. The real protection is that only deterministic code h
 
 ## ADR-003: The model has no tools. It cannot post, read files, or reach Switch
 
-**Decided:** 6 Nov 2026. **Status:** tools list verified from the CLI's own report. **Attack run pending** (Gate 1C).
+**Decided:** 6 Nov 2026. **Status:** verified live, 8 of 8 (Gate 1C).
 
 **Problem:** prompts are not a security boundary. The research plan gave Claude Code a working folder with tool limits, and
 that leaves a statement-reading model able to act.
@@ -42,6 +42,8 @@ that leaves a statement-reading model able to act.
 **Decision:** the model runs with `--tools ""`, `--strict-mcp-config`, `--setting-sources ""`, from an empty temporary
 directory, with its input in the prompt. A deterministic runner holds the Switch key. Model output is parsed as data and
 validated against the real rows and closed lists.
+
+**Evidence that tool limits alone would not have done it:** Gate 1C's positive control gave the same model only `Read`, run from Meera's folder, and it read the file in Arjun's folder. The research plan's folder-plus-tool-limits design would not have held.
 
 **Trade-off:** this is less of an "agent" in the autonomous sense: the model proposes and code acts. That is the point.
 

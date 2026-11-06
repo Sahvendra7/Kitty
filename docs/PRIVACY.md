@@ -17,7 +17,7 @@ We do not claim end-to-end encryption, zero knowledge or complete privacy. Servi
 | Unreleased claims on your desk | Yes | Yes | No | Yes | **No** | **Yes** |
 | Released claims | Yes | Yes | No | Yes | Yes | Yes |
 
-"Whoever hosts Switch" includes anyone with admin access to its database or to the bundled Mattermost.
+"Whoever hosts Switch" includes anyone with admin access to its database or to the bundled Mattermost. `verify.py` shows this directly: Mattermost's seeded `admin` and `user` accounts are members of every channel, private ones included.
 
 ## What is sent to the model provider
 
@@ -26,7 +26,7 @@ Exactly two prompts, both in [`kitty/llm_brain.py`](../kitty/llm_brain.py):
 1. **Sorting.** The person's first name, the trip's name, and for each spending line in the trip: a row number, date, time, narration with long digit runs masked, and amount.
 2. **Reading a reply.** Everyone's first names, the question (which includes a merchant name, time and amount), and the person's reply, up to 400 characters.
 
-The provider in this build is Anthropic, through Claude Code. What it retains is set by the account's terms, and we have not independently checked it.
+The provider in this build is Anthropic, through Claude Code, using `claude-haiku-5-5`. What it retains is set by the account's terms, and we have not independently checked it.
 
 A model gets no tools, no MCP servers and no settings. The CLI's own report shows zero tools and zero servers (`scripts/gate1c_llm_sandbox.py`).
 
@@ -39,7 +39,7 @@ A model gets no tools, no MCP servers and no settings. The CLI's own report show
 | Friends stay out of your channels | Mattermost (403) | `gate1b_humans.py` |
 | A claim has no field for free text | `kitty/claims.py`, on the clerk's side | `tests/test_core.py`, `gate1d_release_live.py` |
 | Only you can release | Clerk compares the sender id Switch sets | `tests/test_core.py`, `gate1d_release_live.py` |
-| A model can't act | No tools, and the runner holds the key | CLI's report. **Live attack not yet run** |
+| A model can't act | No tools, and the runner holds the key | CLI's report, plus a live attack with a positive control (`gate1c_llm_sandbox.py`, 8 of 8) |
 
 ## What is not enforced
 

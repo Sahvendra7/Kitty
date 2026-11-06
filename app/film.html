@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Kitty film</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--monsoon:#0E3B43;--glass:#E4F3EF;--marigold:#F2A81D;--soft:#FFF1CF;--hibiscus:#C8175D;--ink:#10272B}
+*{box-sizing:border-box;margin:0}
+html,body{height:100%;overflow:hidden}
+body{background:var(--ink);color:var(--glass);font:400 18px/1.3 "Mukta",system-ui,sans-serif}
+#view{position:absolute;inset:0 0 118px 0;overflow:hidden}
+#row{position:absolute;inset:12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.55fr);gap:12px;transform-origin:0 0;transition:transform .9s cubic-bezier(.3,.8,.2,1)}
+iframe{width:100%;height:100%;border:0;border-radius:16px;background:#fff}
+#cap{position:absolute;left:0;right:0;bottom:0;height:118px;display:flex;align-items:center;justify-content:center;text-align:center;padding:0 60px;font:700 36px/1.15 "Baloo 2",system-ui,sans-serif;color:#fff;background:var(--ink)}
+#cap small{display:block;font:400 21px/1.2 "Mukta",system-ui,sans-serif;color:var(--glass);margin-top:2px}
+#badge{position:absolute;top:22px;right:26px;background:var(--marigold);color:var(--ink);font:800 30px/1 "Baloo 2",sans-serif;padding:10px 16px;border-radius:10px;z-index:5}
+#who{position:absolute;top:22px;left:26px;background:var(--ink);color:#fff;font:700 30px/1 "Baloo 2",sans-serif;padding:12px 18px;border-radius:10px;z-index:5}
+iframe{transition:opacity .5s}
+#card{position:absolute;inset:0 0 118px 0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:70px 130px;z-index:9;background:var(--monsoon);color:#fff}
+#card.gold{background:var(--marigold);color:var(--ink)}
+#card.ink{background:var(--ink)}
+#card.white{background:#fff;color:var(--ink);padding:16px}
+#card h1{font:800 92px/1.05 "Baloo 2",sans-serif;text-align:center}
+#card h2{font:700 56px/1.15 "Baloo 2",sans-serif;text-align:center;margin-bottom:14px}
+#card p{font:400 34px/1.3 "Mukta",sans-serif;text-align:center;max-width:1400px}
+#card img{width:100%;height:100%;min-height:0;object-fit:contain}
+.chat{width:900px;display:grid;gap:14px}
+.chat div{background:var(--glass);color:var(--ink);padding:16px 24px;border-radius:6px 22px 22px 22px;font-size:38px;width:fit-content}
+.chat div:nth-child(even){justify-self:end;background:#fff;border-radius:22px 6px 22px 22px}
+.chat i{display:block;font:600 22px "Mukta";font-style:normal;opacity:.65}
+.checks{list-style:none;padding:0;font-size:32px;line-height:1.45;width:1320px}
+.checks li{display:flex;gap:18px;justify-content:space-between;border-bottom:2px solid rgba(255,255,255,.18);padding:8px 0}
+.checks b{font-family:"Baloo 2";font-weight:700;color:var(--marigold);white-space:nowrap}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<div id="view"><div id="row">
+  <iframe id="p0" title="Priya" src="http://127.0.0.1:7101/"></iframe>
+  <iframe id="p1" title="Arjun" src="http://127.0.0.1:7102/"></iframe>
+  <iframe id="p2" title="Meera" src="http://127.0.0.1:7103/"></iframe>
+  <iframe id="p3" title="Board" src="http://127.0.0.1:7100/"></iframe>
+</div><div id="badge" hidden></div><div id="who" hidden></div></div>
+<div id="cap"></div>
+<img src="/assets/architecture.png" alt="" hidden>
+<div id="card" hidden></div>
+<script>
+const $=id=>document.getElementById(id);
+window.film={
+  caption(t,s){$("cap").innerHTML=`<div>${t}${s?`<small>${s}</small>`:""}</div>`},
+  card(html,cls){const c=$("card");c.className=cls||"";c.innerHTML=html;c.hidden=false},
+  uncard(){$("card").hidden=true},
+  badge(t){const b=$("badge");b.hidden=!t;b.textContent=t||""},
+  tab(i,name){$("p"+i).contentWindow.postMessage({kittyTab:name},"*")},
+  zoom(i,anchor,label){
+    const row=$("row"),who=$("who");
+    who.hidden=!label;who.textContent=label||"";
+    [0,1,2,3].forEach(n=>$("p"+n).style.opacity=(i===null||n===i)?1:.18);
+    if(i===null){row.style.transform="";return}
+    const f=$("p"+i),view=$("view").getBoundingClientRect();
+    const x=f.offsetLeft,w=f.offsetWidth,h=f.offsetHeight;
+    const s=Math.min(1.5,(view.width-40)/w);
+    const tx=(view.width-w*s)/2-x*s-12;
+    const ty=anchor==="top"?0:view.height-h*s-24;
+    row.style.transform=`translate(${tx}px,${ty}px) scale(${s})`;
+  }
+};
+</script>
+</body>
+</html>

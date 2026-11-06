@@ -3,7 +3,7 @@
   {
    "check": "group room history was readable and is not empty",
    "pass": true,
-   "detail": "30 messages"
+   "detail": "27 messages"
   },
   {
    "check": "group lines were actually parsed (otherwise everything below is vacuous)",
@@ -43,42 +43,42 @@
   {
    "check": "group room has messages to scan",
    "pass": true,
-   "detail": "30"
+   "detail": "27"
   },
   {
    "check": "no statement text in group room",
    "pass": true,
-   "detail": "87 terms, 30 messages"
+   "detail": "87 terms, 27 messages"
   },
   {
    "check": "priya's desk has messages to scan",
    "pass": true,
-   "detail": "32"
+   "detail": "30"
   },
   {
    "check": "no statement text in priya's desk",
    "pass": true,
-   "detail": "87 terms, 32 messages"
+   "detail": "87 terms, 30 messages"
   },
   {
    "check": "arjun's desk has messages to scan",
    "pass": true,
-   "detail": "32"
+   "detail": "30"
   },
   {
    "check": "no statement text in arjun's desk",
    "pass": true,
-   "detail": "87 terms, 32 messages"
+   "detail": "87 terms, 30 messages"
   },
   {
    "check": "meera's desk has messages to scan",
    "pass": true,
-   "detail": "37"
+   "detail": "35"
   },
   {
    "check": "no statement text in meera's desk",
    "pass": true,
-   "detail": "87 terms, 37 messages"
+   "detail": "87 terms, 35 messages"
   },
   {
    "check": "no merchant field in any desk claim",
@@ -88,7 +88,7 @@
   {
    "check": "the clerk is the only agent in the group room",
    "pass": true,
-   "detail": "['kitty-clerk-67bd']"
+   "detail": "['kitty-clerk-9df2']"
   },
   {
    "check": "priya's agent is refused the group room",
@@ -138,22 +138,22 @@
   {
    "check": "no personal agent's bot is in the group's Mattermost channel",
    "pass": true,
-   "detail": "['admin', 'arjun67bd', 'kitty-clerk-67bd', 'meera67bd', 'priya67bd', 'user']"
+   "detail": "['admin', 'arjun9df2', 'kitty-clerk-9df2', 'meera9df2', 'priya9df2', 'user']"
   },
   {
    "check": "the clerk's bot is not in priya's private Mattermost channel",
    "pass": true,
-   "detail": "['admin', 'priya-agent-67bd', 'priya67bd', 'user']"
+   "detail": "['admin', 'priya-agent-9df2', 'priya9df2', 'user']"
   },
   {
    "check": "the clerk's bot is not in arjun's private Mattermost channel",
    "pass": true,
-   "detail": "['admin', 'arjun-agent-67bd', 'arjun67bd', 'user']"
+   "detail": "['admin', 'arjun-agent-9df2', 'arjun9df2', 'user']"
   },
   {
    "check": "the clerk's bot is not in meera's private Mattermost channel",
    "pass": true,
-   "detail": "['admin', 'meera-agent-67bd', 'meera67bd', 'user']"
+   "detail": "['admin', 'meera-agent-9df2', 'meera9df2', 'user']"
   },
   {
    "check": "a withdrawn payment was not counted as confirmed",

@@ -149,7 +149,7 @@ A release counts only if the `sender` that Switch set on the event is that perso
 The model's position is the most restrictive of all. It runs with no tools and no MCP servers, from an empty directory:
 
 ```bash
-claude -p "$PROMPT" --model haiku --system-prompt "$SYSTEM" --tools "" \
+claude -p "$PROMPT" --model claude-haiku-5-5 --system-prompt "$SYSTEM" --tools "" \
   --strict-mcp-config --setting-sources "" --no-session-persistence
 ```
 
@@ -190,8 +190,9 @@ So: every negative test needs a positive control.
 - It runs on one laptop, under one OS user. Switch's boundaries are real, but the separation between folders here isn't a security boundary.
 - There's no end-to-end encryption, and we don't claim any.
 
-`[GAP: result of scripts/gate1c_llm_sandbox.py with the model really running]`
-`[GAP: precision and recall from scripts/eval_agent.py, reported as they come out]`
+**With the model really running,** the attack test passes 8 of 8: zero tools, zero tool calls, secret not leaked. The positive control is the striking part. Given only `Read`, run from Meera's folder, the same model read the file in Arjun's folder. A working directory and a tool list wouldn't have protected her. Having no tools does.
+
+**How good is the model at this?** Across 3 runs of 16 lines, it made 48 judgments: 35 correct decisions, 13 where it asked the person, and none wrong. It asks about different lines on different runs, so our scripted test people had to answer whatever came up. That's a small sample on data we wrote and labelled ourselves, so it says the demo works and not much more.
 
 ## 11. What we learned
 
@@ -219,10 +220,10 @@ Thanks to the Switch team for a server whose boundaries held up when we attacked
 | Asset | Status |
 |---|---|
 | Architecture diagram | Done: `docs/assets/architecture.png` |
-| Stage during the dispute | Done, from the no-model run: `docs/assets/stage-dispute.png` |
+| Stage during the dispute | Done, but from the no-model run. **Retake from a real-model run** |
 | Meera's private reversal message | Done: `docs/assets/meera-private-reversal.png` |
 | Board at "Everyone's square" | Done: `docs/assets/board-square.png` |
-| Mattermost channel view, to show this is real team chat | **Needed** |
-| Verify output | Done: `docs/evidence/verify_output_rules_brain.json`. **Re-run with the real model** |
-| Demo video | **Needed**, and can't be made until the model runs |
+| Mattermost channel view, to show this is real team chat | Done: `docs/assets/mattermost-group.png`, `mattermost-meera-desk.png` |
+| Verify output | Done: `docs/evidence/verify_output_real_model.json` |
+| Demo video | **Not recorded. On hold until the owner says so** |
 | Real-model screenshots | **Needed** |

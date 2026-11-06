@@ -158,10 +158,41 @@ owner:** judges ask whether someone can "clone the repo and reproduce it", and o
 
 Blog sections that depend on a real model are marked `[GAP]` rather than filled in. `scripts/eval_agent.py` is written and has **not run**.
 
-## Status at this point
+(The status table that stood here was superseded by the entries below.)
 
-| | |
-|---|---|
-| **Done and run** | Switch from source, Gate 1A/1B/1D, clerk, ledger, parser, agent logic, person apps, board, verify, full story live with the no-model brain |
-| **Written, not yet run** | `LlmBrain`, `eval_agent.py`, Gate 1C's attack on a live model. All blocked on the Claude CLI login |
-| **Not started** | Demo video, clean-clone test, Mattermost screenshots, final field re-check |
+### Sat 7 Nov, 00:00-00:02 - the owner logged in; Gate 1C and the model score (done)
+
+**Gate 1C: 8 of 8, with the model really running.** Zero tools, zero tool calls, canary absent. The positive control gave the same model only
+`Read`, run from Meera's folder, and it read the file in Arjun's folder. So the research plan's folder-and-tool-limits design would not have held.
+The one first-run failure was naming: we asked for the alias `haiku` and the CLI reported the resolved model, an older one. We pinned `claude-haiku-5-5`.
+
+**Model score:** 3 runs of 16 lines, 48 judgments: 35 correct decisions, 13 asked the person, 0 wrong. Small sample, on data we wrote and labelled.
+
+The model asks about different lines on different runs, which `play_story.py` could not handle, as it only answered Zomato and Tito's. Scripted people now
+answer whatever is asked, matched by amount.
+
+### Sat 7 Nov, 00:03-00:08 - real model, end to end (done)
+
+One rehearsal, then three in a row: each 33 of 33, about 46 s of story, balances identical and equal to the hand-worked numbers. Our first `rehearse.sh`
+read `PIPESTATUS` after an `if` block, so it could not have detected a failed story. Fixed before the three-run streak. Log: `docs/evidence/rehearsals_real_model.log`.
+
+Gate G4 in the research plan, three clean runs by 15:00 Saturday, passed at 00:08.
+
+### Sat 7 Nov, 00:09-00:16 - Mattermost evidence, clean clone, field check (done)
+
+Mattermost screenshots first captured its "open in desktop app?" page, three identical file sizes being the giveaway. Setup now turns that off, along with Switch's
+auto-greetings, whose wording varies by run and had beaten our text filter. `verify.py` now also checks membership as Mattermost reports it (37 checks). That
+output shows Mattermost's seeded `admin` and `user` accounts are in every channel, which is concrete evidence for "the host can read private rooms".
+
+**Clean clone:** wiped the stack, cloned both repositories fresh, followed the README exactly. 68 tests, setup, real-model story, verify 37 of 37, in about 3.5 minutes. Docker
+images and `uv` packages were already cached, so a new machine will take longer.
+
+**Field check:** a code search over READMEs naming Switch found 39 projects (results are capped, and the earlier scan saw 93 hits). None does group settlement. Closest: `Kevrc/overruled`
+(expense renewal review) and `ronkenx9/change-order` (two owners settle scope). This is limited by search, and does not prove nothing else exists. The first searches returned zero, and a positive
+control showed those queries were simply too narrow.
+
+### Sat 7 Nov, 00:17-00:24 - demo video tooling; recording stopped at the owner's request
+
+`scripts/film.py` drives a real run and records it, drawing captions and zooms in the page, with a visible badge on sped-up stretches. Take one's review found a blank architecture card, captions
+hidden behind title cards, run-on captions, zooms cropping the newest message, and no Mattermost at all. All were fixed in code. A second take was running when **the owner asked to hold the video
+until the project has been improved further**, so it was stopped at 00:24. **The fixes are unverified, as no finished take has used them.** Take one is a local, untracked file with known defects, and is not a deliverable.

@@ -23,3 +23,7 @@ vault/
 # OS / tooling
 .DS_Store
 node_modules/
+
+# Demo video takes: recorded only when the owner asks, and not kept in git
+*.mp4
+docs/evidence/film_log.json

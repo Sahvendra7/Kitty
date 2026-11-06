@@ -11,6 +11,7 @@ from __future__ import annotations
 import argparse
 import base64
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -27,7 +28,7 @@ sys.path.insert(0, str(ROOT))
 from kitty.switch_client import Mattermost  # noqa: E402
 
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-PORT = 9333
+PORT = int(os.environ.get("KITTY_CHROME_PORT", "9333"))
 
 
 class Browser:

@@ -89,6 +89,7 @@ Mattermost is at <http://localhost:8065>. Each person's login is in `state/<pers
 | `scripts/demo_pay.py` | Adds one synthetic payment to two synthetic statements |
 | `scripts/verify.py` | Checks the outcome |
 | `scripts/eval_agent.py` | Scores the model against a hand-labelled answer key |
+| `scripts/rehearse.sh` | N full runs from a fresh trip, stopping at the first failure |
 
 ## Results
 
@@ -100,11 +101,14 @@ These are real runs, and the output is in [`docs/evidence/`](docs/evidence/).
 | Isolation between owners (`gate1_spike.py`) | 28 of 28 |
 | Real people in Mattermost (`gate1b_humans.py`) | 26 of 26 |
 | Attacks on the live clerk, and a planted leak that verify must catch (`gate1d_release_live.py`) | 10 of 10 |
-| Live end-to-end outcome (`verify.py`), no-model brain | 33 of 33 |
-| Model with no tools, under attack (`gate1c_llm_sandbox.py`) | **Not yet run: see below** |
-| Model accuracy against the answer key (`eval_agent.py`) | **Not yet run: see below** |
+| Full story with the real model, three runs in a row (`rehearse.sh`, `verify.py`) | 3 of 3 runs clean, balances identical each time |
+| Model with no tools, under attack, with a positive control (`gate1c_llm_sandbox.py`) | 8 of 8 |
+| Model against our answer key, 3 runs of 16 lines (`eval_agent.py`) | 48 judgments: 35 correct decisions, 13 asked the person, 0 wrong |
+| From fresh clones of both repos, following this README | Tests, setup, real-model story and verify all passed, about 3.5 minutes with Docker images and packages already cached |
 
-`verify` checks that balances recomputed from room text net to zero; every visible claim traces to a release by its owner's own account; 87 merchant words, refs and account numbers from the statements are absent from the group room and desks; the clerk is the only agent in the group room; the refusals are live 403s; a withdrawn payment isn't counted; and each confirmed payment was released by both people.
+The model score is a small sample on data we wrote and labelled ourselves, so it shows this demo works and says little about real statements. The model used is `claude-haiku-5-5`.
+
+`verify` (37 checks) confirms that balances recomputed from room text net to zero; every visible claim traces to a release by its owner's own account; 87 merchant words, refs and account numbers from the statements are absent from the group room and desks; the clerk is the only agent in the group room, as both Switch and Mattermost report it; the refusals are live 403s; a withdrawn payment isn't counted; and each confirmed payment was released by both people.
 
 ## What's real and what isn't
 
@@ -119,7 +123,7 @@ These are real runs, and the output is in [`docs/evidence/`](docs/evidence/).
 Read these before believing the tagline.
 
 - **Statements still reach the model provider.** Plain code first strips balances, account numbers, references, lines outside the trip dates, incoming money and payments between friends. Merchant names and amounts of spending inside the trip are still sent. See [`docs/PRIVACY.md`](docs/PRIVACY.md).
-- **Whoever hosts Switch can read private rooms.** This suits friends who trust the host, and not parties who don't. There is no end-to-end encryption.
+- **Whoever hosts Switch can read private rooms.** On this stack, Mattermost's seeded `admin` and `user` accounts are members of every channel, private ones included. This suits friends who trust the host, and not parties who don't. There is no end-to-end encryption.
 - **It runs on one laptop.** The processes are separate and hold separate credentials, but one OS user could read all of `state/`. Switch enforces room boundaries. The operating system doesn't enforce boundaries between these folders here.
 - **No real banks.** CSV only, in one made-up format.
 - **Trip setup is a command**, not a screen. People and dates come from `data/synthetic/trip.json`.

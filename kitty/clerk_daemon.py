@@ -17,7 +17,7 @@ from datetime import date
 from pathlib import Path
 
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
 
 from kitty import claims as C
@@ -91,6 +91,16 @@ def main() -> None:
     @app.get("/")
     def page() -> FileResponse:
         return FileResponse(ROOT / "app" / "board.html")
+
+    @app.get("/film")
+    def film() -> FileResponse:
+        return FileResponse(ROOT / "app" / "film.html")
+
+    @app.get("/assets/{name}")
+    def asset(name: str) -> FileResponse:
+        if name not in ("architecture.png", "mattermost-group.png"):
+            raise HTTPException(status_code=404)
+        return FileResponse(ROOT / "docs" / "assets" / name)
 
     @app.get("/stage")
     def stage() -> FileResponse:
