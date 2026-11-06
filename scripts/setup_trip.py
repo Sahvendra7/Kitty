@@ -59,6 +59,10 @@ def main() -> int:
     bridge = admin.default_bridge()
     mm_admin = Mattermost(ENV["MATTERMOST_ADMIN_USER"], ENV["MATTERMOST_ADMIN_PASSWORD"])
     team = ENV["MATTERMOST_TEAM_NAME"]
+    # Mattermost's default is 50 members per team, and each run adds eight accounts. Past the limit,
+    # agent bots silently fail to join channels and nothing is delivered (found the hard way).
+    r = mm_admin.http.put("/api/v4/config/patch", json={"TeamSettings": {"MaxUsersPerTeam": 2000}})
+    r.raise_for_status()
 
     def person(slug: str, display: str, linked: bool = True) -> dict:
         password = "Kt1!" + secrets.token_urlsafe(16)

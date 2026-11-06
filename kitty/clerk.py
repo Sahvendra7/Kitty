@@ -12,12 +12,16 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 
 from kitty import claims as C
 from kitty import ledger as L
 
-IST_DATE = "%d %b"
+
+
+def day_month(d: date) -> str:
+    return f"{d.day} {d:%b}"
+
 
 
 @dataclass(frozen=True)
@@ -139,7 +143,7 @@ class Clerk:
         tid = self._next("t")
         self.transfers[tid] = TransferRecord(tid, item)
         self._log("held", id=tid, owner=owner.id)
-        return [Post(owner.desk_room, f"**{tid}** ready [ref {item.ref}]: you paid {self._name(item.to_id)} {C.rupees(item.amount_paise)} on {item.date:{IST_DATE}}.\nReply `release {tid}` to tell the group, or `drop {tid}`.")]
+        return [Post(owner.desk_room, f"**{tid}** ready [ref {item.ref}]: you paid {self._name(item.to_id)} {C.rupees(item.amount_paise)} on {day_month(item.date)}.\nReply `release {tid}` to tell the group, or `drop {tid}`.")]
 
     def _propose_answer(self, owner: Person, item: C.TransferAnswer) -> list[Post]:
         rec = self.transfers.get(item.transfer_id)
@@ -187,7 +191,7 @@ class Clerk:
             rec.status, rec.conflict_with = "conflict_hold", conflict.id
             conflict.status, conflict.conflict_with = "conflict_hold", rec.id
             self._log("conflict", ids=[rec.id, conflict.id])
-            posts.append(Post(self.group_room, f"**Possible conflict:** {conflict.id} and {rec.id} look like one expense paid by two people ({C.rupees(rec.claim.amount_paise)}, {rec.claim.category}, {rec.claim.date:{IST_DATE}}). Neither counts until one owner drops theirs."))
+            posts.append(Post(self.group_room, f"**Possible conflict:** {conflict.id} and {rec.id} look like one expense paid by two people ({C.rupees(rec.claim.amount_paise)}, {rec.claim.category}, {day_month(rec.claim.date)}). Neither counts until one owner drops theirs."))
             return posts
         rec.status = "released"
         self._log("released", id=rec.id, by=owner.id)
@@ -212,7 +216,7 @@ class Clerk:
         receiver = self.people[rec.claim.to_id]
         return [
             Post(owner.desk_room, f"{rec.id} released."),
-            Post(self.group_room, f"**{rec.id}** {self._name(rec.claim.from_id)} says they paid {receiver.name} {C.rupees(rec.claim.amount_paise)} on {rec.claim.date:{IST_DATE}}. Not counted until {receiver.name} confirms."),
+            Post(self.group_room, f"**{rec.id}** {self._name(rec.claim.from_id)} says they paid {receiver.name} {C.rupees(rec.claim.amount_paise)} on {day_month(rec.claim.date)}. Not counted until {receiver.name} confirms."),
             Post(receiver.desk_room, f"KITTY_CHECK {rec.id} from={rec.claim.from_id} amount_paise={rec.claim.amount_paise} date={rec.claim.date.isoformat()}"),
         ]
 
@@ -337,4 +341,4 @@ class Clerk:
 
     def _expense_line(self, claim: C.Expense) -> str:
         shares = ", ".join(f"{self._name(p)} {C.rupees(v)}" for p, v in claim.shares)
-        return f"{C.rupees(claim.amount_paise)} · {claim.category} · {claim.date:{IST_DATE}} · paid by {self._name(claim.payer_id)} · {shares}"
+        return f"{C.rupees(claim.amount_paise)} · {claim.category} · {day_month(claim.date)} · paid by {self._name(claim.payer_id)} · {shares}"

@@ -28,8 +28,9 @@ def main() -> int:
 
     spawn("clerk", "kitty.clerk_daemon")
     time.sleep(2)
-    for person in TRIP["people"]:
+    for i, person in enumerate(TRIP["people"]):
         spawn(person, "kitty.agent_runner", person)
+        spawn(f"{person}-app", "kitty.person_app", person, str(7101 + i))
 
     def stop(*_: object) -> None:
         for p in procs:
@@ -38,7 +39,7 @@ def main() -> int:
 
     signal.signal(signal.SIGINT, stop)
     signal.signal(signal.SIGTERM, stop)
-    print("Trip board: http://127.0.0.1:7100   Mattermost: http://localhost:8065   Ctrl-C stops everything.")
+    print("Demo stage: http://127.0.0.1:7100/stage   Trip board: http://127.0.0.1:7100   Mattermost: http://localhost:8065   Ctrl-C stops everything.")
     while True:
         for p in procs:
             if p.poll() is not None:

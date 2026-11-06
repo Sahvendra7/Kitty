@@ -1,1 +1,127 @@
-<!doctype html><meta charset="utf-8"><title>Kitty</title><pre id=o></pre><script>fetch('/api/board').then(r=>r.json()).then(d=>o.textContent=JSON.stringify(d,null,1))</script>
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitty trip board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --monsoon:#0E3B43; --marigold:#F2A81D; --marigold-soft:#FFF1CF; --hibiscus:#C8175D;
+  --ink:#10272B; --ink-2:#4A6367; --rule:rgba(16,39,43,.16); --mid:#7D8F92;
+  --owes:#16505A; --owed:#F2A81D;
+  --display:"Baloo 2","Mukta",system-ui,sans-serif; --body:"Mukta",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+html{background:var(--marigold-soft)}
+body{font:400 16px/1.45 var(--body);color:var(--ink);background:var(--marigold-soft);min-height:100vh;transition:background .6s}
+.top{background:var(--marigold);padding:18px 24px 16px}
+.top h1{font:800 clamp(30px,5vw,46px)/1 var(--display)}
+.top p{margin-top:4px;font-weight:500}
+section{padding:18px 24px 6px}
+h2{font:700 21px/1.2 var(--display);margin-bottom:10px}
+
+/* The memorable thing: one bar per person, from a shared zero. */
+.standings{display:grid;gap:12px}
+.person{display:grid;grid-template-columns:64px 1fr;align-items:center;gap:10px}
+.person .nm{font:700 18px/1 var(--display)}
+.track{position:relative;height:42px}
+.track::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--mid)}
+.bar{position:absolute;top:8px;height:26px;transition:width .7s cubic-bezier(.2,.8,.2,1),left .7s cubic-bezier(.2,.8,.2,1)}
+.bar.owed{left:50%;background:var(--owed);border-radius:0 4px 4px 0;margin-left:1px}
+.bar.owes{background:var(--owes);border-radius:4px 0 0 4px;margin-right:1px}
+.val{position:absolute;top:0;line-height:42px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.key{display:flex;justify-content:space-between;color:var(--ink-2);font-size:14px;margin:0 0 4px 74px}
+
+.plan{list-style:none;padding:0}
+.plan li{padding:7px 0;border-top:1.5px solid var(--rule);font-size:17px}
+.plan b{font:700 19px/1 var(--display)}
+.plan small{display:block;color:var(--ink-2);font-size:14px}
+
+.pay{display:grid;grid-template-columns:1fr auto;gap:0 12px;padding:9px 0;border-top:1.5px solid var(--rule)}
+.pay .who{font-weight:600}
+.pay .amt{font:700 18px/1.3 var(--display);text-align:right}
+.pay small{grid-column:1/-1;color:var(--ink-2);font-size:14px}
+.pay.challenged small{color:var(--hibiscus);font-weight:600}
+.pay.withdrawn .who,.pay.withdrawn .amt{text-decoration:line-through;color:var(--ink-2)}
+.pay.challenged{animation:pulse 1.2s ease-out 1}
+@keyframes pulse{from{background:rgba(200,23,93,.2)}to{background:transparent}}
+
+.exp{width:100%;border-collapse:collapse}
+.exp td,.exp th{padding:6px 0;border-top:1.5px solid var(--rule);text-align:left;font-weight:400;vertical-align:baseline}
+.exp th{color:var(--ink-2);font-size:14px;border-top:0;padding-top:0}
+.exp td:last-child,.exp th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.exp small{color:var(--ink-2)}
+.empty{color:var(--ink-2)}
+footer{padding:14px 24px 24px;color:var(--ink-2);font-size:14px;max-width:70ch}
+
+/* Everyone's square: the page itself turns marigold. */
+body.square{background:var(--marigold)}
+body.square section,body.square footer{--rule:rgba(16,39,43,.25)}
+body.square .top h1{font-size:clamp(44px,9vw,84px)}
+body.square .ink-2{color:var(--ink)}
+.err{background:var(--hibiscus);color:#fff;padding:8px 24px}
+@media (prefers-reduced-motion:reduce){.bar,body{transition:none}.pay.challenged{animation:none}}
+</style>
+</head>
+<body>
+<div class="err" id="err" hidden></div>
+<div class="top"><h1 id="title">Kitty</h1><p id="sub"></p></div>
+<section aria-labelledby="st"><h2 id="st">Where everyone stands</h2><div class="key"><span>owes</span><span>is owed</span></div><div class="standings" id="bars"></div></section>
+<section id="planWrap" hidden aria-labelledby="pl"><h2 id="pl">Payments that would settle it</h2><ul class="plan" id="plan"></ul></section>
+<section id="payWrap" hidden aria-labelledby="pa"><h2 id="pa">Payments people have reported</h2><div id="pays"></div></section>
+<section aria-labelledby="ex"><h2 id="ex">Counted expenses</h2><div id="exps"></div></section>
+<footer>This board shows only what's in the group room: dates, amounts, categories and who shared. It never receives merchant names or statements. Kitty never moves money. All data in this demo is synthetic.</footer>
+<script>
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function money(p){const n=Math.abs(p);const w=Math.floor(n/100);const f=String(n%100).padStart(2,"0");return "₹"+w.toLocaleString("en-IN")+"."+f}
+const dm=d=>new Date(d+"T12:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+const NOTE={awaiting_receiver:p=>`Not counted until ${p.to} confirms.`,challenged:p=>`Not confirmed: ${p.to}'s side shows nothing. Both agents are re-checking privately.`,confirmed:()=>"Confirmed by both sides.",withdrawn:p=>p.reason==="payment_failed"?"Withdrawn: the payment failed and never arrived.":"Withdrawn."};
+let last="";
+function bars(d){
+  const max=Math.max(1,...d.balances.map(b=>Math.abs(b.paise)));
+  const host=$("bars");
+  d.balances.forEach(b=>{
+    let row=host.querySelector(`[data-n="${CSS.escape(b.name)}"]`);
+    if(!row){row=document.createElement("div");row.className="person";row.dataset.n=b.name;row.innerHTML=`<span class="nm">${esc(b.name)}</span><div class="track"><div class="bar"></div><span class="val"></span></div>`;host.append(row)}
+    const pct=Math.abs(b.paise)/max*42,bar=row.querySelector(".bar"),val=row.querySelector(".val");
+    bar.className="bar "+(b.paise<0?"owes":"owed");
+    bar.style.width=pct+"%";
+    bar.style.left=b.paise<0?(50-pct)+"%":"50%";
+    const label=b.paise===0?"square":`${money(b.paise)} ${b.paise<0?"owes":"is owed"}`;
+    val.textContent=label;
+    row.title=`${b.name}: ${label}`;
+    row.setAttribute("aria-label",`${b.name}: ${label}`);
+    if(b.paise<0){val.style.left="";val.style.right=pct>22?`calc(50% + 10px)`:`calc(50% + ${pct}% + 8px)`;val.style.color=pct>22?"#fff":"var(--ink)"}
+    else{val.style.right="";val.style.left=pct>22?`calc(50% + 10px)`:`calc(50% + ${pct}% + 8px)`;val.style.color="var(--ink)"}
+  });
+}
+function draw(d){
+  const square=d.expenses.some(e=>e.status==="released")&&d.balances.every(b=>b.paise===0)&&!d.transfers.some(t=>["awaiting_receiver","challenged"].includes(t.status))&&d.held_count===0;
+  document.body.classList.toggle("square",square);
+  $("title").textContent=square?"Everyone's square.":d.trip.name;
+  const nExp=d.expenses.filter(e=>e.status==="released").length;
+  const nConf=d.transfers.filter(t=>t.status==="confirmed").length;
+  $("sub").textContent=`${dm(d.trip.start)} to ${dm(d.trip.end)}. ${nExp} expense${nExp===1?"":"s"} counted, ${nConf} payment${nConf===1?"":"s"} confirmed by both sides${d.held_count?`, ${d.held_count} waiting on their owner's release`:""}.`;
+  bars(d);
+  $("planWrap").hidden=!d.plan.length;
+  $("plan").innerHTML=d.plan.map(p=>`<li>${esc(p.from)} pays ${esc(p.to)} <b>${money(p.paise)}</b></li>`).join("");
+  $("payWrap").hidden=!d.transfers.length;
+  $("pays").innerHTML=d.transfers.slice().reverse().map(t=>`<div class="pay ${esc(t.status)}"><span class="who">${esc(t.from)} to ${esc(t.to)}</span><span class="amt">${money(t.amount_paise)}</span><small>${esc((NOTE[t.status]||(()=>t.status))(t))}</small></div>`).join("");
+  const exps=d.expenses.filter(e=>e.status==="released").slice().reverse();
+  $("exps").innerHTML=exps.length?`<table class="exp"><tr><th>What</th><th>Amount</th></tr>${exps.map(e=>`<tr title="${esc(e.shares.map(s=>`${s.name} ${money(s.paise)}`).join(", "))}"><td>${esc(e.category[0].toUpperCase()+e.category.slice(1))}, paid by ${esc(e.payer)}<br><small>${dm(e.date)}. Shared by ${esc(e.shares.map(s=>s.name).join(", "))}</small></td><td>${money(e.amount_paise)}</td></tr>`).join("")}</table>`:`<p class="empty">Nothing yet. Expenses appear here once their owner releases them.</p>`;
+}
+async function poll(){
+  try{
+    const r=await fetch("/api/board");if(!r.ok)throw 0;
+    const d=await r.json();$("err").hidden=true;
+    const s=JSON.stringify(d);if(s!==last){last=s;draw(d)}
+  }catch(e){$("err").textContent="Can't reach the clerk. Is run_all.py still going?";$("err").hidden=false}
+}
+poll();setInterval(poll,800);
+</script>
+</body>
+</html>

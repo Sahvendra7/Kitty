@@ -128,3 +128,28 @@ own release, and Arjun releasing Meera's claim from two rooms. All refused, 10/1
 **Gate 1 decision: PASS, with one open item.** Multiple owners, isolation, clerk relay and release enforcement are all demonstrated
 live. Gate 1C's live attack on the model is still open because the CLI is not logged in. We continue because the model's zero-tools
 state is reported by the CLI itself, and because the whole flow also runs with no model at all.
+
+### Fri 6 Nov, 23:38 - "flaky" setup that was not flaky
+
+The third setup run failed: `never saw "Hi, it's Priya"`. The server log showed the first error was
+`Unable to create the new team membership because the team has reached the limit of members`. Mattermost defaults to 50
+members per team, and every setup and spike run adds eight accounts. The bridge swallows that error
+(`except Exception: pass` in `add_user_to_team`), so bots then fail to join channels and messages simply never arrive. Setup
+now raises the limit on our local stack. Anyone re-running a Switch template many times on one Mattermost team could hit this.
+
+### Fri 6 Nov, 23:31-23:41 - product UI (done, tested by clicking)
+
+`app/person.html` and `kitty/person_app.py`: one process per person on its own port, holding only that person's Mattermost session.
+It posts as them, so the sender id is real. `app/board.html`: the public trip board, fed only by the clerk's released facts.
+`app/stage.html`: all four side by side, for recording. Design notes: color carries the boundary (teal is private, a paper chit is
+your desk, marigold is the group), and one line at the top of every screen says who can see it.
+
+Found by looking at screenshots, not by tests: `hidden` lost to `display:inline-block`, so badges read "0"; a loose regex left a
+trailing comma on share amounts (`₹1,600.00,`), and dates read "09 Oct"; the Withdraw button stayed after use; small bar labels
+overlapped their bars; Switch's own auto-greetings ("Hey! I'm on standby") leaked into the feed.
+
+Full flow driven through the apps: withdraw, synthetic payments, re-scan, release, answer. Ended at zero balances with verify 33/33.
+
+Read the official rules at this point. Best Blog is judged on "clarity, accuracy, and how much it helps a first-time Switch user",
+so the blog has to teach setup, not only tell the story. Submission needs a repo, demo video and README. **Open question for the
+owner:** judges ask whether someone can "clone the repo and reproduce it", and our repo is private.

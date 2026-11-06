@@ -43,7 +43,9 @@ def main(me: str) -> None:
 
     conn = agent.listen()
     conn.ready.wait(15)
-    agent.say(targets["private"], GREETING.format(name=names[me], trip=trip_doc["name"]))
+    history = agent.result("read_context", room_id=targets["private"], limit=20)["threads"]
+    if not any(t["root"]["body"].startswith(f"Hi {names[me]}. I'm your own agent") for t in history):
+        agent.say(targets["private"], GREETING.format(name=names[me], trip=trip_doc["name"]))
     log.info("listening. Brain: %s", type(brain).__name__)
     while True:
         try:

@@ -3,7 +3,7 @@
   {
    "check": "group room history was readable and is not empty",
    "pass": true,
-   "detail": "30 messages"
+   "detail": "26 messages"
   },
   {
    "check": "group lines were actually parsed (otherwise everything below is vacuous)",
@@ -43,12 +43,12 @@
   {
    "check": "group room has messages to scan",
    "pass": true,
-   "detail": "30"
+   "detail": "26"
   },
   {
    "check": "no statement text in group room",
    "pass": true,
-   "detail": "87 terms, 30 messages"
+   "detail": "87 terms, 26 messages"
   },
   {
    "check": "priya's desk has messages to scan",
@@ -88,7 +88,7 @@
   {
    "check": "the clerk is the only agent in the group room",
    "pass": true,
-   "detail": "['kitty-clerk-0ec2']"
+   "detail": "['kitty-clerk-b68f']"
   },
   {
    "check": "priya's agent is refused the group room",

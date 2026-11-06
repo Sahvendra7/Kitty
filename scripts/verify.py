@@ -96,7 +96,7 @@ def main() -> int:
     withdrawn_or_held = set()
     for text in group_text:
         if m := LINE.match(text):
-            shares = tuple((ids[n], rupees_to_paise(v)) for n, v in re.findall(r"(\w+) (₹[\d,.]+)", m.group(6)))
+            shares = tuple((ids[n], rupees_to_paise(v)) for n, v in re.findall(r"(\w+) (₹[\d,]*\d\.\d{2})", m.group(6)))
             shown[m.group(1)] = {"payer": ids[m.group(5)]}
             lines.append(L.Line(ids[m.group(5)], rupees_to_paise(m.group(2)), shares))
     payments: list[L.Payment] = []

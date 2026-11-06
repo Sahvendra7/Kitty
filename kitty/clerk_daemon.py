@@ -92,6 +92,10 @@ def main() -> None:
     def page() -> FileResponse:
         return FileResponse(ROOT / "app" / "board.html")
 
+    @app.get("/stage")
+    def stage() -> FileResponse:
+        return FileResponse(ROOT / "app" / "stage.html")
+
     threading.Thread(target=lambda: uvicorn.run(app, host="127.0.0.1", port=7100, log_level="warning"), daemon=True).start()
 
     conn = agent.listen()

@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kitty</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --monsoon:#0E3B43; --monsoon-2:#16505A; --glass:#E4F3EF; --glass-2:#CFE8E1;
+  --marigold:#F2A81D; --marigold-soft:#FFF1CF; --hibiscus:#C8175D;
+  --ink:#10272B; --ink-2:#4A6367; --white:#FFFFFF;
+  --display:"Baloo 2","Mukta",system-ui,sans-serif; --body:"Mukta",system-ui,sans-serif;
+}
+*{box-sizing:border-box;margin:0}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{font:400 16px/1.45 var(--body);color:var(--ink);background:var(--monsoon);display:flex;flex-direction:column;overflow:hidden}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--marigold);outline-offset:2px}
+header{padding:14px 18px 10px;display:flex;align-items:baseline;justify-content:space-between;color:var(--white)}
+header h1{font:700 24px/1 var(--display)}
+header span{font-size:14px;opacity:.75}
+
+/* Who can see this: the one line that is always true, and always visible. */
+.who{padding:8px 18px;font-size:14px;line-height:1.3;font-weight:500}
+main{flex:1;overflow-y:auto;padding:14px 14px 18px;scroll-behavior:smooth}
+body[data-tab=private]{background:var(--monsoon)} body[data-tab=private] .who{background:var(--monsoon-2);color:var(--glass)}
+body[data-tab=desk]{background:var(--monsoon)} body[data-tab=desk] .who{background:var(--glass-2);color:var(--ink)} body[data-tab=desk] main{background:var(--glass)}
+body[data-tab=group]{background:var(--monsoon)} body[data-tab=group] .who{background:var(--marigold);color:var(--ink)} body[data-tab=group] main{background:var(--marigold-soft)}
+
+/* Just you */
+.bubble{max-width:86%;padding:9px 13px;margin:0 0 8px;border-radius:4px 14px 14px 14px;background:var(--monsoon-2);color:var(--white);white-space:pre-wrap;overflow-wrap:anywhere}
+.bubble.mine{margin-left:auto;background:var(--glass);color:var(--ink);border-radius:14px 4px 14px 14px}
+.bubble code{font:600 14px var(--body);background:rgba(255,255,255,.16);padding:0 5px;border-radius:4px}
+.bubble.mine code{background:rgba(0,0,0,.08)}
+.asks{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px}
+.ask{border:0;border-radius:999px;padding:7px 14px;background:var(--marigold);color:var(--ink);font-weight:600;cursor:pointer}
+.ask.quiet{background:transparent;color:var(--glass);box-shadow:inset 0 0 0 1.5px var(--glass)}
+.ask.danger{background:var(--hibiscus);color:var(--white)}
+.ask[aria-pressed=true]{background:var(--glass);color:var(--ink);box-shadow:none}
+.lede{color:var(--glass);margin-bottom:12px}
+form{display:flex;gap:8px;padding:10px 12px;background:var(--monsoon-2)}
+form input{flex:1;min-width:0;border:0;border-radius:999px;padding:9px 14px;background:var(--white)}
+form button{border:0;border-radius:999px;padding:9px 16px;background:var(--marigold);font-weight:600;cursor:pointer}
+
+/* Your desk: only chits get a torn edge, because only chits travel. */
+.chit{position:relative;background:var(--white);padding:16px 16px 14px;margin:0 2px 16px;
+  --t:7px;-webkit-mask:conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/calc(2*var(--t)) 51% repeat-x,linear-gradient(#000 0 0) bottom/100% 50% no-repeat;mask:conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/calc(2*var(--t)) 51% repeat-x,linear-gradient(#000 0 0) bottom/100% 50% no-repeat}
+.chit .amt{font:700 28px/1.1 var(--display)}
+.chit .what{color:var(--ink-2);margin:2px 0 10px}
+.chit ul{list-style:none;padding:0;margin:0 0 12px;display:grid;grid-template-columns:1fr auto;gap:0 12px;font-size:15px}
+.chit li{display:contents}
+.chit li span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.chit .acts{display:flex;gap:8px;flex-wrap:wrap}
+.btn{border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer}
+.btn.go{background:var(--marigold);color:var(--ink)} .btn.no{background:var(--glass);color:var(--ink)} .btn.warn{background:var(--hibiscus);color:var(--white)}
+.chit .state{font-weight:600;color:var(--ink-2);font-size:15px}
+.chit.done{opacity:.72}
+.chit.alert{box-shadow:inset 4px 0 0 var(--hibiscus)}
+.chit.alert .state{color:var(--hibiscus)}
+.chit.dropping{animation:drop .55s cubic-bezier(.4,0,.8,.3) forwards}
+@keyframes drop{to{transform:translateY(-180px) rotate(-6deg) scale(.6);opacity:0}}
+.empty{color:var(--ink-2);padding:18px 4px}
+details{margin-top:18px;color:var(--ink-2);font-size:14px}
+summary{cursor:pointer;font-weight:600}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.4 ui-monospace,Menlo,monospace;background:var(--glass-2);padding:8px;margin-top:6px;border-radius:6px}
+.notice{background:var(--white);border-left:4px solid var(--hibiscus);padding:8px 10px;margin-bottom:12px;font-size:15px}
+
+/* The group */
+.line{display:grid;grid-template-columns:1fr auto;gap:0 12px;padding:9px 0;border-bottom:1.5px solid rgba(16,39,43,.14)}
+.line b{font:600 18px/1.2 var(--display)}
+.line small{grid-column:1/-1;color:var(--ink-2);font-size:14px}
+.note{padding:9px 0;border-bottom:1.5px solid rgba(16,39,43,.14);overflow-wrap:anywhere}
+.note.mine{color:var(--ink-2);font-size:14px}
+.note.big{font:700 22px/1.2 var(--display);border:0;padding:14px 0}
+.note.bad{color:var(--hibiscus);font-weight:600}
+.note table{width:100%;border-collapse:collapse;margin-top:2px}.note td{padding:2px 0}.note td:nth-child(2){text-align:right;font-variant-numeric:tabular-nums;font-weight:600}.note td:nth-child(3){padding-left:10px;color:var(--ink-2)}
+.quick{display:flex;gap:8px;margin-bottom:10px}
+
+nav{display:grid;grid-template-columns:repeat(3,1fr);background:var(--ink)}
+nav button{border:0;background:none;color:var(--glass);padding:11px 2px 12px;cursor:pointer;font-weight:600;position:relative}
+nav button[aria-current=page]{color:var(--ink)}
+nav button[data-t=private][aria-current=page]{background:var(--glass)}
+nav button[data-t=desk][aria-current=page]{background:var(--white)}
+nav button[data-t=group][aria-current=page]{background:var(--marigold)}
+nav i{font-style:normal;display:inline-block;min-width:19px;margin-left:5px;border-radius:999px;background:var(--marigold);color:var(--ink);font-size:13px;line-height:19px}
+.error{background:var(--hibiscus);color:var(--white);padding:8px 18px;font-size:14px}
+@media (prefers-reduced-motion:reduce){.chit.dropping{animation:none;opacity:.4}main{scroll-behavior:auto}}
+</style>
+</head>
+<body data-tab="private">
+<header><h1 id="name">Kitty</h1><span id="trip"></span></header>
+<div class="who" id="who"></div>
+<div class="error" id="err" hidden></div>
+<main id="main" tabindex="-1"></main>
+<form id="form" autocomplete="off"><input id="input" aria-label="Message your agent" placeholder="Tell your agent"><button>Send</button></form>
+<nav aria-label="Rooms">
+  <button data-t="private">Just you</button>
+  <button data-t="desk">Your desk<i id="count" hidden></i></button>
+  <button data-t="group">The group</button>
+</nav>
+<script>
+const WHO={private:"Only you and your agent are here. The clerk can't get in.",desk:"You, your agent and the clerk. Nothing goes further until you release it.",group:"Everyone on the trip can see this."};
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const inline=s=>esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`(.+?)`/g,"<code>$1</code>");
+let tab="private",data=null,last="",picked=new Set(),dropping=null;
+try{tab=sessionStorage.getItem("tab")||tab}catch(e){}
+
+async function say(room,text){
+  const r=await fetch("/api/say",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room,text})});
+  if(!r.ok){showError("Couldn't send that. Check that Mattermost is running, then try again.")}
+  poll();
+}
+function showError(t){const e=$("err");e.textContent=t;e.hidden=!t}
+
+function privateView(d){
+  const msgs=d.private;
+  if(!msgs.length) return `<p class="lede">Your agent hasn't said hello yet. Check that it's running.</p>`;
+  let html="";
+  for(const m of msgs) html+=`<div class="bubble ${m.mine?"mine":""}">${inline(m.text)}</div>`;
+  const lastMsg=msgs[msgs.length-1];
+  if(lastMsg.mine) return html;
+  const t=lastMsg.text;
+  if(/Say `start`/.test(t)){
+    html+=`<div class="asks"><button class="ask" data-say="private" data-text="start">Go through my statement</button></div>`;
+  } else if(/Was this shared with the group\?/.test(t)){
+    const others=d.people.filter(p=>p.id!==d.me.id);
+    html+=`<div class="asks"><button class="ask" data-say="private" data-text="shared">Everyone shared it</button><button class="ask quiet" data-say="private" data-text="personal">Just me</button></div><div class="asks">`;
+    for(const p of others) html+=`<button class="ask quiet" data-pick="${esc(p.id)}" aria-pressed="${picked.has(p.id)}">${esc(p.name)}</button>`;
+    if(picked.size) html+=`<button class="ask" data-share>Shared with ${[...picked].map(id=>esc(d.people.find(p=>p.id===id).name)).join(" and ")}</button>`;
+    html+=`</div>`;
+  } else if(/failed and was reversed/.test(t)){
+    const id=(t.match(/withdraw (t\d+)/)||[])[1];
+    const open=d.desk.slips.some(x=>x.id===id&&x.kind==="transfer"&&x.state==="challenged");
+    if(id&&open) html+=`<div class="asks"><button class="ask danger" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw ${id}: the payment failed</button></div>`;
+    else html+=`<div class="asks"><button class="ask quiet" data-say="private" data-text="rescan">Check my statement again</button></div>`;
+  } else if(/Check your desk|on your desk|Your desk has/.test(t)){
+    html+=`<div class="asks"><button class="ask quiet" data-go="desk">Open your desk</button><button class="ask quiet" data-say="private" data-text="rescan">Check my statement again</button></div>`;
+  }
+  return html;
+}
+
+function chit(s){
+  const id=s.id;let head="",what="",rows="",acts="",state="",cls="chit";
+  if(s.kind==="expense"){
+    head=s.amount;what=`${esc(s.category[0].toUpperCase()+s.category.slice(1))}, ${esc(s.date)}. You paid.`;
+    rows="<ul>"+s.shares.map(x=>`<li><span>${esc(x.name)}</span><span>${esc(x.amount)}</span></li>`).join("")+"</ul>";
+  }else if(s.kind==="transfer"){
+    head=s.amount;what=`You paid ${esc(s.to)} on ${esc(s.date)}.`;
+  }else{
+    head=s.amount;what=s.received?`From ${esc(s.from)}. Your agent found that it reached you.`:`From ${esc(s.from)}. Your agent found that it did not reach you.`;
+  }
+  if(s.state==="waiting"){
+    acts=`<div class="acts"><button class="btn go" data-release="${id}">${s.kind==="answer"?"Send this answer":"Release to the group"}</button><button class="btn no" data-say="desk" data-text="drop ${id}">${s.kind==="answer"?"Keep private":"Drop"}</button></div>`;
+  }else{
+    state={released:s.kind==="transfer"?"Released. Waiting for the other side.":"Released to the group.",dropped:"Dropped. The group never saw it.",sent:"Answer sent.",kept:"Kept private.",confirmed:"Confirmed by both sides.",challenged:"Not confirmed. Your agent is re-checking privately.",withdrawn:"Withdrawn."}[s.state]||s.state;
+    cls+=s.state==="challenged"?" alert":" done";
+    if(s.state==="challenged") acts=`<div class="acts" style="margin-top:10px"><button class="btn warn" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw: the payment failed</button></div>`;
+  }
+  if(dropping===id) cls+=" dropping";
+  return `<article class="${cls}"><div class="amt">${esc(head)}</div><p class="what">${what}</p>${rows}${state?`<p class="state">${esc(state)}</p>`:""}${acts}</article>`;
+}
+
+function deskView(d){
+  const slips=d.desk.slips,waiting=slips.filter(s=>s.state==="waiting"),rest=slips.filter(s=>s.state!=="waiting");
+  let html=d.desk.notices.slice(-1).map(n=>`<div class="notice">${esc(n)}</div>`).join("");
+  if(!slips.length) html+=`<p class="empty">Nothing here yet. When your agent files something, it waits here for you.</p>`;
+  html+=waiting.map(chit).join("")+rest.slice().reverse().map(chit).join("");
+  if(d.desk.raw.length) html+=`<details><summary>See exactly what the clerk receives</summary><pre>${esc(d.desk.raw.join("\n\n"))}</pre></details>`;
+  return html;
+}
+
+function table(text){
+  const rows=text.split("\n").filter(l=>l.startsWith("|")&&!/^\|[-:|\s]+\|$/.test(l)&&!/^\| Person/.test(l));
+  const rest=text.split("\n").filter(l=>!l.startsWith("|")).join(" ").trim();
+  return "<table>"+rows.map(r=>"<tr>"+r.split("|").slice(1,-1).map(c=>`<td>${esc(c.trim())}</td>`).join("")+"</tr>").join("")+"</table>"+(rest?`<p>${inline(rest)}</p>`:"");
+}
+function groupView(d){
+  let html=`<div class="quick"><button class="btn go" data-say="group" data-text="balances">Show balances</button><button class="btn no" data-say="group" data-text="settle">Suggest payments</button></div>`;
+  const feed=d.group.slice().reverse();
+  for(const f of feed){
+    if(f.type==="expense"){
+      html+=`<div class="line"><b>${esc(f.category[0].toUpperCase()+f.category.slice(1))}, paid by ${esc(f.payer)}</b><b>${esc(f.amount)}</b><small>${esc(f.date)}. ${f.shares.map(x=>`${esc(x.name)} ${esc(x.amount)}`).join(", ")}</small></div>`;
+    }else if(/^\| Person/.test(f.text)){
+      html+=`<div class="note">${table(f.text)}</div>`;
+    }else{
+      const big=/Everyone's square/.test(f.text),bad=/NOT CONFIRMED|Possible conflict/.test(f.text);
+      const who=f.mine||f.from?"":"";
+      const isHuman=!/^\*\*|^Kitty is open|^Suggested|^Nothing to settle|^Refused|^Conflict|^\d+ expenses|^No released/.test(f.text);
+      html+=`<div class="note ${big?"big":""} ${bad?"bad":""} ${isHuman?"mine":""}">${isHuman?`${esc(f.from)}: `:""}${inline(f.text)}${who}</div>`;
+    }
+  }
+  return html;
+}
+
+function render(){
+  if(!data) return;
+  const d=data;
+  $("name").textContent=d.me.name;$("trip").textContent=d.trip;document.title=`${d.me.name}: Kitty`;
+  document.body.dataset.tab=tab;$("who").textContent=WHO[tab];
+  $("form").hidden=tab!=="private";
+  document.querySelectorAll("nav button").forEach(b=>b.dataset.t===tab?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
+  const waiting=d.desk.slips.filter(s=>s.state==="waiting").length;
+  $("count").hidden=!waiting;$("count").textContent=waiting;
+  const main=$("main");const nearEnd=main.scrollHeight-main.scrollTop-main.clientHeight<80;
+  main.innerHTML=tab==="private"?privateView(d):tab==="desk"?deskView(d):groupView(d);
+  if(tab==="private"&&nearEnd) main.scrollTop=main.scrollHeight;
+}
+async function poll(){
+  try{
+    const r=await fetch("/api/feed");const j=await r.json();
+    if(!r.ok){showError(j.error||"Something's wrong with this app.");return}
+    showError("");
+    const s=JSON.stringify(j);
+    if(s!==last){last=s;data=j;render()}
+  }catch(e){showError("This app isn't responding. Is run_all.py still going?")}
+}
+document.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b)return;
+  if(b.dataset.t){tab=b.dataset.t;try{sessionStorage.setItem("tab",tab)}catch(_){}render();$("main").scrollTop=tab==="private"?1e6:0;return}
+  if(b.dataset.go){tab=b.dataset.go;try{sessionStorage.setItem("tab",tab)}catch(_){}render();return}
+  if(b.dataset.say){say(b.dataset.say,b.dataset.text);return}
+  if(b.dataset.pick){picked.has(b.dataset.pick)?picked.delete(b.dataset.pick):picked.add(b.dataset.pick);render();return}
+  if("share" in b.dataset){const list=[...picked].join(" ");picked.clear();say("private",`shared ${list}`);return}
+  if(b.dataset.release){
+    const id=b.dataset.release;dropping=id;render();
+    const delay=matchMedia("(prefers-reduced-motion:reduce)").matches?0:500;
+    setTimeout(()=>{dropping=null;say("desk",`release ${id}`)},delay);
+  }
+});
+$("form").addEventListener("submit",e=>{e.preventDefault();const v=$("input").value.trim();if(!v)return;$("input").value="";say("private",v)});
+poll();setInterval(poll,900);
+</script>
+</body>
+</html>
