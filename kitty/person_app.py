@@ -43,12 +43,16 @@ ANSWER = re.compile(r"^Your agent found that (t\d+) \(([₹$€£][\d,.]+) from 
 GROUP_EXPENSE = re.compile(r"^\*\*(c\d+)\*\* ([₹$€£][\d,.]+) · (\w+) · (\d+ \w+) · paid by (\w+) · (.+)$")
 SHARE = re.compile(r"(\w+) ([₹$€£][\d,]*\d\.\d{2})")
 HIDDEN = re.compile(r"^(Hi, it's \w+\. \[|\w+'s agent checking in\. \[|Kitty clerk here\.|Hey! I'm on standby|Hi there! Just @)")
-MACHINE = re.compile(r"^(KITTY/1 |KITTY_CHECK |KITTY_RECHECK )")
+MACHINE = re.compile(r"^(KITTY/1 |KITTY_CHECK |KITTY_RECHECK |KITTY_POT_CHECK )")
+READY_CONTRIBUTION = re.compile(r"^\*\*(p\d+)\*\* ready \[ref [a-z0-9]+\]: you paid (\w+) ([₹$€£][\d,.]+) on (\d+ \w+)\.")
+TO_CHECK = re.compile(r"^\*\*(p\d+)\*\* to check: (\w+) says they paid you ([₹$€£][\d,.]+) on (\d+ \w+)\. Your agent: (found it|a different amount|nothing yet)\.")
+ASKED_ABOUT = re.compile(r"^\w+ asks about (p\d+): \w+\. (.+)$")
 DESK_COMMAND = re.compile(r"^\s*(release|drop|withdraw)\s", re.I)
 REVIEW_COMMAND = re.compile(r"^\s*(start|go|review|rescan)\s*$", re.I)
 
 
-def build_desk(posts: list[dict], group_text: list[str]) -> dict:
+def build_desk(posts: list[dict], group_text: list[str], pot_room: dict[str, dict] | None = None) -> dict:
+    """`pot_room` is a Pot trip's contributions as the group room reads, and None otherwise."""
     slips: dict[str, dict] = {}
     raw: list[str] = []
     notices: list[str] = []
@@ -67,6 +71,16 @@ def build_desk(posts: list[dict], group_text: list[str]) -> dict:
             slips[m[1]] = {"id": m[1], "kind": "transfer", "to": m[2], "amount": m[3], "date": m[4], "state": "waiting"}
         elif m := ANSWER.match(text):
             slips[f"{m[1]}?"] = {"id": m[1], "kind": "answer", "amount": m[2], "from": m[3], "received": m[4] == "reached you", "state": "waiting"}
+        elif pot_room is not None and (m := READY_CONTRIBUTION.match(text)):
+            slips[m[1]] = {"id": m[1], "kind": "contribution", "to": m[2], "amount": m[3], "date": m[4], "state": "waiting"}
+        elif pot_room is not None and (m := TO_CHECK.match(text)):
+            slips[m[1]] = {"id": m[1], "kind": "pot_review", "from": m[2], "amount": m[3], "date": m[4], "candidate": m[5], "state": "waiting"}
+        elif pot_room is not None and (m := ASKED_ABOUT.match(text)):
+            if m[1] in slips:
+                slips[m[1]]["note"] = m[2]
+        elif pot_room is not None and (m := re.match(r"^(p\d+) dropped", text)):
+            if m[1] in slips:
+                slips[m[1]]["state"] = "dropped"
         elif m := re.match(r"^([ct]\d+) released\.", text):
             if m[1] in slips:
                 slips[m[1]]["state"] = "released"
@@ -86,6 +100,11 @@ def build_desk(posts: list[dict], group_text: list[str]) -> dict:
             notices.append(text)
     joined = "\n".join(group_text)
     for slip in slips.values():
+        if slip["kind"] in ("contribution", "pot_review") and slip["id"] in pot_room:
+            status, basis = pot_room[slip["id"]]["status"], pot_room[slip["id"]]["basis"]
+            slip["basis"] = basis
+            if slip["kind"] == "contribution" or status != "submitted":
+                slip["state"] = status
         if slip["kind"] == "transfer" and slip["state"] == "released":
             if f"**{slip['id']} confirmed by both sides" in joined:
                 slip["state"] = "confirmed"
@@ -108,6 +127,26 @@ def build_group(posts: list[dict]) -> list[dict]:
         else:
             feed.append({"type": "note", "text": text, "from": post["from"], "mine": post["mine"]})
     return feed
+
+
+def pot_view(group_text: list[str], me: str, people: dict[str, dict], treasurer: str) -> dict:
+    """Asked, confirmed and outstanding, from the group room's own text."""
+    from kitty.pot import parse_room
+
+    room = parse_room(group_text, {d["name"]: p for p, d in people.items()})
+    credited = {p: 0 for p in people}
+    for pay in room.payments:
+        credited[pay.from_id] += pay.amount_paise
+
+    def line(person: str) -> dict:
+        return {"asked": room.asked[person], "credited": credited[person], "outstanding": max(0, room.asked[person] - credited[person]), "above": max(0, credited[person] - room.asked[person])}
+
+    return {
+        "treasurer": people[treasurer]["name"],
+        "is_treasurer": me == treasurer,
+        "mine": line(me),
+        "roll": [{"name": d["name"], **line(p)} for p, d in people.items() if p != treasurer],
+    }
 
 
 class Say(BaseModel):
@@ -234,7 +273,14 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
         except httpx.HTTPError:
             return JSONResponse({"error": "Can't reach Mattermost. Check that it's running."}, status_code=502)
         group_text = [p["text"] for p in group]
+        treasurer = trip.get("treasurer")
+        if treasurer:
+            from kitty.pot import parse_room
+
+            pot_room = parse_room(group_text, {d["name"]: p for p, d in people.items()}).contributions
+        extra = {"pot": pot_view(group_text, me, people, treasurer)} if treasurer else {}
         return JSONResponse({
+            **extra,
             "me": {"id": me, "name": my_name},
             "people": [{"id": p, "name": d["name"]} for p, d in people.items()],
             "trip": trip["name"],
@@ -243,7 +289,7 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
             "currency": currency,
             "statement": statement_view(private) if where.in_app else None,
             "private": [{"text": p["text"], "mine": p["mine"]} for p in private if not HIDDEN.match(p["text"])],
-            "desk": build_desk(desk, group_text),
+            "desk": build_desk(desk, group_text, pot_room) if treasurer else build_desk(desk, group_text),
             "group": build_group(group),
         })
 

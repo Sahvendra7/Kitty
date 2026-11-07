@@ -150,9 +150,13 @@ function showError(t){const e=$("err");e.textContent=t;e.hidden=!t}
 /* The clerk's room text carries ids such as c7 and t1, because verify.py reads them. People don't need them. */
 function plainPrivate(t){
   return t.replace(/ To correct it, say `withdraw t\d+ payment_failed` on your desk\. Only the words "payment failed" reach the group\./," Only the words \"payment failed\" reach the group.")
-    .replace(/I re-checked t\d+, and/,"I re-checked that payment, and").replace(/The clerk asked me to re-check t\d+\./,"The clerk asked me to re-check that payment.");
+    .replace(/ To correct it, say `withdraw p\d+ payment_failed` on your desk\. Only the words "payment failed" reach the group\./," Only the words \"payment failed\" reach the group.")
+    .replace(/I re-checked [tp]\d+, and/,"I re-checked that payment, and").replace(/The clerk asked me to re-check [tp]\d+\./,"The clerk asked me to re-check that payment.").replace(/ for p\d+\. Check your UPI app/," for that. Check your UPI app");
 }
 function plainGroup(t){
+  t=t.replace(/ \[d\d+ [0-9a-f]{12}\]$/,"").replace(/^\*\*[pk]\d+\*\* /,"").replace(/^\*\*p\d+ confirmed received by (\w+):\*\*/,"**$1 confirmed it arrived:**")
+    .replace(/^\*\*p\d+ needs clarification\.\*\*/,"**Needs clarifying.**").replace(/^\*\*p\d+ not received, says (\w+)\.\*\*/,"**Not received, says $1.**")
+    .replace(/^\*\*p\d+ withdrawn by (\w+)\.\*\*/,"**Withdrawn by $1.**").replace(/^\*\*Correction of p\d+:\*\*/,"**Correction:**").replace(/^\*\*k\d+ cancelled by (\w+)\.\*\*/,"**$1 cancelled a request for money.**");
   return t.replace(/^\*\*t\d+ confirmed by both sides:\*\*/,"**Confirmed by both sides:**").replace(/^\*\*t\d+ NOT CONFIRMED:\*\*/,"**Not confirmed:**")
     .replace(/^\*\*t\d+ withdrawn by (\w+)\.\*\*/,"**Withdrawn by $1.**").replace(/^\*\*t\d+\*\* /,"")
     .replace(/^\*\*Possible conflict:\*\* c\d+ and c\d+ look/,"**Possible conflict:** two claims look")
@@ -191,8 +195,8 @@ function privateView(d){
   } else if(/I can't reach the model|Something went wrong on my side/.test(t)){
     html+=`<div class="asks"><button class="ask" data-say="private" data-text="rescan">Try again</button></div>`;
   } else if(/failed and was reversed/.test(t)){
-    const id=(t.match(/withdraw (t\d+)/)||[])[1];
-    const open=d.desk.slips.some(x=>x.id===id&&x.kind==="transfer"&&x.state==="challenged");
+    const id=(t.match(/withdraw ([tp]\d+)/)||[])[1];
+    const open=d.desk.slips.some(x=>x.id===id&&((x.kind==="transfer"&&x.state==="challenged")||(x.kind==="contribution"&&["rejected","submitted","needs_clarification"].includes(x.state))));
     if(id&&open) html+=`<div class="asks"><button class="ask danger" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw it: the payment failed</button></div>`;
     else html+=`<div class="asks"><button class="ask quiet" data-say="private" data-text="rescan">Check my statement again</button></div>`;
   } else if(/Check your desk|on your desk|Your desk has/.test(t)){
@@ -203,7 +207,47 @@ function privateView(d){
   return html;
 }
 
+const cash=p=>({INR:"₹",USD:"$",EUR:"€",GBP:"£"}[data.currency]||"")+(p/100).toLocaleString(data.currency==="INR"?"en-IN":"en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
+let potForm={amount:"",day:"",ref:"",show:false,ask:"",who:""};
+function potCard(d){
+  const p=d.pot,inv=s=>esc(potForm[s]);
+  if(p.is_treasurer){
+    const rows=p.roll.map(r=>`<li><span>${esc(r.name)}</span><span>${r.outstanding?`${cash(r.outstanding)} to come`:r.asked?"Paid":"Not asked"}${r.above?`, ${cash(r.above)} above ask`:""}</span></li>`).join("");
+    return `<article class="chit"><div class="amt">The pot</div><p class="what">You hold the group's money. Only you can confirm it arrived. Checking a payment uses your statement on this laptop, and no model. "Go through my statement" is separate, and only for your spending.</p><ul>${rows}</ul>
+      <form data-pot="call" class="stack"><label>Ask for money<input name="ask" inputmode="decimal" placeholder="5000" value="${inv("ask")}"></label><label>Only these people (leave empty for everyone)<input name="who" placeholder="rohan meera" value="${inv("who")}"></label><div class="acts"><button class="btn go">Ask</button></div></form></article>`;
+  }
+  const m=p.mine;
+  return `<article class="chit"><div class="amt">Your contribution</div><p class="what">${esc(p.treasurer)} holds the group's money. It counts once ${esc(p.treasurer)} confirms it arrived.</p>
+    <ul><li><span>Asked</span><span>${cash(m.asked)}</span></li><li><span>Confirmed</span><span>${cash(m.credited)}</span></li><li><span>Outstanding</span><span>${cash(m.outstanding)}</span></li>${m.above?`<li><span>Above ask</span><span>${cash(m.above)}</span></li>`:""}</ul>
+    <form data-pot="paid" class="stack"><label>I paid<input name="amount" inputmode="decimal" placeholder="5000" value="${inv("amount")}"></label><label>On<input type="date" name="day" value="${inv("day")}"></label><label>UPI reference, if you have it<input name="ref" maxlength="16" value="${inv("ref")}"></label><label class="attest"><input type="checkbox" name="show" ${potForm.show?"checked":""}><span>Show the last 4 in the group</span></label><div class="acts"><button class="btn go">File it</button></div></form></article>`;
+}
+function potChit(s){
+  const id=s.id,askBtns=`<details><summary>Ask ${s.kind==="pot_review"?esc(s.from):""}</summary><div class="acts"><button class="btn no" data-say="desk" data-text="ask ${id} amount_differs">The amount differs</button><button class="btn no" data-say="desk" data-text="ask ${id} date_differs">The date differs</button><button class="btn no" data-say="desk" data-text="ask ${id} not_found_yet">I can't find it yet</button></div></details>`;
+  const no=`<button class="btn warn" data-say="desk" data-text="reject ${id} not_received">It didn't arrive</button>`;
+  let what="",acts="",state="",cls="chit";
+  if(s.kind==="contribution"){
+    what=`You paid ${esc(s.to)} on ${esc(s.date)}.`;
+    const undo=`<button class="btn no" data-say="desk" data-text="withdraw ${id} mistaken">Withdraw it</button><button class="btn warn" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw: the payment failed</button>`;
+    if(s.state==="waiting") acts=`<div class="acts"><button class="btn go" data-release="${id}">Release</button><button class="btn no" data-say="desk" data-text="drop ${id}">Drop</button></div>`;
+    else state={submitted:`Waiting for ${esc(s.to)}. Not counted yet.`,needs_clarification:`${esc(s.to)} can't confirm this yet.${s.note?" "+esc(s.note):""}`,confirmed:`${esc(s.to)} confirmed it arrived.`,rejected:`${esc(s.to)} says it didn't arrive. It isn't counted.`,withdrawn:"Withdrawn.",dropped:"Dropped. The group never saw it."}[s.state]||"";
+    if(["submitted","needs_clarification","rejected"].includes(s.state)) acts=`<div class="acts">${undo}</div>`;
+    cls+=["rejected","needs_clarification"].includes(s.state)?" alert":["confirmed","withdrawn","dropped"].includes(s.state)?" done":"";
+  }else{
+    what=`From ${esc(s.from)}, on ${esc(s.date)}. Your agent: ${esc(s.candidate)}.`;
+    const again=`<button class="btn no" data-say="desk" data-text="recheck ${id}">Check again</button>`;
+    if(s.state==="waiting"){
+      if(s.candidate==="found it") acts=`<div class="acts"><button class="btn go" data-say="desk" data-text="confirm ${id}">Confirm it arrived</button>${no}</div>${askBtns}`;
+      else if(s.candidate==="nothing yet") acts=`<div class="acts">${again}${no}</div>${askBtns}<details><summary>Confirm by hand</summary><p class="what">Only if you can see it in your bank app. The group will see that this is on your word.</p><div class="acts"><button class="btn go" data-say="desk" data-text="confirm ${id} manual">Confirm by hand</button></div></details>`;
+      else acts=`<div class="acts">${again}${no}</div>${askBtns}`;
+    }else if(s.state==="needs_clarification"){state="You asked about this.";acts=`<div class="acts">${again}${no}</div>`}
+    else if(s.state==="confirmed"){state=s.basis==="word"?"Confirmed, on your word.":"Confirmed.";acts=`<details><summary>Correct this</summary><p class="what">The group will see the correction, and it changes who owes what.</p><div class="acts"><button class="btn warn" data-say="desk" data-text="correct ${id} reversed">It came back</button><button class="btn warn" data-say="desk" data-text="correct ${id} not_received">It never arrived</button><button class="btn warn" data-say="desk" data-text="correct ${id} mistaken">My mistake</button></div></details>`;cls+=" done"}
+    else if(s.state==="rejected"){state="You said it didn't arrive. It isn't counted.";acts=`<details><summary>Correct this</summary><p class="what">The group will see the correction, and it changes who owes what.</p><div class="acts"><button class="btn go" data-say="desk" data-text="correct ${id} received">It did arrive</button></div></details>`;cls+=" alert"}
+    else{state="Withdrawn.";cls+=" done"}
+  }
+  return `<article class="${cls}"><div class="amt">${esc(s.amount)}</div><p class="what">${what}</p>${state?`<p class="state">${state}</p>`:""}${acts}</article>`;
+}
 function chit(s){
+  if(s.kind==="contribution"||s.kind==="pot_review") return potChit(s);
   const id=s.id;let head="",what="",rows="",acts="",state="",cls="chit";
   if(s.kind==="expense"){
     head=s.amount;what=`${esc(s.category[0].toUpperCase()+s.category.slice(1))}, ${esc(s.date)}. You paid.`;
@@ -233,6 +277,7 @@ function chit(s){
 function deskView(d){
   const slips=d.desk.slips,waiting=slips.filter(s=>s.state==="waiting"),rest=slips.filter(s=>s.state!=="waiting");
   let html=d.desk.notices.slice(-1).map(n=>`<div class="notice">${esc(n)}</div>`).join("");
+  if(d.pot) html+=potCard(d);
   if(!slips.length) html+=`<p class="empty">Nothing here yet. When your agent files something, it waits here for you.</p>`;
   html+=waiting.map(chit).join("")+rest.slice().reverse().map(chit).join("");
   if(d.desk.raw.length) html+=`<details><summary>See exactly what the clerk receives</summary><pre>${esc(d.desk.raw.join("\n\n"))}</pre></details>`;
@@ -245,13 +290,13 @@ function table(text){
   return "<table>"+rows.map(r=>"<tr>"+r.split("|").slice(1,-1).map(c=>`<td>${esc(c.trim())}</td>`).join("")+"</tr>").join("")+"</table>"+(rest?`<p>${inline(rest)}</p>`:"");
 }
 function groupView(d){
-  let html=`<div class="quick"><button class="btn go" data-say="group" data-text="balances">Show balances</button><button class="btn no" data-say="group" data-text="settle">Suggest payments</button></div>`;
+  let html=`<div class="quick">${d.pot?`<button class="btn go" data-say="group" data-text="pot">Who has paid in</button>`:""}<button class="btn go" data-say="group" data-text="balances">Show balances</button><button class="btn no" data-say="group" data-text="settle">Suggest payments</button></div>`;
   const feed=d.group.slice().reverse();
   for(const f of feed){
     if(f.type==="expense"){
       html+=`<div class="line"><b>${esc(f.category[0].toUpperCase()+f.category.slice(1))}, paid by ${esc(f.payer)}</b><b>${esc(f.amount)}</b><small>${esc(f.date)}. ${f.shares.map(x=>`${esc(x.name)} ${esc(x.amount)}`).join(", ")}</small></div>`;
     }else if(/^\| Person/.test(f.text)){
-      html+=`<div class="note">${table(f.text)}</div>`;
+      html+=`<div class="note">${/^\| Person \| Asked/.test(f.text)?"<p>Asked, confirmed and still to come</p>":""}${table(f.text)}</div>`;
     }else{
       const big=/Everyone's square/.test(f.text),bad=/NOT CONFIRMED|Possible conflict/.test(f.text);
       const who=f.mine||f.from?"":"";
@@ -364,6 +409,13 @@ document.addEventListener("click",e=>{
     const delay=matchMedia("(prefers-reduced-motion:reduce)").matches?0:500;
     setTimeout(()=>{dropping=null;say("desk",`release ${id}`)},delay);
   }
+});
+document.addEventListener("input",e=>{const f=e.target.closest("form[data-pot]");if(!f)return;potForm[e.target.name]=e.target.type==="checkbox"?e.target.checked:e.target.value});
+document.addEventListener("submit",e=>{
+  const f=e.target.closest("form[data-pot]");if(!f)return;e.preventDefault();
+  if(f.dataset.pot==="call"){const a=potForm.ask.trim();if(!a)return;say("desk",`call ${a} ${potForm.who.trim()}`.trim());potForm.ask="";potForm.who="";render();return}
+  const a=potForm.amount.trim(),day=potForm.day,ref=potForm.ref.trim();if(!a||!day)return;
+  say("private",`paid ${a} ${day}${ref?` ref ${ref}${potForm.show?" show":""}`:""}`);potForm={...potForm,amount:"",day:"",ref:"",show:false};render();
 });
 // The demo stage can change which tab is showing, and nothing else.
 window.addEventListener("message",e=>{

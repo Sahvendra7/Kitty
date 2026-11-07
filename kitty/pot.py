@@ -671,3 +671,58 @@ class PotBook:
             basis = "records" if rec.credit_token else "word"
             return [Post(owner.desk_room, f"{pid} corrected: counted."), self._publish(clerk, text, owner.human_sender, "correct_in", pid, basis, code), *self.square_posts(clerk)]
         return self._refuse(clerk, owner, "cannot_correct")
+
+
+# ---- reading the room back: the same text people see, with no help from the book ---------------
+
+_MONEY = r"[₹$€£][0-9,]+\.[0-9]{2}"
+_R_CALL = re.compile(rf"^\*\*(k\d+)\*\* (\w+) asked (.+?) for ({_MONEY})\.$")
+_R_CANCEL = re.compile(r"^\*\*(k\d+) cancelled by \w+\.\*\*$")
+_R_SUBMIT = re.compile(rf"^\*\*(p\d+)\*\* (\w+) says they paid (\w+) ({_MONEY}) on ")
+_R_CONFIRM = re.compile(r"^\*\*(p\d+) confirmed received by \w+:\*\* .* · (checked against|on )")
+_R_CLARIFY = re.compile(r"^\*\*(p\d+) needs clarification\.\*\*")
+_R_REJECT = re.compile(r"^\*\*(p\d+) not received, says \w+\.\*\*")
+_R_WITHDRAW = re.compile(r"^\*\*(p\d+) withdrawn by \w+\.\*\*")
+_R_OUT = re.compile(r"^\*\*Correction of (p\d+):\*\* \w+ no longer confirms it")
+_R_IN = re.compile(r"^\*\*Correction of (p\d+):\*\* \w+ says it arrived after all")
+
+
+@dataclass(frozen=True)
+class RoomPot:
+    asked: dict[str, int]
+    contributions: dict[str, dict]
+    payments: list[L.Payment]
+
+
+def _paise(text: str) -> int:
+    whole, _, frac = re.sub(r"[₹$€£,]", "", text).partition(".")
+    return int(whole) * 100 + int(frac or 0)
+
+
+def parse_room(lines: Iterable[str], ids_by_name: dict[str, str]) -> RoomPot:
+    """What the group room's text says. The person's app and `verify.py` both read it this way."""
+    calls: dict[str, tuple[int, list[str]]] = {}
+    found: dict[str, dict] = {}
+    for line in lines:
+        tag = _TAG.match(line)
+        text = tag.group(1) if tag else line
+        if m := _R_CALL.match(text):
+            who = [p for p in ids_by_name.values() if p != ids_by_name[m.group(2)]] if m.group(3) == "each person" else [ids_by_name[n] for n in m.group(3).split(", ")]
+            calls[m.group(1)] = (_paise(m.group(4)), who)
+        elif m := _R_CANCEL.match(text):
+            calls.pop(m.group(1), None)
+        elif m := _R_SUBMIT.match(text):
+            found[m.group(1)] = {"from": ids_by_name[m.group(2)], "to": ids_by_name[m.group(3)], "amount": _paise(m.group(4)), "status": "submitted", "basis": None}
+        elif m := _R_CONFIRM.match(text):
+            found[m.group(1)].update(status="confirmed", basis="records" if m.group(2) == "checked against" else "word")
+        else:
+            for rx, status in ((_R_CLARIFY, "needs_clarification"), (_R_REJECT, "rejected"), (_R_WITHDRAW, "withdrawn"), (_R_OUT, "rejected"), (_R_IN, "confirmed")):
+                if m := rx.match(text):
+                    found[m.group(1)]["status"] = status
+                    break
+    asked = {p: 0 for p in ids_by_name.values()}
+    for amount, who in calls.values():
+        for person in who:
+            asked[person] += amount
+    payments = [L.Payment(c["from"], c["to"], c["amount"]) for c in found.values() if c["status"] == "confirmed"]
+    return RoomPot(asked, found, payments)
