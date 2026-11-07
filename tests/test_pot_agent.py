@@ -189,8 +189,8 @@ def test_typed_input_that_does_not_gets_a_plain_answer(text):
 
 def test_a_date_outside_collection_says_which_dates_work():
     w = PotWorld({})
-    w.say("rohan", "private", "paid 5000 2026-10-25")
-    assert "25 Sep to 19 Oct" in w.texts("private-rohan") and not w.clerk.pot.records
+    w.say("rohan", "private", "paid 5000 2026-11-25")
+    assert "25 Sep to 18 Nov" in w.texts("private-rohan") and not w.clerk.pot.records
 
 
 def test_the_treasurer_cannot_claim_to_have_paid_themselves():

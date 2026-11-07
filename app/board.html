@@ -103,7 +103,7 @@ function bars(d){
 }
 function draw(d){
   COIN=d.trip.currency||"INR";
-  const square=(d.pot?d.pot.open===0&&d.pot.contributions.length>0:d.expenses.some(e=>e.status==="released"))&&d.balances.every(b=>b.paise===0)&&!d.transfers.some(t=>["awaiting_receiver","challenged"].includes(t.status))&&d.held_count===0;
+  const square=(d.pot?d.pot.square:d.expenses.some(e=>e.status==="released"))&&d.balances.every(b=>b.paise===0)&&!d.transfers.some(t=>["awaiting_receiver","challenged"].includes(t.status))&&d.held_count===0;
   document.body.classList.toggle("square",square);
   $("title").textContent=square?"Everyone's square.":d.trip.name;
   const nExp=d.expenses.filter(e=>e.status==="released").length;

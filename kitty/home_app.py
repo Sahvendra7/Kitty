@@ -94,7 +94,7 @@ class Home:
                 item["app_url"] = f"http://127.0.0.1:{rt['apps'][slug]}/"
             people.append(item)
         out = {**self.summary(trip), "people": people, "provision": prov, "editable": self.editable(trip), "running": self.is_running(trip["trip_id"]), "apps_up": up, "limits": {"min": MIN_PEOPLE, "max": MAX_PEOPLE}}
-        out["treasurer"], out["collect_from"] = trip.get("treasurer"), trip.get("collect_from")
+        out["treasurer"], out["collect_from"], out["pot_cleared"] = trip.get("treasurer"), trip.get("collect_from"), trip.get("pot_cleared")
         if up:
             out["board_url"] = f"http://127.0.0.1:{rt['board']}/"
             try:
@@ -175,6 +175,7 @@ def create_app(home: Home, port: int = PORT) -> FastAPI:
         fields = clean_pot(await request.json(), doc)
         doc.pop("treasurer", None)
         doc.pop("collect_from", None)
+        doc.pop("pot_cleared", None)
         doc.update(fields)
         home.store.save(doc)
         return JSONResponse(home.detail(doc))
@@ -210,6 +211,7 @@ def create_app(home: Home, port: int = PORT) -> FastAPI:
         if doc.get("treasurer") == slug:
             doc.pop("treasurer")
             doc.pop("collect_from", None)
+            doc["pot_cleared"] = doc["people"].get(slug, {}).get("name") or slug.title()
         home.store.save(doc)
         home.provisioner(doc).forget_person(slug)
         return JSONResponse(home.detail(doc))

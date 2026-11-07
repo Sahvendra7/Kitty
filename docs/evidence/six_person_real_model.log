@@ -54,3 +54,38 @@ run 3 FAILED
     raise AssertionError(text)
 AssertionError: six people provisioned in 48s
 run 1 FAILED
+=== six-person run 1 of 3, Sat Nov  7 06:13:43 IST 2026
+[06:15:00] PASS  six people provisioned in 76s
+[06:15:14] chits people had to correct: 1
+[06:15:29] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[06:15:42] messages people had to resend: 0 
+[06:15:42] story finished in 119s. Now the independent check.
+61/61 checks passed
+=== six-person run 2 of 3, Sat Nov  7 06:15:45 IST 2026
+[06:16:31] FAIL  six people provisioned in 46s
+    check(detail["state"] == "live", f"six people provisioned in {time.time() - began:.0f}s")
+    raise AssertionError(text)
+AssertionError: six people provisioned in 46s
+run 2 FAILED
+=== six-person run 1 of 3, Sat Nov  7 06:17:46 IST 2026
+[06:18:40] PASS  six people provisioned in 54s
+[06:18:55] chits people had to correct: 1
+[06:19:09] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[06:19:23] messages people had to resend: 0 
+[06:19:23] story finished in 97s. Now the independent check.
+61/61 checks passed
+=== six-person run 2 of 3, Sat Nov  7 06:19:25 IST 2026
+[06:20:18] PASS  six people provisioned in 52s
+[06:20:32] chits people had to correct: 1
+[06:20:46] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[06:21:00] messages people had to resend: 0 
+[06:21:00] story finished in 94s. Now the independent check.
+61/61 checks passed
+=== six-person run 3 of 3, Sat Nov  7 06:21:02 IST 2026
+[06:21:55] PASS  six people provisioned in 52s
+[06:22:07] chits people had to correct: 1
+[06:22:21] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[06:22:35] messages people had to resend: 0 
+[06:22:35] story finished in 92s. Now the independent check.
+61/61 checks passed
+ALL 3 SIX-PERSON RUNS PASSED, Sat Nov  7 06:22:37 IST 2026

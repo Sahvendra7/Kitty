@@ -22,6 +22,7 @@ POT_CARD = re.compile(r"^\*\*(p[0-9]+)\*\* ready \[ref ([a-z0-9]+)\]")
 FREED = re.compile(r"^(p[0-9]+)(?: withdrawn\.|: not counted\.| corrected: not counted\.)$")
 COUNTED_AGAIN = re.compile(r"^(p[0-9]+) corrected: counted\.$")
 ANSWERED = re.compile(r"^(not\s+)?received\s+(t[0-9]+)$", re.I)
+CATEGORY_HELP = ", ".join(C.CATEGORIES)
 AMOUNT = re.compile(r"^₹?[0-9][0-9,]*(\.[0-9]{1,2})?$")
 REFERENCE = re.compile(r"^[A-Za-z0-9]{4,16}$")
 HOW = "I couldn't read that. Try `paid 5000 2026-10-09`, and add `ref U441001` if you have the UPI reference."
@@ -96,16 +97,23 @@ class PotAgent(PersonalAgent):
         return super()._transfer_claim(ref, to, row)
 
     def _scan(self) -> list[Post]:
-        """People pay into a pot before a trip, so a member's look starts at `collect_from`. The model's window doesn't move."""
+        """People pay in before a trip and settle after it, so plain code looks wider. The model's window doesn't move."""
         out: list[Post] = []
-        if not self.is_treasurer:
-            known = {r.row_id for r in self.transfers.values()}
-            before = S.in_window(self.rows, self.cfg.collect_from, self.trip.start)
-            for row, who in S.outgoing_transfers(before, self.directory):
-                if who == self.cfg.treasurer and row.row_id not in known and row.day < self.trip.start:
-                    ref = self._ref()
-                    self.transfers[ref] = row
-                    out.append(Post("desk", self._transfer_claim(ref, who, row)))
+        known = {r.row_id for r in self.transfers.values()}
+        end = P.window_end(self.trip)
+        outside = False
+        for row, who in S.outgoing_transfers(self.rows, self.directory):
+            if self.trip.start <= row.day <= self.trip.end or row.row_id in known:
+                continue
+            if not self.cfg.collect_from <= row.day <= end:
+                outside = True
+                continue
+            if row.day > self.trip.end or (who == self.cfg.treasurer and not self.is_treasurer):
+                ref = self._ref()
+                self.transfers[ref] = row
+                out.append(Post("desk", self._transfer_claim(ref, who, row)))
+        if outside:
+            out.append(Post("private", f"I left out a payment dated outside this trip's dates for paying in and settling, {day_month(self.cfg.collect_from)} to {day_month(end)}."))
         return out + super()._scan()
 
     def _from_owner(self, body: str) -> list[Post]:
@@ -113,9 +121,59 @@ class PotAgent(PersonalAgent):
         words = text.split()
         if words and words[0].lower() == "paid":
             return self._typed_payment(words[1:])
+        if words and words[0].lower() == "spent":
+            return self._typed_spending(words[1:])
+        if words and words[0].lower() == "refund":
+            return self._typed_refund(words[1:])
         if m := ANSWERED.match(text):
             return self._typed_answer(m.group(2).lower(), not m.group(1))
         return super()._from_owner(body)
+
+    @staticmethod
+    def _amount_of(word: str) -> int:
+        """Whole paise, or 0 when it can't be read."""
+        return S.to_paise(word.replace("₹", "").replace(",", "")) if AMOUNT.fullmatch(word) else 0
+
+    @staticmethod
+    def _date_of(word: str) -> date | None:
+        if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", word):
+            return None
+        try:
+            return date.fromisoformat(word)
+        except ValueError:
+            return None
+
+    def _typed_spending(self, words: list[str]) -> list[Post]:
+        """So nobody has to send their statement lines to a model to record what they spent."""
+        how = f"I couldn't read that. Try `spent 3600 2026-10-17 groceries`. The kinds are: {CATEGORY_HELP}."
+        if len(words) != 3 or not (amount := self._amount_of(words[0])) or not (day := self._date_of(words[1])) or words[2].lower() not in C.CATEGORIES:
+            return [Post("private", how)]
+        if not self.trip.start <= day <= self.trip.end:
+            return [Post("private", f"Spending has to be dated within the trip, {day_month(self.trip.start)} to {day_month(self.trip.end)}. Nothing was filed.")]
+        shares = C.even_shares(amount, list(self.trip.participants))
+        return [
+            Post("desk", C.PREFIX + json.dumps({
+                "v": 1, "type": "expense", "ref": self._ref(), "trip_id": self.trip.trip_id, "owner_id": self.me, "payer_id": self.me, "date": day.isoformat(),
+                "amount_paise": amount, "currency": self.trip.currency, "category": words[2].lower(), "participant_ids": list(shares), "shares": shares,
+            })),
+            Post("private", "I've sent it to your desk, split among everyone. Release it when you're ready."),
+        ]
+
+    def _typed_refund(self, words: list[str]) -> list[Post]:
+        if not self.is_treasurer:
+            return [Post("private", f"Only {self.names[self.cfg.treasurer]} files money going back out of the pot.")]
+        how = "I couldn't read that. Try `refund 1000 2026-10-20 rohan`."
+        if len(words) != 3 or not (amount := self._amount_of(words[0])) or not (day := self._date_of(words[1])):
+            return [Post("private", how)]
+        to = self._person(words[2])
+        if to is None or to == self.me:
+            return [Post("private", how)]
+        if not self.cfg.collect_from <= day <= P.window_end(self.trip):
+            return [Post("private", f"That date is outside this trip's dates for paying in and settling, {day_month(self.cfg.collect_from)} to {day_month(P.window_end(self.trip))}. Nothing was filed.")]
+        return [
+            Post("desk", C.PREFIX + json.dumps({"v": 1, "type": "transfer", "ref": self._ref(), "trip_id": self.trip.trip_id, "owner_id": self.me, "from_id": self.me, "to_id": to, "date": day.isoformat(), "amount_paise": amount, "currency": self.trip.currency})),
+            Post("private", f"I've sent it to your desk. It counts once {self.names[to]} confirms it arrived."),
+        ]
 
     def _typed_payment(self, words: list[str]) -> list[Post]:
         """Parsed here, and never by a model, because this is what the claim is built from."""
@@ -139,12 +197,12 @@ class PotAgent(PersonalAgent):
             return [Post("private", HOW)]
         if not re.fullmatch(r"\d{4}-\d{2}-\d{2}", words[1]) or not amount:
             return [Post("private", HOW)]
-        if not self.cfg.collect_from <= day <= self.trip.end:
-            return [Post("private", f"That date is outside this trip's collection dates, {day_month(self.cfg.collect_from)} to {day_month(self.trip.end)}. Nothing was filed.")]
+        if not self.cfg.collect_from <= day <= P.window_end(self.trip):
+            return [Post("private", f"That date is outside this trip's dates for paying in and settling, {day_month(self.cfg.collect_from)} to {day_month(P.window_end(self.trip))}. Nothing was filed.")]
         last4 = reference[-4:] if show and reference else None
         return [
             Post("desk", self._contribution(self._ref(), day, amount, reference, last4)),
-            Post("private", "It's on your desk. Release it when you're ready. It doesn't count until it's confirmed."),
+            Post("private", "I've sent it to your desk. Release it when you're ready. It doesn't count until it's confirmed."),
         ]
 
     def _typed_answer(self, tid: str, received: bool) -> list[Post]:

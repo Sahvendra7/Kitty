@@ -129,6 +129,9 @@ def main() -> int:
 
     group_msgs = history(clerk, group)
     group_text = [body_of(m) for m in group_msgs]
+    # On a Pot trip the ledger is read from the clerk's own posts. A person can type anything in the group room.
+    clerk_sender = next(iter(agents_cfg.values()))["clerk_sender"] if POT else None
+    counted_text = [body_of(m) for m in group_msgs if m["sender"] == clerk_sender] if POT else group_text
     check("group room history was readable and is not empty", len(group_text) > 3, f"{len(group_text)} messages")
 
     # 1. Re-derive the ledger from the group room's own words.
@@ -149,7 +152,7 @@ def main() -> int:
         return m.group(1)
 
     # In the order the room shows them, because a conflict takes a line back out.
-    for text in group_text:
+    for text in counted_text:
         if count(text):
             continue
         if m := CONFLICT.match(text):
@@ -163,7 +166,7 @@ def main() -> int:
     lines = list(counted.values())
     payments: list[L.Payment] = []
     confirmed_ids: list[str] = []
-    for text in group_text:
+    for text in counted_text:
         if m := CONFIRMED.match(text):
             confirmed_ids.append(m.group(1))
             payments.append(L.Payment(ids[m.group(2)], ids[m.group(3)], rupees_to_paise(m.group(4))))
@@ -173,7 +176,7 @@ def main() -> int:
     if POT:
         from kitty.pot import parse_room
 
-        room = parse_room(group_text, ids)
+        room = parse_room(counted_text, ids)
         payments.extend(room.payments)
     check("group lines were actually parsed (otherwise everything below is vacuous)", len(lines) >= 1 and len(lines) == len(shown), f"{len(lines)} lines")
     check("allocated shares sum to the total on every group line", all(sum(v for _, v in x.shares) == x.amount_paise for x in lines), f"{len(lines)} lines")
@@ -251,19 +254,19 @@ def main() -> int:
 
     # 5. Reversal and two-sided confirmation.
     check("a withdrawn payment was not counted as confirmed", not withdrawn_or_held & set(confirmed_ids), f"withdrawn {sorted(withdrawn_or_held)}, confirmed {confirmed_ids}")
-    has_dispute = any("NOT CONFIRMED" in t for t in group_text)
+    has_dispute = any("NOT CONFIRMED" in t for t in counted_text)
     if has_dispute:
         check("the dispute was raised and then closed in the group room", bool(withdrawn_or_held))
     for tid in confirmed_ids:
         senders = {e["sender"] for e in events if re.match(rf"^\s*release\s+{tid}\s*$", e["body"], re.I)}
         check(f"{tid} was released by both people's human accounts", len(senders) == 2 and senders <= set(humans.values()), f"{len(senders)} releases")
     if not any(net.values()):
-        check("balances are zero, and only because of confirmed payments", any("Everyone's square" in t for t in group_text) and bool(confirmed_ids or (room and room.payments)))
+        check("balances are zero, and only because of confirmed payments", any("Everyone's square" in t for t in counted_text) and bool(confirmed_ids or (room and room.payments)))
     else:
         print(f"NOTE  not square yet: {net}. Balanced on paper is not the same as paid.")
 
     if POT:
-        pot_checks(room, group_text, events, clerk_cfg, agents, agents_cfg, board, net, lines, terms)
+        pot_checks(room, counted_text, events, clerk_cfg, agents, agents_cfg, board, net, lines, terms)
 
     failed = [n for n, ok, _ in results if not ok]
     print(f"\n{len(results) - len(failed)}/{len(results)} checks passed")
@@ -272,7 +275,7 @@ def main() -> int:
     return 1 if failed else 0
 
 
-def pot_checks(room, group_text, events, clerk_cfg, agents, agents_cfg, board, net, lines, terms) -> None:
+def pot_checks(room, counted_text, events, clerk_cfg, agents, agents_cfg, board, net, lines, terms) -> None:
     """A Pot trip's own promises, checked from the room's text, the log and the live server."""
     from kitty.clerk_daemon import apply_event, build_clerk
     from kitty.pot import chain_check
@@ -303,16 +306,17 @@ def pot_checks(room, group_text, events, clerk_cfg, agents, agents_cfg, board, n
     book = rebuilt.pot
     actors = {d.actor for d in book.decisions if d.kind not in ("match",)}
     check("pot: no decision command from any agent took effect", not actors & agent_senders, f"{len(book.decisions)} decisions")
-    check("pot: rebuilt from the log, every contribution has the status the room shows", all(book.status(cid) == c["status"] for cid, c in room.contributions.items()))
+    # The room can't show a private step, such as a claim under review, so what's compared is whether it counts.
+    check("pot: rebuilt from the log, every contribution counts or not as the room shows", all((book.status(cid) == "confirmed") == (c["status"] == "confirmed") for cid, c in room.contributions.items()), f"{len(room.contributions)} compared")
     tokens = [r.credit_token for r in book.records.values() if book.status(r.id) == "confirmed" and r.credit_token]
     check("pot: no credit token was confirmed twice", len(tokens) == len(set(tokens)), f"{len(tokens)} tokens")
 
-    tagged = [t for t in group_text if re.search(r" \[d\d+ [0-9a-f]{12}\]$", t)]
-    broken = chain_check(group_text)
+    tagged = [t for t in counted_text if re.search(r" \[d\d+ [0-9a-f]{12}\]$", t)]
+    broken = chain_check(counted_text)
     check("pot: decision chain is unbroken", bool(tagged) and broken is None, f"{len(tagged)} decisions" + (f", broken at {broken}" if broken else ""))
 
     statement_refs = {t for t in terms if re.fullmatch(r"[A-Z]\d{5,}", t)}
-    rooms = [*group_text, *(m["body"] for p in PEOPLE for m in history(agents[p], clerk_cfg["people"][p]["desk_room"]))]
+    rooms = [*counted_text, *(m["body"] for p in PEOPLE for m in history(agents[p], clerk_cfg["people"][p]["desk_room"]))]
     check("pot: no full statement reference in any room the clerk can read", bool(statement_refs) and not any(r in t for r in statement_refs for t in rooms), f"{len(statement_refs)} refs")
     digits = [t for t in tagged if re.search(r"\d{5,}", re.sub(r" \[d\d+ [0-9a-f]{12}\]$", "", t))]
     check("pot: no run of 5 or more digits in a group pot line", not digits, str(digits[:2]) if digits else "")

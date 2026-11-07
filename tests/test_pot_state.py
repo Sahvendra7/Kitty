@@ -263,7 +263,7 @@ ALLOWED = {
     # status: commands that may succeed
     "held": {"release", "drop"},
     "dropped": set(),
-    "submitted": {"withdraw"},
+    "submitted": {"withdraw", "recheck"},
     "recipient_review": {"confirm", "ask", "reject", "recheck", "withdraw"},
     "needs_clarification": {"reject", "recheck", "withdraw"},
     "confirmed": {"correct_out"},
@@ -367,8 +367,8 @@ def test_a_contribution_to_someone_else_is_refused():
 
 def test_a_bad_claim_gets_a_plain_reason_and_no_echo():
     c = make()
-    text = agent(c, "rohan", claim(day="2026-10-25"))[0].text
-    assert "date_outside_trip" in text and "25 Sep to 19 Oct" in text and text.startswith("Rejected:")
+    text = agent(c, "rohan", claim(day="2026-11-25"))[0].text
+    assert "date_outside_trip" in text and "25 Sep to 18 Nov" in text and text.startswith("Rejected:")
 
 
 def test_call_asks_everyone_but_the_treasurer():

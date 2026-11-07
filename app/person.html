@@ -178,11 +178,20 @@ function keptPrivate(msgs){
   }
   return [...kept];
 }
+function potPrivate(d,msgs){
+  /* On a Pot trip nobody needs a statement to say what they paid, or whether money arrived. */
+  let html=msgs.map(m=>`<div class="bubble ${m.mine?"mine":""}">${inline(m.mine?m.text:plainPrivate(m.text))}</div>`).join("");
+  const last=msgs[msgs.length-1],id=last&&!last.mine?(last.text.match(/`received (t\d+)`/)||[])[1]:null;
+  if(id) html+=`<div class="asks"><button class="ask" data-say="private" data-text="received ${id}">Yes, it arrived</button><button class="ask quiet" data-say="private" data-text="not received ${id}">No</button></div>`;
+  html+=`<p class="lede" style="margin-top:10px">You don't need a statement on this trip. Say what you paid on your desk, and ${esc(d.pot.treasurer)} confirms it arrived.</p><div class="asks"><button class="ask" data-go="desk">Open your desk</button><button class="ask quiet" data-go="statement">Add my statement</button></div>`;
+  return html;
+}
 function privateView(d){
   const msgs=d.private;
   const st=d.statement;
+  if(st&&st.state==="none"&&d.pot) return potPrivate(d,msgs);
   if(st&&st.state==="none") return (msgs.length?`<div class="bubble">${inline(msgs[msgs.length-1].text)}</div>`:"")+`<div class="asks"><button class="ask" data-go="statement">Add my statement</button></div>`;
-  if(st&&st.state==="ready") return msgs.map(m=>`<div class="bubble ${m.mine?"mine":""}">${inline(m.text)}</div>`).join("")+`<div class="asks"><button class="ask" data-say="private" data-text="start">Go through my statement</button></div>`;
+  if(st&&st.state==="ready") return (d.pot&&d.pot.is_treasurer?`<p class="lede">Checking payments doesn't need this button. It sends your spending lines from the trip's dates to the model provider. You can skip it and file spending by hand on your desk.</p>`:"")+msgs.map(m=>`<div class="bubble ${m.mine?"mine":""}">${inline(m.text)}</div>`).join("")+`<div class="asks"><button class="ask" data-say="private" data-text="start">Go through my statement</button></div>`;
   if(!msgs.length) return `<p class="lede">Your agent hasn't said hello yet. Check that it's running.</p>`;
   let html="";
   for(const m of msgs) html+=`<div class="bubble ${m.mine?"mine":""}">${inline(m.mine?m.text:plainPrivate(m.text))}</div>`;
@@ -216,18 +225,29 @@ function privateView(d){
 }
 
 const cash=p=>({INR:"₹",USD:"$",EUR:"€",GBP:"£"}[data.currency]||"")+(p/100).toLocaleString(data.currency==="INR"?"en-IN":"en-US",{minimumFractionDigits:2,maximumFractionDigits:2});
-let potForm={amount:"",day:"",ref:"",show:false,ask:"",who:""};
+const CATEGORIES=["stay","travel","food","groceries","fuel","activity","shopping","other"];
+let potForm={amount:"",day:"",ref:"",show:false,ask:"",who:"",sAmount:"",sDay:"",sCat:"food",rAmount:"",rDay:"",rTo:""},potProblem={},potNote="";
+const potFlag=k=>potProblem[k]?`<p class="retry-note" role="alert">${esc(potProblem[k])}</p>`:"";
+function potSpentForm(d){
+  const w=d.pot.window;
+  return `<form data-pot="spent" class="pot-form"><label>I spent for the group<input name="sAmount" inputmode="decimal" placeholder="3600" value="${esc(potForm.sAmount)}"></label><label>On<input type="date" name="sDay" min="${esc(w.spend_from)}" max="${esc(w.spend_to)}" value="${esc(potForm.sDay)}"></label><label>On what<select name="sCat">${CATEGORIES.map(c=>`<option value="${c}" ${potForm.sCat===c?"selected":""}>${c}</option>`).join("")}</select></label>${potFlag("spent")}<div class="acts"><button class="btn no">File it, split among everyone</button></div></form>`;
+}
 function potCard(d){
-  const p=d.pot,inv=s=>esc(potForm[s]);
+  const p=d.pot,inv=s=>esc(potForm[s]),w=p.window,note=potNote?`<div class="okline" role="status">${esc(potNote)}</div>`:"";
   if(p.is_treasurer){
     const rows=p.roll.map(r=>`<li><span>${esc(r.name)}</span><span>${r.outstanding?`${cash(r.outstanding)} to come`:r.asked?"Paid":"Not asked"}${r.above?`, ${cash(r.above)} above ask`:""}</span></li>`).join("");
-    return `<article class="chit"><div class="amt">The pot</div><p class="what">You hold the group's money. Only you can confirm it arrived. Checking a payment uses your statement on this laptop, and no model. "Go through my statement" is separate, and only for your spending.</p><ul>${rows}</ul>
-      <form data-pot="call" class="pot-form"><label>Ask for money<input name="ask" inputmode="decimal" placeholder="5000" value="${inv("ask")}"></label><label>Only these people (leave empty for everyone)<input name="who" placeholder="rohan meera" value="${inv("who")}"></label><div class="acts"><button class="btn go">Ask</button></div></form></article>`;
+    const calls=p.calls.length?`<details><summary>What you've asked for</summary>${p.calls.map(c=>`<div class="acts"><span class="what">${cash(c.amount)} from ${esc(c.who)}</span><button class="btn no" data-say="desk" data-text="cancel ${esc(c.id)}">Cancel this</button></div>`).join("")}</details>`:"";
+    const others=d.people.filter(x=>x.id!==d.me.id);
+    return `<article class="chit"><div class="amt">The pot</div><p class="what">You hold the group's money. Only you can confirm it arrived. Checking a payment uses your statement on this laptop, and no model.</p>${note}<ul>${rows}</ul>${calls}
+      <form data-pot="call" class="pot-form"><label>Ask for money<input name="ask" inputmode="decimal" placeholder="5000" value="${inv("ask")}"></label><label>Only these people (leave empty for everyone)<input name="who" placeholder="rohan meera" value="${inv("who")}"></label>${potFlag("call")}<div class="acts"><button class="btn go">Ask</button></div></form>
+      <details><summary>File spending or money paid back by hand</summary>${potSpentForm(d)}
+      <form data-pot="refund" class="pot-form"><label>I paid back<input name="rAmount" inputmode="decimal" placeholder="1000" value="${inv("rAmount")}"></label><label>On<input type="date" name="rDay" min="${esc(w.from)}" max="${esc(w.to)}" value="${inv("rDay")}"></label><label>To<select name="rTo">${others.map(x=>`<option value="${esc(x.id)}" ${potForm.rTo===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>${potFlag("refund")}<div class="acts"><button class="btn no">File it</button></div></form></details></article>`;
   }
   const m=p.mine;
-  return `<article class="chit"><div class="amt">Your contribution</div><p class="what">${esc(p.treasurer)} holds the group's money. It counts once ${esc(p.treasurer)} confirms it arrived.</p>
+  return `<article class="chit"><div class="amt">Your contribution</div><p class="what">${esc(p.treasurer)} holds the group's money. It counts once ${esc(p.treasurer)} confirms it arrived.</p>${note}
     <ul><li><span>Asked</span><span>${cash(m.asked)}</span></li><li><span>Confirmed</span><span>${cash(m.credited)}</span></li><li><span>Outstanding</span><span>${cash(m.outstanding)}</span></li>${m.above?`<li><span>Above ask</span><span>${cash(m.above)}</span></li>`:""}</ul>
-    <form data-pot="paid" class="pot-form"><label>I paid<input name="amount" inputmode="decimal" placeholder="5000" value="${inv("amount")}"></label><label>On<input type="date" name="day" value="${inv("day")}"></label><label>UPI reference, if you have it<input name="ref" maxlength="16" value="${inv("ref")}"></label><label class="attest"><input type="checkbox" name="show" ${potForm.show?"checked":""}><span>Show the last 4 in the group</span></label><div class="acts"><button class="btn go">File it</button></div></form></article>`;
+    <form data-pot="paid" class="pot-form"><label>I paid<input name="amount" inputmode="decimal" placeholder="5000" value="${inv("amount")}"></label><label>On<input type="date" name="day" min="${esc(w.from)}" max="${esc(w.to)}" value="${inv("day")}"></label><label>UPI reference, if you have it<input name="ref" maxlength="16" value="${inv("ref")}"></label><label class="attest"><input type="checkbox" name="show" ${potForm.show?"checked":""}><span>Show the last 4 in the group</span></label>${potFlag("paid")}<div class="acts"><button class="btn go">File it</button></div></form>
+    <details><summary>I spent money for the group</summary>${potSpentForm(d)}</details></article>`;
 }
 function potChit(s){
   const id=s.id,askBtns=`<details><summary>Ask ${s.kind==="pot_review"?esc(s.from):""}</summary><div class="acts"><button class="btn no" data-say="desk" data-text="ask ${id} amount_differs">The amount differs</button><button class="btn no" data-say="desk" data-text="ask ${id} date_differs">The date differs</button><button class="btn no" data-say="desk" data-text="ask ${id} not_found_yet">I can't find it yet</button></div></details>`;
@@ -241,10 +261,11 @@ function potChit(s){
     if(["submitted","needs_clarification","rejected"].includes(s.state)) acts=`<div class="acts">${undo}</div>`;
     cls+=["rejected","needs_clarification"].includes(s.state)?" alert":["confirmed","withdrawn","dropped"].includes(s.state)?" done":"";
   }else{
-    what=`From ${esc(s.from)}, on ${esc(s.date)}. Your agent: ${esc(s.candidate)}.`;
+    what=`From ${esc(s.from)}${s.date?`, on ${esc(s.date)}`:""}. Your agent: ${esc(s.candidate)}.`;
     const again=`<button class="btn no" data-say="desk" data-text="recheck ${id}">Check again</button>`;
     if(s.state==="waiting"){
       if(s.candidate==="found it") acts=`<div class="acts"><button class="btn go" data-say="desk" data-text="confirm ${id}">Confirm it arrived</button>${no}</div>${askBtns}`;
+      else if(s.candidate==="not checked yet"){what=`From ${esc(s.from)}. Your agent hasn't reported on this yet.`;acts=`<div class="acts">${again}</div>`}
       else if(s.candidate==="nothing yet") acts=`<div class="acts">${again}${no}</div>${askBtns}<details><summary>Confirm by hand</summary><p class="what">Only if you can see it in your bank app. The group will see that this is on your word.</p><div class="acts"><button class="btn go" data-say="desk" data-text="confirm ${id} manual">Confirm by hand</button></div></details>`;
       else acts=`<div class="acts">${again}${no}</div>${askBtns}`;
     }else if(s.state==="needs_clarification"){state="You asked about this.";acts=`<div class="acts">${again}${no}</div>`}
@@ -303,12 +324,12 @@ function groupView(d){
   for(const f of feed){
     if(f.type==="expense"){
       html+=`<div class="line"><b>${esc(f.category[0].toUpperCase()+f.category.slice(1))}, paid by ${esc(f.payer)}</b><b>${esc(f.amount)}</b><small>${esc(f.date)}. ${f.shares.map(x=>`${esc(x.name)} ${esc(x.amount)}`).join(", ")}</small></div>`;
-    }else if(/^\| Person/.test(f.text)){
+    }else if(f.clerk!==false&&/^\| Person/.test(f.text)){
       html+=`<div class="note">${/^\| Person \| Asked/.test(f.text)?"<p>Asked, confirmed and still to come</p>":""}${table(f.text)}</div>`;
     }else{
-      const big=/Everyone's square/.test(f.text),bad=/NOT CONFIRMED|Possible conflict/.test(f.text);
+      const big=f.clerk!==false&&/Everyone's square/.test(f.text),bad=f.clerk!==false&&/NOT CONFIRMED|Possible conflict/.test(f.text);
       const who=f.mine||f.from?"":"";
-      const isHuman=!/^\*\*|^Kitty is open|^Suggested|^Nothing to settle|^Refused|^Conflict|^\d+ expenses|^No released/.test(f.text);
+      const isHuman=f.clerk===undefined?!/^\*\*|^Kitty is open|^Suggested|^Nothing to settle|^Refused|^Conflict|^\d+ expenses|^No released/.test(f.text):!f.clerk;
       html+=`<div class="note ${big?"big":""} ${bad?"bad":""} ${isHuman?"mine":""}">${isHuman?`${esc(f.from)}: `:""}${inline(isHuman?f.text:plainGroup(f.text))}${who}</div>`;
     }
   }
@@ -419,11 +440,34 @@ document.addEventListener("click",e=>{
   }
 });
 document.addEventListener("input",e=>{const f=e.target.closest("form[data-pot]");if(!f)return;potForm[e.target.name]=e.target.type==="checkbox"?e.target.checked:e.target.value});
+document.addEventListener("change",e=>{const f=e.target.closest("form[data-pot]");if(!f)return;potForm[e.target.name]=e.target.type==="checkbox"?e.target.checked:e.target.value});
+const potAmount=v=>{const t=String(v).trim().replace(/^(rs\.?|₹)\s*/i,"").replace(/,/g,"");return /^[0-9]+(\.[0-9]{1,2})?$/.test(t)&&Number(t)>0?t:null};
+const inWindow=(d,lo,hi)=>d&&d>=lo&&d<=hi;
 document.addEventListener("submit",e=>{
   const f=e.target.closest("form[data-pot]");if(!f)return;e.preventDefault();
-  if(f.dataset.pot==="call"){const a=potForm.ask.trim();if(!a)return;say("desk",`call ${a} ${potForm.who.trim()}`.trim());potForm.ask="";potForm.who="";render();return}
-  const a=potForm.amount.trim(),day=potForm.day,ref=potForm.ref.trim();if(!a||!day)return;
-  say("private",`paid ${a} ${day}${ref?` ref ${ref}${potForm.show?" show":""}`:""}`);potForm={...potForm,amount:"",day:"",ref:"",show:false};render();
+  const kind=f.dataset.pot,w=data.pot.window,problem=t=>{potProblem={[kind]:t};potNote="";render()};
+  /* Checked here first, and what was typed stays until it's accepted. */
+  if(kind==="call"){
+    const a=potAmount(potForm.ask);if(!a)return problem("Say how much, like 5000.");
+    say("desk",`call ${a} ${potForm.who.trim()}`.trim());potForm.ask="";potForm.who="";potNote="Asked. It's in the group room.";
+  }else if(kind==="paid"){
+    const a=potAmount(potForm.amount),ref=potForm.ref.trim();
+    if(!a)return problem("Say how much you paid, like 5000.");
+    if(!inWindow(potForm.day,w.from,w.to))return problem(`Choose a date from ${w.from} to ${w.to}.`);
+    if(ref&&!/^[A-Za-z0-9]{4,16}$/.test(ref))return problem("A UPI reference is 4 to 16 letters and numbers.");
+    say("private",`paid ${a} ${potForm.day}${ref?` ref ${ref}${potForm.show?" show":""}`:""}`);potForm={...potForm,amount:"",day:"",ref:"",show:false};potNote="Filed. It'll appear below for you to release.";
+  }else if(kind==="spent"){
+    const a=potAmount(potForm.sAmount);
+    if(!a)return problem("Say how much you spent, like 3600.");
+    if(!inWindow(potForm.sDay,w.spend_from,w.spend_to))return problem(`Spending has to be within the trip, ${w.spend_from} to ${w.spend_to}.`);
+    say("private",`spent ${a} ${potForm.sDay} ${potForm.sCat}`);potForm={...potForm,sAmount:"",sDay:""};potNote="Filed. It'll appear below for you to release.";
+  }else{
+    const a=potAmount(potForm.rAmount),to=potForm.rTo||(f.querySelector("select")||{}).value;
+    if(!a)return problem("Say how much you paid back, like 1000.");
+    if(!inWindow(potForm.rDay,w.from,w.to))return problem(`Choose a date from ${w.from} to ${w.to}.`);
+    say("private",`refund ${a} ${potForm.rDay} ${to}`);potForm={...potForm,rAmount:"",rDay:""};potNote="Filed. It'll appear below for you to release.";
+  }
+  potProblem={};render();
 });
 // The demo stage can change which tab is showing, and nothing else.
 window.addEventListener("message",e=>{

@@ -122,6 +122,7 @@ def test_pot_key_reaches_agents_and_not_the_clerk(tmp_path):
     keys = {json.loads((folder / "state" / f"{p}.json").read_text())["pot_key"] for p in ("asha", "bilal", "chitra")}
     assert len(keys) == 1 and len(next(iter(keys))) == 64
     assert "pot_key" not in (folder / "state" / "clerk.json").read_text()
+    assert json.loads((folder / "state" / "asha.json").read_text())["clerk_bot"] == json.loads((folder / "state" / "clerk.json").read_text())["name"]
 
 
 def test_trip_with_no_treasurer_has_no_pot_key(tmp_path):

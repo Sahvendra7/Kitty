@@ -55,7 +55,7 @@ A trip with a treasurer adds this. Everything else on this page still applies. T
 
 **Checking a payment never calls a model.** "Go through my statement" is a separate step, with the same preview of the exact lines. A treasurer can skip it and keep their personal spending away from the provider. A test with a recording model proves no credit and no pre-trip line reaches a prompt.
 
-**References don't cross.** A full reference becomes a keyed token, using a key held by personal agents and not by the clerk. Anyone holding the key could brute-force a short reference. On this one-laptop setup, every process could read it.
+**References don't cross.** A full reference becomes a keyed token, using a key held by personal agents and not by the clerk. Anyone holding the key could brute-force a short reference. On this one-laptop setup, every process could read it. **A reference a member types does pass through their own private room,** on its way to their agent, so whoever hosts Switch can read that one.
 
 **We don't promise privacy against the infrastructure host.** They can read every room, including the treasurer's private chits. There's no end-to-end encryption. If the treasurer is also the host, room boundaries don't bind them, and the organiser's page says so.
 

@@ -78,6 +78,9 @@ def build_desk(posts: list[dict], group_text: list[str], pot_room: dict[str, dic
         elif pot_room is not None and (m := ASKED_ABOUT.match(text)):
             if m[1] in slips:
                 slips[m[1]]["note"] = m[2]
+        elif pot_room is not None and (m := re.match(r"^(p\d+): asked\.", text)):
+            if m[1] in slips:
+                slips[m[1]]["asked"] = True
         elif pot_room is not None and (m := re.match(r"^(p\d+) dropped", text)):
             if m[1] in slips:
                 slips[m[1]]["state"] = "dropped"
@@ -103,7 +106,7 @@ def build_desk(posts: list[dict], group_text: list[str], pot_room: dict[str, dic
         if slip["kind"] in ("contribution", "pot_review") and slip["id"] in pot_room:
             status, basis = pot_room[slip["id"]]["status"], pot_room[slip["id"]]["basis"]
             slip["basis"] = basis
-            if slip["kind"] == "contribution" or status != "submitted":
+            if slip["kind"] == "contribution" or (status != "submitted" and (status != "needs_clarification" or slip.get("asked"))):
                 slip["state"] = status
         if slip["kind"] == "transfer" and slip["state"] == "released":
             if f"**{slip['id']} confirmed by both sides" in joined:
@@ -116,11 +119,19 @@ def build_desk(posts: list[dict], group_text: list[str], pot_room: dict[str, dic
     return {"slips": list(slips.values()), "raw": raw[-40:], "notices": notices[-3:]}
 
 
-def build_group(posts: list[dict]) -> list[dict]:
+def build_group(posts: list[dict], clerk_uid: str | None = None) -> list[dict]:
+    """On a Pot trip `clerk_uid` is given, and only the clerk's own posts are read as anything but chat."""
     feed = []
     for post in posts:
         text = post["text"]
         if HIDDEN.match(text):
+            continue
+        if clerk_uid is not None:
+            is_clerk = post.get("uid") == clerk_uid
+            if is_clerk and (m := GROUP_EXPENSE.match(text)):
+                feed.append({"type": "expense", "id": m[1], "amount": m[2], "category": m[3], "date": m[4], "payer": m[5], "shares": [{"name": n, "amount": v} for n, v in SHARE.findall(m[6])]})
+            else:
+                feed.append({"type": "note", "text": text, "from": post["from"], "mine": post["mine"], "clerk": is_clerk})
             continue
         if m := GROUP_EXPENSE.match(text):
             feed.append({"type": "expense", "id": m[1], "amount": m[2], "category": m[3], "date": m[4], "payer": m[5], "shares": [{"name": n, "amount": v} for n, v in SHARE.findall(m[6])]})
@@ -221,19 +232,46 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
             names[user_id] = u.get("first_name") or u.get("username") or "Someone"
         return names[user_id]
 
-    def read(room: str) -> list[dict]:
+    def read(room: str, whole: bool = False) -> list[dict]:
+        """One page, or on a Pot trip's group room the whole history, because the figures are read from it."""
         mm = session["mm"]
-        r = mm.http.get(f"/api/v4/channels/{channels[room]}/posts", params={"per_page": 200})
-        r.raise_for_status()
-        data = r.json()
+        order: list[str] = []
+        posts: dict[str, dict] = {}
+        for page in range(1000 if whole else 1):
+            params = {"per_page": 200, "page": page} if whole else {"per_page": 200}
+            r = mm.http.get(f"/api/v4/channels/{channels[room]}/posts", params=params)
+            r.raise_for_status()
+            data = r.json()
+            order += data["order"]
+            posts.update(data["posts"])
+            if len(data["order"]) < 200:
+                break
         out = []
-        for pid in reversed(data["order"]):
-            post = data["posts"][pid]
+        for pid in reversed(order):
+            post = posts[pid]
             if post.get("type", "").startswith("system_") or post.get("delete_at"):
                 continue
             mine = post["user_id"] == mm.user_id
-            out.append({"id": pid, "text": post["message"], "mine": mine, "from": person_name(post["user_id"]), "at": post["create_at"]})
+            out.append({"id": pid, "text": post["message"], "mine": mine, "from": person_name(post["user_id"]), "at": post["create_at"], "uid": post["user_id"]})
         return out
+
+    def clerk_uid() -> str:
+        """The clerk's chat identity. Text can claim anything, and the sender can't."""
+        if "clerk_uid" not in session:
+            r = session["mm"].http.get(f"/api/v4/users/username/{config['clerk_bot']}")
+            r.raise_for_status()
+            session["clerk_uid"] = r.json()["id"]
+        return session["clerk_uid"]
+
+    def treasurer_locked() -> bool:
+        """Once claims exist, the treasurer's agent knows statement lines by position, so the file may only grow."""
+        if trip.get("treasurer") != me:
+            return False
+        from kitty.pot import parse_room
+
+        uid = clerk_uid()
+        lines = [p["text"] for p in read("group", whole=True) if p["uid"] == uid]
+        return bool(parse_room(lines, {d["name"]: p for p, d in people.items()}).contributions)
 
     def review_started(private: list[dict] | None = None) -> bool:
         posts = read("private") if private is None else private
@@ -269,16 +307,33 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
     @app.get("/api/feed")
     def feed() -> JSONResponse:
         try:
-            private, desk, group = read("private"), read("desk"), read("group")
+            treasurer = trip.get("treasurer")
+            private, desk, group = read("private"), read("desk"), read("group", whole=bool(treasurer))
+            uid = clerk_uid() if treasurer else None
         except httpx.HTTPError:
             return JSONResponse({"error": "Can't reach Mattermost. Check that it's running."}, status_code=502)
-        group_text = [p["text"] for p in group]
-        treasurer = trip.get("treasurer")
+        extra: dict = {}
+        built_desk = None
         if treasurer:
-            from kitty.pot import parse_room
+            from kitty.pot import parse_room, window_end
 
-            pot_room = parse_room(group_text, {d["name"]: p for p, d in people.items()}).contributions
-        extra = {"pot": pot_view(group_text, me, people, treasurer)} if treasurer else {}
+            # Only the clerk's own posts. A person can type anything in the group room.
+            group_text = [p["text"] for p in group if p["uid"] == uid]
+            room = parse_room(group_text, {d["name"]: p for p, d in people.items()})
+            built_desk = build_desk(desk, group_text, room.contributions)
+            if me == treasurer:
+                shown = {s["id"] for s in built_desk["slips"]}
+                built_desk["slips"] += [
+                    {"id": cid, "kind": "pot_review", "from": people[c["from"]]["name"], "amount": C.money(c["amount"], currency), "date": "", "candidate": "not checked yet", "state": "waiting"}
+                    for cid, c in room.contributions.items() if c["status"] == "submitted" and cid not in shown
+                ]
+            extra["pot"] = {
+                **pot_view(group_text, me, people, treasurer),
+                "window": {"from": trip["collect_from"], "to": window_end(trip_model).isoformat(), "spend_from": trip["start"], "spend_to": trip["end"]},
+                "calls": [{"id": k, "amount": c["amount"], "who": c["label"]} for k, c in room.calls.items()],
+            }
+        else:
+            group_text = [p["text"] for p in group]
         return JSONResponse({
             **extra,
             "me": {"id": me, "name": my_name},
@@ -289,8 +344,8 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
             "currency": currency,
             "statement": statement_view(private) if where.in_app else None,
             "private": [{"text": p["text"], "mine": p["mine"]} for p in private if not HIDDEN.match(p["text"])],
-            "desk": build_desk(desk, group_text, pot_room) if treasurer else build_desk(desk, group_text),
-            "group": build_group(group),
+            "desk": built_desk if treasurer else build_desk(desk, group_text),
+            "group": build_group(group, uid),
         })
 
     @app.post("/api/say")
@@ -341,7 +396,7 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
             started = False
             if existing is not None:
                 try:
-                    started = review_started()
+                    started = review_started() or treasurer_locked()
                 except httpx.HTTPError:
                     return JSONResponse({"status": "rejected", "problems": [{"code": "chat_unreachable", "message": "Kitty couldn't check where your review has got to. Try again in a moment.", "line": None, "column": None}], "total": 1}, status_code=503)
                 if started:
@@ -361,7 +416,7 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
     def statement_remove() -> JSONResponse:
         if not statement_path.exists():
             return JSONResponse({"state": "none"})
-        if review_started():
+        if review_started() or treasurer_locked():
             return JSONResponse({"error": "Your agent has already started on this statement, so it has to stay."}, status_code=409)
         statement_path.unlink()
         meta_path.unlink(missing_ok=True)

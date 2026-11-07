@@ -49,7 +49,7 @@ def build_core(me: str, trip_doc: dict, config: dict, rows: list[S.Row], brain) 
 
 def needs_statement(body: str, pot: bool) -> bool:
     """On a Pot trip a member can say what they paid, or whether something arrived, with no statement at all."""
-    return not (pot and bool(re.match(r"^\s*(paid\b|(not\s+)?received\b)", body, re.I)))
+    return not (pot and bool(re.match(r"^\s*(paid\b|spent\b|refund\b|(not\s+)?received\b)", body, re.I)))
 
 
 def main(me: str) -> None:

@@ -10,7 +10,7 @@ import hmac
 import json
 import re
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timedelta, timezone
 
 from kitty import claims as C
@@ -22,6 +22,7 @@ ASK_CODES = ("amount_differs", "date_differs", "not_found_yet")
 REJECT_CODES = ("not_received", "duplicate", "reversed")
 CORRECT_OUT_CODES = ("reversed", "not_received", "mistaken")
 POT_TYPES = ("contribution", "pot_match")
+SETTLE_DAYS = 30  # People settle up after a trip. Plain code may look this far on. The model's window doesn't move.
 
 _TOKEN = re.compile(r"^[0-9a-f]{32}$")
 _LAST4 = re.compile(r"^[A-Za-z0-9]{4}$")
@@ -69,6 +70,10 @@ def _optional(value: object, pattern: re.Pattern, code: str) -> str | None:
     return value
 
 
+def window_end(trip: C.Trip) -> date:
+    return trip.end + timedelta(days=SETTLE_DAYS)
+
+
 def _collect_date(value: object, trip: C.Trip, cfg: PotConfig) -> date:
     if not isinstance(value, str) or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", value):
         raise C.ClaimError("bad_date")
@@ -76,7 +81,7 @@ def _collect_date(value: object, trip: C.Trip, cfg: PotConfig) -> date:
         parsed = date.fromisoformat(value)
     except ValueError as exc:
         raise C.ClaimError("bad_date") from exc
-    if not cfg.collect_from <= parsed <= trip.end:
+    if not cfg.collect_from <= parsed <= window_end(trip):
         raise C.ClaimError("date_outside_trip")
     return parsed
 
@@ -230,7 +235,8 @@ _ASK = re.compile(r"^\s*ask\s+(p[0-9]{1,6})(?:\s+(.*?))?\s*$", re.I)
 _REJECT = re.compile(r"^\s*reject\s+(p[0-9]{1,6})(?:\s+(.*?))?\s*$", re.I)
 _RECHECK = re.compile(r"^\s*recheck\s+(p[0-9]{1,6})\s*$", re.I)
 _CORRECT = re.compile(r"^\s*correct\s+(p[0-9]{1,6})(?:\s+(.*?))?\s*$", re.I)
-_CALL = re.compile(r"^\s*call\s+[₹0-9]", re.I)
+_RUPEES = r"(?:rs\.?\s*|₹\s*)?"
+_CALL = re.compile(rf"^\s*call\s+{_RUPEES}[0-9]", re.I)
 _CALL_LOOSE = re.compile(r"^\s*call\b(.*)$", re.I | re.S)
 _CANCEL = re.compile(r"^\s*cancel\s+(k[0-9]{1,6})\s*$", re.I)
 _MEMBER_COMMANDS = (_RELEASE, _DROP, _WITHDRAW)
@@ -303,13 +309,23 @@ class PotBook:
     def settle_text(self, clerk) -> str:
         plan = self.plan(clerk)
         if not plan:
+            if clerk.open_items():
+                return f"Nothing to settle right now, but {len(clerk.open_items())} still open."
             return "Nothing to settle. Everyone's square." if clerk.lines() or self.confirmed_payments() else "Nothing has been counted yet."
         rows = "\n".join(f"- {clerk._name(p.from_id)} pays {clerk._name(p.to_id)} **{clerk._money(p.amount_paise)}**" for p in plan)
         return f"Suggested payments ({len(plan)}):\n{rows}\n\nKitty never moves money. Each payment counts once whoever receives it confirms it."
 
-    def square_posts(self, clerk) -> list[Post]:
+    def status_text(self, clerk) -> str:
+        expenses = sum(r.status == "released" for r in clerk.expenses.values())
+        moved = sum(r.status == "confirmed" for r in clerk.transfers.values()) + len(self.confirmed_payments())
+        return f"{expenses} expenses counted, {moved} payments confirmed, {len(clerk.open_items())} open."
+
+    def is_square(self, clerk) -> bool:
         counted = clerk.lines() or self.confirmed_payments()
-        if counted and not clerk.open_items() and not any(clerk.balances().values()):
+        return bool(counted) and not clerk.open_items() and not any(clerk.balances().values())
+
+    def square_posts(self, clerk) -> list[Post]:
+        if self.is_square(clerk):
             return [Post(clerk.group_room, "**Everyone's square.** Every balance is zero, and every payment was confirmed by whoever received it.")]
         return []
 
@@ -342,6 +358,7 @@ class PotBook:
                 for r in self.records.values() if self.status(r.id) not in ("held", "dropped")
             ],
             "open": len(self.open_ids()),
+            "square": self.is_square(clerk),
         }
 
     # ---- routing ----------------------------------------------------------------------
@@ -378,26 +395,39 @@ class PotBook:
             clerk._log("rejected", owner=owner.id, code=err.code)
             return [self._rejected(clerk, owner, err.code)]
         if item is None:
-            return self._transfer_to_treasurer(clerk, owner, body)
+            return self._transfer(clerk, owner, body)
         if isinstance(item, Contribution):
             return self._file(clerk, owner, item)
         return self._match(clerk, owner, item)
 
-    def _transfer_to_treasurer(self, clerk, owner, body: str) -> list[Post] | None:
+    def _transfer(self, clerk, owner, body: str) -> list[Post] | None:
+        """A payment into the pot is a contribution. Any other can be dated up to the settling window."""
         if not body.startswith(C.PREFIX):
             return None
         try:
             obj = json.loads(body[len(C.PREFIX):])
         except json.JSONDecodeError:
             return None
-        if isinstance(obj, dict) and obj.get("type") == "transfer" and obj.get("to_id") == self.cfg.treasurer and owner.id != self.cfg.treasurer:
+        if not isinstance(obj, dict) or obj.get("type") != "transfer":
+            return None
+        if obj.get("to_id") == self.cfg.treasurer and owner.id != self.cfg.treasurer:
             clerk._log("rejected", owner=owner.id, code="use_contribution")
             return [self._rejected(clerk, owner, "use_contribution")]
-        return None
+        try:
+            item = C.parse(body, replace(clerk.trip, end=window_end(clerk.trip)), owner.id)
+        except C.ClaimError as err:
+            clerk._log("rejected", owner=owner.id, code=err.code)
+            return [self._rejected(clerk, owner, err.code)]
+        key = (owner.id, item.ref)
+        if key in clerk._seen_refs:
+            clerk._log("rejected", owner=owner.id, code="duplicate_ref")
+            return [Post(owner.desk_room, "Rejected: duplicate_ref. Already on this desk.")]
+        clerk._seen_refs.add(key)
+        return clerk._propose_transfer(owner, item)
 
     def _rejected(self, clerk, owner, code: str) -> Post:
         plain = {
-            "date_outside_trip": f"That date is outside this trip's collection dates, {day_month(self.cfg.collect_from)} to {day_month(clerk.trip.end)}.",
+            "date_outside_trip": f"That date is outside this trip's dates for paying in and settling, {day_month(self.cfg.collect_from)} to {day_month(window_end(clerk.trip))}.",
             "possible_duplicate": "You already have a claim for this amount on this day. Add the UPI reference to tell them apart.",
             "duplicate_reference": "That UPI reference has already been used on this trip.",
             "use_contribution": "A payment to the person holding the money is filed as a contribution.",
@@ -540,7 +570,7 @@ class PotBook:
     # ---- from the treasurer, on their own desk ---------------------------------------------
 
     def _call(self, clerk, owner, rest: str) -> list[Post]:
-        words = rest.split()
+        words = re.sub(r"^\s*(?:rs\.?|₹)\s*", "", rest, flags=re.I).split()
         if not words or not _AMOUNT.fullmatch(words[0]):
             return self._refuse(clerk, owner, "bad_amount", "Say how much, like `call 5000`.")
         whole, _, frac = words[0].replace("₹", "").replace(",", "").partition(".")
@@ -644,7 +674,7 @@ class PotBook:
         pid = m.group(1).lower()
         if pid not in self.records:
             return self._no_such(clerk, owner, pid)
-        if self.status(pid) not in ("recipient_review", "needs_clarification"):
+        if self.status(pid) not in ("submitted", "recipient_review", "needs_clarification"):
             return self._not_now(clerk, owner, pid)
         rec = self.records[pid]
         rec.candidate, rec.credit_token = None, None
@@ -692,6 +722,7 @@ class RoomPot:
     asked: dict[str, int]
     contributions: dict[str, dict]
     payments: list[L.Payment]
+    calls: dict[str, dict]
 
 
 def _paise(text: str) -> int:
@@ -700,29 +731,38 @@ def _paise(text: str) -> int:
 
 
 def parse_room(lines: Iterable[str], ids_by_name: dict[str, str]) -> RoomPot:
-    """What the group room's text says. The person's app and `verify.py` both read it this way."""
-    calls: dict[str, tuple[int, list[str]]] = {}
+    """What the clerk's lines say. Pass only the clerk's lines, because a person can type anything in the room.
+
+    Anything it can't place is skipped, so one strange line can't take down everyone's app.
+    """
+    calls: dict[str, dict] = {}
     found: dict[str, dict] = {}
     for line in lines:
         tag = _TAG.match(line)
         text = tag.group(1) if tag else line
         if m := _R_CALL.match(text):
-            who = [p for p in ids_by_name.values() if p != ids_by_name[m.group(2)]] if m.group(3) == "each person" else [ids_by_name[n] for n in m.group(3).split(", ")]
-            calls[m.group(1)] = (_paise(m.group(4)), who)
+            asker, whom = ids_by_name.get(m.group(2)), m.group(3)
+            names = [] if whom == "each person" else whom.split(", ")
+            if asker is None or any(n not in ids_by_name for n in names):
+                continue
+            who = [p for p in ids_by_name.values() if p != asker] if whom == "each person" else [ids_by_name[n] for n in names]
+            calls[m.group(1)] = {"amount": _paise(m.group(4)), "who": who, "label": whom}
         elif m := _R_CANCEL.match(text):
             calls.pop(m.group(1), None)
         elif m := _R_SUBMIT.match(text):
-            found[m.group(1)] = {"from": ids_by_name[m.group(2)], "to": ids_by_name[m.group(3)], "amount": _paise(m.group(4)), "status": "submitted", "basis": None}
+            if m.group(2) in ids_by_name and m.group(3) in ids_by_name:
+                found[m.group(1)] = {"from": ids_by_name[m.group(2)], "to": ids_by_name[m.group(3)], "amount": _paise(m.group(4)), "status": "submitted", "basis": None}
         elif m := _R_CONFIRM.match(text):
-            found[m.group(1)].update(status="confirmed", basis="records" if m.group(2) == "checked against" else "word")
+            if m.group(1) in found:
+                found[m.group(1)].update(status="confirmed", basis="records" if m.group(2) == "checked against" else "word")
         else:
             for rx, status in ((_R_CLARIFY, "needs_clarification"), (_R_REJECT, "rejected"), (_R_WITHDRAW, "withdrawn"), (_R_OUT, "rejected"), (_R_IN, "confirmed")):
-                if m := rx.match(text):
+                if (m := rx.match(text)) and m.group(1) in found:
                     found[m.group(1)]["status"] = status
                     break
     asked = {p: 0 for p in ids_by_name.values()}
-    for amount, who in calls.values():
-        for person in who:
-            asked[person] += amount
+    for call in calls.values():
+        for person in call["who"]:
+            asked[person] += call["amount"]
     payments = [L.Payment(c["from"], c["to"], c["amount"]) for c in found.values() if c["status"] == "confirmed"]
-    return RoomPot(asked, found, payments)
+    return RoomPot(asked, found, payments, calls)

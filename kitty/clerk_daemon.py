@@ -31,7 +31,7 @@ ROOT = Path(__file__).resolve().parent.parent
 log = logging.getLogger("kitty.clerk")
 CLERK_LOCK = threading.Lock()
 RELEVANT = re.compile(r"^\s*(release|drop|withdraw|balances|settle|status)\b", re.I)
-POT_RELEVANT = re.compile(r"^\s*(?:(?:confirm|reject|ask|recheck|correct)\s+p[0-9]|cancel\s+k[0-9]|call\s+[₹0-9]|pot\s*$)", re.I)
+POT_RELEVANT = re.compile(r"^\s*(?:(?:confirm|reject|ask|recheck|correct)\s+p[0-9]|cancel\s+k[0-9]|call\s+(?:rs\.?\s*|₹\s*)?[0-9]|pot\s*$)", re.I)
 
 
 def build_clerk(config: dict, trip_doc: dict) -> Clerk:

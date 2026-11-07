@@ -42,7 +42,7 @@ def test_a_good_contribution_parses():
     ({"to_id": "meera"}, "not_treasurer"),
     ({"owner_id": "asha", "to_id": "asha"}, "self_transfer"),
     ({"date": "2026-09-24"}, "date_outside_trip"),
-    ({"date": "2026-10-20"}, "date_outside_trip"),
+    ({"date": "2026-11-19"}, "date_outside_trip"),
     ({"date": "9 Oct"}, "bad_date"),
     ({"amount_paise": 0}, "bad_amount"),
     ({"amount_paise": 100.0}, "bad_amount"),
@@ -70,12 +70,12 @@ def test_a_missing_field_is_refused():
 
 def test_pre_trip_date_is_accepted_once_collection_has_started():
     assert parse(contribution(date="2026-09-25")).date == date(2026, 9, 25)
-    assert parse(contribution(date="2026-10-19")).date == date(2026, 10, 19)
 
 
-def test_settling_date_after_the_last_day_gets_a_fixed_code():
+def test_settling_date_past_the_window_gets_a_fixed_code():
+    assert parse(contribution(date="2026-11-18")).date == date(2026, 11, 18)
     with pytest.raises(C.ClaimError) as err:
-        parse(contribution(date="2026-10-25"))
+        parse(contribution(date="2026-11-25"))
     assert err.value.code == "date_outside_trip"
 
 

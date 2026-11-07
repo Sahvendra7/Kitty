@@ -282,13 +282,17 @@ function drawPeople(t){
 /* ---- step 3 ---- */
 let potChoice={};
 function drawReview(t){
-  const pot={treasurer:potChoice.treasurer??t.treasurer??"",collect_from:potChoice.collect_from??t.collect_from??""};
+  const chosen=potChoice[t.id]||(potChoice[t.id]={});
+  let gone=t.pot_cleared||null;
+  if(chosen.treasurer&&!t.people.some(p=>p.id===chosen.treasurer)){gone=chosen.treasurer[0].toUpperCase()+chosen.treasurer.slice(1);delete chosen.treasurer}
+  const pot={treasurer:chosen.treasurer??t.treasurer??"",collect_from:chosen.collect_from??t.collect_from??""};
   $("main").innerHTML=`<div class="make"><div>${stepsNav(2)}<h1 style="font-size:clamp(30px,5vw,44px)">Ready to open ${esc(t.name)}?</h1>
     <ul class="next"><li>Kitty makes ${t.people.length} separate accounts, each with its own private agent, private room and desk.</li>
     <li>You get one invite link per person. Each link opens once, and only that person's own app.</li>
     <li>Everyone adds their own made-up statement. You won't see any of it.</li>
     <li>Once the group room opens, this trip's people and dates are fixed.</li></ul>
     <fieldset class="stack" style="margin-top:22px;border:0;padding:0"><legend style="font-weight:600">Who holds the group's money?</legend>
+      ${gone&&!pot.treasurer?`<p class="hint" role="alert">${esc(gone)} was holding the money and has been removed. Choose someone else, or leave it on Nobody.</p>`:""}
       <label>Everyone pays them, and only they can confirm money arrived<select id="treasurer"><option value="">Nobody, everyone pays and we settle up</option>${t.people.map(p=>`<option value="${esc(p.id)}" ${pot.treasurer===p.id?"selected":""}>${esc(p.name)}</option>`).join("")}</select></label>
       <div id="potExtra" ${pot.treasurer?"":"hidden"}>
         <label>People can start paying in from<input type="date" id="collectFrom" value="${esc(pot.collect_from||t.start)}" max="${esc(t.start)}"></label>
@@ -296,8 +300,8 @@ function drawReview(t){
       </div></fieldset>
     <div class="actions"><button class="btn" id="openTrip">Open the trip</button><button class="btn quiet" id="backPeople">Back to people</button></div></div>${chit(t)}</div>`;
   $("backPeople").onclick=()=>{view.step="";lastDraw="";drawPeople(t)};
-  $("treasurer").onchange=e=>{potChoice.treasurer=e.target.value;$("potExtra").hidden=!e.target.value};
-  $("collectFrom").onchange=e=>{potChoice.collect_from=e.target.value};
+  $("treasurer").onchange=e=>{potChoice[t.id].treasurer=e.target.value;$("potExtra").hidden=!e.target.value};
+  $("collectFrom").onchange=e=>{potChoice[t.id].collect_from=e.target.value};
   $("openTrip").onclick=async e=>{e.target.disabled=true;e.target.textContent="Opening";
     const who=$("treasurer").value,saved=await api(`/api/trips/${t.id}/pot`,{method:"PUT",body:who?{treasurer:who,collect_from:$("collectFrom").value}:{}});
     if(!saved.ok){toast(Object.values(saved.body.fields||{})[0]||saved.body.error||"Couldn't save that. Try again.");e.target.disabled=false;e.target.textContent="Open the trip";return}

@@ -348,6 +348,8 @@ class Clerk:
         return f"Suggested payments ({len(plan)}):\n{rows}\n\nKitty never moves money. Each payment counts once both people's sides confirm it."
 
     def status_text(self) -> str:
+        if self.pot is not None:
+            return self.pot.status_text(self)
         return f"{sum(r.status == 'released' for r in self.expenses.values())} expenses counted, {sum(r.status == 'confirmed' for r in self.transfers.values())} payments confirmed, {len(self.open_items())} open."
 
     def _expense_line(self, claim: C.Expense) -> str:

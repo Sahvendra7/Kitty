@@ -117,7 +117,7 @@ Any open state (`submitted`, `recipient_review`, `needs_clarification`) can also
 | 7 | `recipient_review` | `confirm p3 manual` | Treasurer, on own desk | Candidate is `none` | `confirmed`, basis `word` |
 | 8 | `recipient_review` | `ask p3 <code>` | Treasurer | Code in `amount_differs`, `date_differs`, `not_found_yet`, `send_proof` | `needs_clarification`. Group sees status only, member's desk sees the code |
 | 9 | `recipient_review`, `needs_clarification` | `reject p3 <code>` | Treasurer | Code in `not_received`, `duplicate`, `reversed` | `rejected`. Clerk sends `KITTY_RECHECK p3` to member's desk |
-| 10 | `recipient_review`, `needs_clarification` | `recheck p3` | Treasurer | | `submitted`, check re-sent |
+| 10 | `submitted`, `recipient_review`, `needs_clarification` | `recheck p3` | Treasurer | | `submitted`, check re-sent |
 | 11 | any open, or `rejected` | `withdraw p3 <reason>` | Member | Existing closed reasons | `withdrawn` |
 | 12 | `rejected` | `dispute p3` | Member | Once | Stays `rejected`, flagged in the group. Moves no money |
 | 13 | `confirmed` | `correct p3 <code>` | Treasurer | `reversed`, `not_received`, `mistaken` | `rejected`, new decision, group post shows the balance effect |
@@ -265,7 +265,7 @@ Authority comes from the sender id Switch sets and the room an event arrived in,
 {"treasurer": "asha", "collect_from": "2026-09-25"}
 ```
 
-`collect_to` is the trip's end. **Collection dates widen only what plain code searches. The model's window stays the trip's dates.**
+People pay in and settle from `collect_from` to 30 days after the trip. Spending stays within the trip's dates. **These dates widen only what plain code searches. The model's window stays the trip's dates.**
 
 ### New typed claims, parsed in `kitty/pot.py`
 
