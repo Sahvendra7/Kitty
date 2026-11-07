@@ -25,6 +25,7 @@ import httpx
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from kitty import ledger as L  # noqa: E402
+from kitty.paths import trips_root  # noqa: E402
 
 DATA = ROOT / "data/synthetic/six"
 TRIP = json.loads((DATA / "trip.json").read_text())
@@ -223,6 +224,7 @@ def main() -> int:
     ap.add_argument("--leave-unsettled", action="store_true", help="Stop before the final payments, to look around.")
     ap.add_argument("--restart-midway", action="store_true", help="Stop every process mid-trip, send a release while they're down, then start them again.")
     ap.add_argument("--shots", help="Save stills of the pages to this folder, for the README and blog.")
+    ap.add_argument("--existing", metavar="TRIP_ID", help="Play the story on a trip already set up by this script and not yet played, so no new accounts are made.")
     args = ap.parse_args()
     shots = Shots(args.shots)
     home = httpx.Client(base_url=HOME, timeout=30, limits=httpx.Limits(max_keepalive_connections=0))  # See Person.__init__.
@@ -231,26 +233,34 @@ def main() -> int:
     shots.take("app-home", HOME + "/")
     fill = "const set=(n,v)=>{const i=document.querySelector(`#tripForm [name=${n}]`);i.value=v;i.dispatchEvent(new Event('input',{bubbles:true}))};" + "".join(f"set('{k}','{TRIP[k]}');" for k in ("name", "start", "end"))
     shots.take("app-new-trip", HOME + "/trips/new", js=fill)
-    trip = home.post("/api/trips", json={k: TRIP[k] for k in ("name", "start", "end", "currency")}).json()
-    tid = trip["id"]
-    log(f"trip {tid}")
-    for p in TRIP["people"]:
-        r = home.post(f"/api/trips/{tid}/people", json=p)
-        assert r.status_code == 201, r.text
-    shots.take("app-add-people", f"{HOME}/trips/{tid}")
-    shots.take("app-ready-to-open", f"{HOME}/trips/{tid}", js="document.getElementById('toReview').click();")
-    assert home.post(f"/api/trips/{tid}/open").status_code == 202
-    time.sleep(12)
+    if args.existing:
+        tid = args.existing
+        log(f"trip {tid}, already set up: no accounts are made")
+        existing = home.get(f"/api/trips/{tid}").json()
+        same = {k: existing[k] for k in ("name", "start", "end", "currency")} == {k: TRIP[k] for k in ("name", "start", "end", "currency")}
+        fresh = all(not p["joined"] and not p["statement_added"] for p in existing["people"]) and not (existing.get("board") or {}).get("expenses")
+        check(same and fresh and existing["state"] == "live", "the existing trip is this story's, and nobody has used it yet")
+    else:
+        trip = home.post("/api/trips", json={k: TRIP[k] for k in ("name", "start", "end", "currency")}).json()
+        tid = trip["id"]
+        log(f"trip {tid}")
+        for p in TRIP["people"]:
+            r = home.post(f"/api/trips/{tid}/people", json=p)
+            assert r.status_code == 201, r.text
+        shots.take("app-add-people", f"{HOME}/trips/{tid}")
+        shots.take("app-ready-to-open", f"{HOME}/trips/{tid}", js="document.getElementById('toReview').click();")
+        assert home.post(f"/api/trips/{tid}/open").status_code == 202
+        time.sleep(12)
     shots.take("app-setting-up", f"{HOME}/trips/{tid}")
     while True:
         detail = home.get(f"/api/trips/{tid}").json()
         if detail["state"] in ("live", "failed") and not detail["running"]:
             break
         time.sleep(2)
-    check(detail["state"] == "live", f"six people provisioned in {time.time() - began:.0f}s")
+    check(detail["state"] == "live", "six people were already provisioned" if args.existing else f"six people provisioned in {time.time() - began:.0f}s")
     blob = json.dumps(detail)
     check(not [m for m in SECRET_MARKS if m in blob], "the organiser's page gets no credentials, room ids or sender ids")
-    folder = ROOT / "trips" / tid
+    folder = trips_root() / tid  # KITTY_TRIPS_DIR, so a checkout can play a trip the running home app holds.
     board_url = detail["board_url"]
     people = {p["name"]: Person(p["name"], int(re.search(r":(\d+)/", p["invite_url"]).group(1)), p["invite_url"][p["invite_url"].index("/join"):]) for p in detail["people"]}
 
