@@ -37,9 +37,10 @@ STATE = ROOT / "state"
 
 
 def write_private(name: str, doc: dict) -> None:
-    path = STATE / name
-    path.write_text(json.dumps(doc, indent=1, ensure_ascii=False))
-    os.chmod(path, 0o600)
+    """Created at mode 600 and swapped in whole, so credentials are never briefly readable by others."""
+    from kitty.trips import write_json
+
+    write_json(STATE / name, doc)
 
 
 def await_sender(conn, needle: str, seconds: float = 20) -> str:
