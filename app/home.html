@@ -334,11 +334,11 @@ function drawPeople(t){
     </div>${chit(t)}</div>`;
   const f=$("personForm");
   f.addEventListener("input",()=>{const d=new FormData(f);personForm={name:d.get("name"),statement_name:d.get("statement_name")}});
-  f.addEventListener("submit",async e=>{e.preventDefault();const r=await api(`/api/trips/${t.id}/people`,{method:"POST",body:personForm});
+  f.addEventListener("submit",async e=>{e.preventDefault();const btn=f.querySelector("button[type=submit],button:not([type])");if(btn?.disabled)return;if(btn)btn.disabled=true;let r;try{r=await api(`/api/trips/${t.id}/people`,{method:"POST",body:personForm})}finally{if(btn)btn.disabled=false}
     if(r.ok){personForm={};errors={};drawPeople(r.body);lastDraw=JSON.stringify(r.body)+"{}";document.querySelector("#personForm input").focus()}
     else{errors=r.body.fields||{};if(!r.body.fields)toast(r.body.error||"Couldn't add them. Try again.");drawPeople(t);document.querySelector("[aria-invalid=true]")?.focus()}});
   $("toReview").onclick=()=>{view.step="review";lastDraw="";drawReview(t)};
-  $("deleteTrip").onclick=async()=>{await api(`/api/trips/${t.id}`,{method:"DELETE"});go("/")};
+  $("deleteTrip").onclick=async()=>{if(!confirm(`Delete ${t.name}? This can't be undone.`))return;await api(`/api/trips/${t.id}`,{method:"DELETE"});go("/")};
   document.querySelectorAll("[data-remove]").forEach(b=>b.onclick=async()=>{const r=await api(`/api/trips/${t.id}/people/${b.dataset.remove}`,{method:"DELETE"});if(r.ok){drawPeople(r.body);lastDraw=""}});
   companion.set(guide.people(t));
 }

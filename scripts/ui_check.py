@@ -187,7 +187,7 @@ class Stage:
         if path == "/api/statement/model-preview":
             return route.fulfill(json={"lines": []})
         if path in ("/api/say",):
-            return route.fulfill(json={"ok": True})
+            return route.fulfill(json={"ok": True}) if self.state.get("say_ok", True) else route.fulfill(status=502, json={"error": "Can't reach Mattermost."})
         page = {"/board": "board.html", "/me": "person.html"}.get(path, "home.html")
         return route.fulfill(status=200, body=(APP / page).read_bytes(), headers={"content-type": "text/html"})
 
@@ -273,6 +273,25 @@ def interactions(browser, stage_for, problems: list[str]) -> None:
     expect(not page.evaluate("document.getElementById('kittyPanel').open"), "Escape closes the panel")
     expect(page.evaluate("document.activeElement.classList.contains('kc-btn')"), "focus returns to the cat")
     page.close()
+
+    # A send that fails says so and keeps what was typed. One that succeeds clears it.
+    stage.state.update(feed=FEEDS["treasurer"], say_ok=False)
+    page = ctx.new_page()
+    page.goto("http://localhost:7999/me")
+    page.wait_for_timeout(300)
+    page.evaluate("document.querySelector('nav button[data-t=desk]').click()")
+    page.wait_for_timeout(150)
+    page.locator('form[data-pot="call"] input[name="ask"]').fill("5000")
+    page.locator('form[data-pot="call"] button').click()
+    page.wait_for_timeout(400)
+    expect(page.locator('form[data-pot="call"] input[name="ask"]').input_value() == "5000", "a failed send keeps what was typed")
+    expect(not page.locator("#err").is_hidden(), "a failed send shows an error")
+    stage.state.update(say_ok=True)
+    page.locator('form[data-pot="call"] button').click()
+    page.wait_for_timeout(400)
+    expect(page.locator('form[data-pot="call"] input[name="ask"]').input_value() == "", "a sent request clears the form")
+    page.close()
+    posts.clear()
 
     # Hide stays hidden across a reload, and can be undone.
     page = ctx.new_page()

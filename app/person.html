@@ -233,10 +233,14 @@ const SENT_PATIENCE=12000;let pressed={};
 let up={busy:false,problems:[],total:0,note:"",attested:false},preview=null,previewOpen=false,replacing=false;
 try{const t=sessionStorage.getItem("tab");if(t){tab=t;tabChosen=true}}catch(e){}
 
+/* True only once the message is in the room. A failed send says so, and the caller keeps what was typed. */
+let sendError="";  /* Stays up until a send works, so the regular poll can't wipe it a second later. */
 async function say(room,text){
-  const r=await fetch("/api/say",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room,text})});
-  if(!r.ok){showError("Couldn't send that. Check that Mattermost is running, then try again.")}
-  poll();
+  let ok=false;
+  try{const r=await fetch("/api/say",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({room,text})});ok=r.ok}catch(e){}
+  sendError=ok?"":"Couldn't send that. Check that Mattermost is running, then try again.";
+  await poll();
+  return ok;
 }
 function showError(t){const e=$("err");e.textContent=t;e.hidden=!t}
 
@@ -551,13 +555,13 @@ function render(){
 /* A poll can redraw the page mid-sentence. This keeps your cursor where it was, and open sections open. */
 function remember(main){
   const a=document.activeElement,inside=a&&main.contains(a)&&a!==main;
-  const sel=!inside?null:a.name?`[name="${a.name}"]`:a.dataset.text?`[data-text="${a.dataset.text}"]`:a.dataset.release?`[data-release="${a.dataset.release}"]`:a.id?`#${a.id}`:null;
+  const q=v=>CSS.escape(v),sel=!inside?null:a.name?`[name="${q(a.name)}"]`:a.dataset.text?`[data-text="${q(a.dataset.text)}"]`:a.dataset.release?`[data-release="${q(a.dataset.release)}"]`:a.id?`#${q(a.id)}`:null;
   const form=inside&&a.form?a.form.dataset.pot:null,at=inside&&a.selectionStart!=null?a.selectionStart:null;
   const open=[...main.querySelectorAll("details[open]>summary")].map(s=>s.textContent);
   return ()=>{
     main.querySelectorAll("details>summary").forEach(s=>{if(open.includes(s.textContent))s.parentElement.open=true});
     if(!sel)return;
-    const next=main.querySelector((form?`form[data-pot="${form}"] `:"")+sel);
+    const next=main.querySelector((form?`form[data-pot="${CSS.escape(form)}"] `:"")+sel);
     if(next){next.focus({preventScroll:true});if(at!=null&&next.setSelectionRange)try{next.setSelectionRange(at,at)}catch(e){}}
   };
 }
@@ -589,7 +593,7 @@ async function poll(){
   try{
     const r=await fetch("/api/feed");const j=await r.json();
     if(!r.ok){showError(j.error||"Something's wrong with this app.");return}
-    showError("");
+    showError(sendError);
     const s=JSON.stringify(j);
     if(s!==last){last=s;data=j;render()}
   }catch(e){showError("This app isn't responding. Is run_all.py still going?")}
@@ -616,26 +620,27 @@ const inWindow=(d,lo,hi)=>d&&d>=lo&&d<=hi;
 document.addEventListener("submit",e=>{
   const f=e.target.closest("form[data-pot]");if(!f)return;e.preventDefault();
   const kind=f.dataset.pot,w=data.pot.window,problem=t=>{potProblem={[kind]:t};potNote="";render()};
+  const send=(room,text,done)=>{say(room,text).then(ok=>{if(ok)done();render()})};
   /* Checked here first, and what was typed stays until it's accepted. */
   if(kind==="call"){
     const a=potAmount(potForm.ask);if(!a)return problem("Say how much, like 5000.");
-    say("desk",`call ${a} ${potForm.who.trim()}`.trim());potForm.ask="";potForm.who="";potNote="Asked. It's in the group room.";
+    send("desk",`call ${a} ${potForm.who.trim()}`.trim(),()=>{potForm.ask="";potForm.who="";potNote="Asked. It's in the group room."});
   }else if(kind==="paid"){
     const a=potAmount(potForm.amount),ref=potForm.ref.trim();
     if(!a)return problem("Say how much you paid, like 5000.");
     if(!inWindow(potForm.day,w.from,w.to))return problem(`Choose a date from ${w.from} to ${w.to}.`);
     if(ref&&!/^[A-Za-z0-9]{4,16}$/.test(ref))return problem("A UPI reference is 4 to 16 letters and numbers.");
-    say("private",`paid ${a} ${potForm.day}${ref?` ref ${ref}${potForm.show?" show":""}`:""}`);potForm={...potForm,amount:"",day:"",ref:"",show:false};potNote="Filed. It'll appear below for you to release.";
+    send("private",`paid ${a} ${potForm.day}${ref?` ref ${ref}${potForm.show?" show":""}`:""}`,()=>{potForm={...potForm,amount:"",day:"",ref:"",show:false};potNote="Filed. It'll appear below for you to release."});
   }else if(kind==="spent"){
     const a=potAmount(potForm.sAmount);
     if(!a)return problem("Say how much you spent, like 3600.");
     if(!inWindow(potForm.sDay,w.spend_from,w.spend_to))return problem(`Spending has to be within the trip, ${w.spend_from} to ${w.spend_to}.`);
-    say("private",`spent ${a} ${potForm.sDay} ${potForm.sCat}`);potForm={...potForm,sAmount:"",sDay:""};potNote="Filed. It'll appear below for you to release.";
+    send("private",`spent ${a} ${potForm.sDay} ${potForm.sCat}`,()=>{potForm={...potForm,sAmount:"",sDay:""};potNote="Filed. It'll appear below for you to release."});
   }else{
     const a=potAmount(potForm.rAmount),to=potForm.rTo||(f.querySelector("select")||{}).value;
     if(!a)return problem("Say how much you paid back, like 1000.");
     if(!inWindow(potForm.rDay,w.from,w.to))return problem(`Choose a date from ${w.from} to ${w.to}.`);
-    say("private",`refund ${a} ${potForm.rDay} ${to}`);potForm={...potForm,rAmount:"",rDay:""};potNote="Filed. It'll appear below for you to release.";
+    send("private",`refund ${a} ${potForm.rDay} ${to}`,()=>{potForm={...potForm,rAmount:"",rDay:""};potNote="Filed. It'll appear below for you to release."});
   }
   potProblem={};render();
 });
