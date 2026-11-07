@@ -195,7 +195,8 @@ class Clerk:
         conflict = self._find_conflict(rec)
         if conflict is not None:
             rec.status, rec.conflict_with = "conflict_hold", conflict.id
-            conflict.status, conflict.conflict_with = "conflict_hold", rec.id
+            if conflict.status == "released":
+                conflict.status, conflict.conflict_with = "conflict_hold", rec.id
             self._log("conflict", ids=[rec.id, conflict.id])
             posts.append(Post(self.group_room, f"**Possible conflict:** {conflict.id} and {rec.id} look like one expense paid by two people ({self._money(rec.claim.amount_paise)}, {rec.claim.category}, {day_month(rec.claim.date)}). Neither counts until one owner drops theirs."))
             return posts
@@ -204,10 +205,19 @@ class Clerk:
         posts.append(Post(self.group_room, f"**{rec.id}** {self._expense_line(rec.claim)}"))
         return posts
 
+    @staticmethod
+    def _conflict_key(claim: C.Expense) -> tuple:
+        return (claim.date, claim.amount_paise, claim.category)
+
     def _find_conflict(self, rec: ExpenseRecord) -> ExpenseRecord | None:
-        for other in self.expenses.values():
-            if other.id != rec.id and other.status == "released" and other.claim.owner_id != rec.claim.owner_id and (other.claim.date, other.claim.amount_paise, other.claim.category) == (rec.claim.date, rec.claim.amount_paise, rec.claim.category):
-                return other
+        """A counted claim that looks like the same expense, or one already held in such a conflict.
+
+        Looking at held conflicts too means a third person's copy can't slip in while two are held.
+        """
+        for status in ("released", "conflict_hold"):
+            for other in self.expenses.values():
+                if other.id != rec.id and other.status == status and other.claim.owner_id != rec.claim.owner_id and self._conflict_key(other.claim) == self._conflict_key(rec.claim):
+                    return other
         return None
 
     def _release_transfer(self, owner: Person, rec: TransferRecord) -> list[Post]:
@@ -227,6 +237,11 @@ class Clerk:
         ]
 
     def _release_answer(self, owner: Person, rec: TransferRecord) -> list[Post]:
+        if rec.status != "awaiting_receiver":
+            # The payer withdrew it while this answer waited. A withdrawn payment can never be confirmed.
+            rec.answer, rec.answer_status = None, None
+            self._log("refused", owner=owner.id, id=rec.id, reason=f"already_{rec.status}")
+            return [Post(owner.desk_room, f"Refused: {rec.id} is already {rec.status}.")]
         rec.answer_status = "released"
         self._log("answered", id=rec.id, by=owner.id, received=rec.answer)
         payer = self.people[rec.claim.from_id]
@@ -264,9 +279,23 @@ class Clerk:
         return [Post(owner.desk_room, f"{rec.id} dropped. The group never saw it.")]
 
     def _resolve_conflict(self, owner: Person, rec: ExpenseRecord) -> list[Post]:
-        other = self.expenses[rec.conflict_with]  # type: ignore[index]
-        rec.status, other.status = "dropped", "released"
-        rec.conflict_with = other.conflict_with = None
+        rec.status, rec.conflict_with = "dropped", None
+        left = [o for o in self.expenses.values() if o.status == "conflict_hold" and self._conflict_key(o.claim) == self._conflict_key(rec.claim)]
+        if not left:
+            self._log("dropped", id=rec.id, by=owner.id)
+            return [Post(owner.desk_room, f"{rec.id} dropped.")]
+        if len(left) > 1:
+            # Three or more owners claimed it. It still counts for nobody until only one is left.
+            for o in left:
+                if o.conflict_with == rec.id:
+                    o.conflict_with = next(x.id for x in left if x.id != o.id)
+            self._log("conflict_narrowed", dropped=rec.id, held=[o.id for o in left])
+            return [
+                Post(owner.desk_room, f"{rec.id} dropped."),
+                Post(self.group_room, f"Conflict narrowed: {owner.name} withdrew {rec.id}. {' and '.join(o.id for o in left)} still look like one expense, so none counts until only one is left."),
+            ]
+        other = left[0]
+        other.status, other.conflict_with = "released", None
         self._log("conflict_resolved", dropped=rec.id, kept=other.id)
         return [
             Post(owner.desk_room, f"{rec.id} dropped."),
@@ -281,6 +310,7 @@ class Clerk:
         if rec.status not in ("challenged", "awaiting_receiver"):
             return [Post(owner.desk_room, f"Refused: {tid} is {rec.status}, so it can't be withdrawn.")]
         rec.status, rec.withdraw_reason = "withdrawn", reason
+        rec.answer, rec.answer_status = None, None  # Any answer still waiting on the receiver's desk can no longer count.
         self._log("withdrawn", id=tid, by=owner.id, reason=reason)
         why = {"payment_failed": "The payment failed and never arrived.", "mistaken": "It was a mistake.", "duplicate": "It was a duplicate."}[reason]
         return [
