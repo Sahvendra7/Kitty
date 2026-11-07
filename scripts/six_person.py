@@ -81,6 +81,8 @@ class Shots:
             b.send("Runtime.evaluate", expression=f"(async()=>{{{js}}})()", awaitPromise=True)
             time.sleep(settle)
         b.shot(self.out / f"{name}.png")
+        self.close()  # An idle browser connection doesn't survive the long waits between stills.
+        self.browser = None
 
     def phone(self, name: str, person: "Person", tab: str = "", js: str = "", height: int = 860) -> None:
         pick = f"document.querySelector('nav button[data-t={tab}]').click();await new Promise(r=>setTimeout(r,400));" if tab else ""

@@ -347,6 +347,14 @@ html.kp-open body{padding-right:424px}
 .kp-ask[aria-pressed=true]{background:var(--monsoon);color:var(--on-dark);box-shadow:none}
 .kp-foot{padding:10px 16px 14px;font-size:14px;line-height:1.35;color:var(--ink-2)}
 
+/* Fingers need room, wherever a finger is the likely pointer. */
+@media (pointer:coarse),(max-width:640px){
+  .btn,.btn.small{min-height:44px}
+  .kp-x{width:44px;height:44px}
+  summary{min-height:44px;padding-block:10px}
+  .linkish{min-height:44px;display:inline-flex;align-items:center}
+  .ask{min-height:44px}
+}
 @media (max-width:1023px){
   .kp{inset:auto 0 0 0;width:100%;max-width:560px;margin-inline:auto;max-height:82vh;border-radius:var(--r-l) var(--r-l) 0 0}
   .kp[open]{animation:kp-up .24s var(--ease)}
