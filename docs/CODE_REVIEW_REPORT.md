@@ -267,7 +267,7 @@ None found.
 
 ## 10. Explicitly untested
 
-- **Live runs:** `verify.py` (Pot 68/68), six people 61/61, three people 37/37, the live clerk attacks 10/10, and the gate scripts. **None were re-run on this branch.** The numbers in the README are from `6fd0204` and earlier.
+- **Live runs:** after the merge, the Pot trip (68/68, with live attacks and a restart) and three people (37/37) were re-run and passed. See section 12. **Six people (61/61), `gate1d_release_live.py` (10/10), the other gate scripts and the dollars smoke test were not re-run.** Their numbers in the README are historical.
 - **Real model:** no real-model run. F5 and F8 were checked with a monkeypatched `subprocess`.
 - **Crash timing:** the crash-between-log-and-cursor scenario was tested at the function level, not by killing a live daemon.
 - **Platforms:** Safari, Firefox, a real phone and a screen reader.
@@ -304,4 +304,6 @@ None found.
 |---|---|
 | Pot trip, `--attack --restart-midway`, real model | **68/68**, plus 31 in-script checks. Two earlier attempts failed at set-up, and a third on a harness keep-alive race, since fixed. See journal section G |
 | Three people, `rehearse.sh 1`, real model | **37/37** |
-| Six people | **Not completed.** Set-up failed on Switch's `create_room` 500. Not retried, because of the Mattermost account limit (246 of 250) |
+| Six people, shared expenses | **Not tested on this code.** Two attempts, at 22:16 and 22:24, both failed when Switch made the sixth person's room. The first was a confirmed 500, and the second's HTTP status was lost with the home app's log. It is recorded as an infrastructure limit. The six-person 61/61 is a historical result, from `6fd0204` |
+
+Across all six-person set-ups on the evening of 7 Nov, Pot trips included, 4 of 6 failed at that step, and the three-person set-up didn't. The cause is in Switch, or its link to Mattermost, and isn't understood. Connection counts were 501 for some failures and 243 for others.

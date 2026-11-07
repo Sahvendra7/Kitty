@@ -451,3 +451,14 @@ With the owner's go-ahead, the 21 Switch agents of our three failed test trips (
 
 Mattermost: 246 active people against the limit of 250. There's no room for another six-person trip until accounts are freed.
 
+### Sat 7 Nov, 22:21-22:25 - the last six-person attempt fails at set-up, and live testing ends
+
+The owner authorised one final six-person attempt, and deactivating only test-made accounts to make room.
+
+- **Freeing room.** The 7 Mattermost accounts of `coorg-weekend-53c8` all carry the suffix `8a1d`. All were created between 22:16:54 and 22:17:37, during our own failed run at 22:16:53. None of them appears in any other trip, the owner's `dp-break-trip-a2c0` (`293a`) or the current 7100 demo (`0e49`). All 7 were deactivated, not deleted. Each returned 200. Mattermost went from 246 to 239 active people.
+- **The attempt,** real model, 22:24:05-22:24:56 (`coorg-weekend-96fa`). Accounts and agents were made for all six. Then `rooms:farhan` failed with `unexpected`, the same Switch `create_room` step as before. Its HTTP status couldn't be read, because `rehearse.sh` runs `rm -rf logs`: at 22:18 it removed `logs/home_app.log` while the home app was still writing to it. So this one isn't counted as a confirmed 500. No processes started, nothing was retried, and no further accounts were made beyond this attempt's 7.
+- **Result: six people, shared expenses, is not tested on the current code.** This is an infrastructure limit, not a pass. `six_person.py` always makes a new trip and new accounts, so existing test identities couldn't be reused.
+- **Tonight's six-person set-ups:** 6 in all, 4 Pot and 2 shared. 4 failed at the sixth person's room, and 2 passed. The three-person set-up passed.
+
+Mattermost ends at 246 active people against 250. Live testing for this submission is finished.
+
