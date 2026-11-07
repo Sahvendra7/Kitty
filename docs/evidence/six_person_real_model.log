@@ -89,3 +89,25 @@ run 2 FAILED
 [06:22:35] story finished in 92s. Now the independent check.
 61/61 checks passed
 ALL 3 SIX-PERSON RUNS PASSED, Sat Nov  7 06:22:37 IST 2026
+=== six-person run 1 of 3, Sat Nov  7 08:09:14 IST 2026
+[08:10:03] PASS  six people provisioned in 48s
+[08:10:20] chits people had to correct: 1
+[08:10:34] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[08:10:48] messages people had to resend: 0 
+[08:10:48] story finished in 93s. Now the independent check.
+61/61 checks passed
+=== six-person run 2 of 3, Sat Nov  7 08:10:50 IST 2026
+[08:11:43] PASS  six people provisioned in 52s
+[08:12:04] chits people had to correct: 1
+[08:12:18] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[08:12:32] messages people had to resend: 0 
+[08:12:32] story finished in 101s. Now the independent check.
+61/61 checks passed
+=== six-person run 3 of 3, Sat Nov  7 08:12:34 IST 2026
+[08:13:27] PASS  six people provisioned in 52s
+[08:13:47] chits people had to correct: 1
+[08:14:01] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[08:14:15] messages people had to resend: 0 
+[08:14:15] story finished in 100s. Now the independent check.
+61/61 checks passed
+ALL 3 SIX-PERSON RUNS PASSED, Sat Nov  7 08:14:17 IST 2026

@@ -309,4 +309,30 @@ Built test-first in a separate worktree, because the owner's home app was runnin
 
 **We used up Mattermost's free user limit.** Regressions began failing with `ERROR_SAFETY_LIMITS_EXCEEDED`: the free edition stops at 250 active users, every person on every trip counts, and this project's test runs had reached it. New trips would have failed for everyone on this server, the owner's included. We deactivated only the accounts this worktree's test trips had made, which is reversible, and that brought it down to 159. This is now in the README's limits.
 
-**Something we haven't explained.** Twice, at 06:08:05 and 06:12:09, every connection from Switch to Mattermost was reset within a second or two, and each time a six-person set-up failed at its last room with a 500 from Switch. Mattermost's own log and Docker's show nothing at those moments, the container didn't restart, and Switch held over 500 connections to port 8065 by then. Each trip adds bots, and Switch keeps a connection per bot, so accumulated load is our guess, not a finding. Pressing "Try again" is the designed response, and we didn't add a silent retry.
+**Something we haven't fully explained.** Three times, at 06:08:05, 06:12:09 and 06:16:29, every connection from Switch to Mattermost was reset within a second or two, and each time a six-person set-up failed at its last room with a 500 from Switch. Mattermost's own log and Docker's show nothing at those moments, the container didn't restart, and Switch held over 500 connections to port 8065 by then. Each trip adds bots, and Switch keeps connections per bot. We deleted the Switch agents our own test trips had registered. Connections only fell from 549 to 513, yet the next three runs were clean, as were the three after the fixes. So load is a likely cause, not a proven one. Pressing "Try again" is the designed response, and we didn't add a silent retry.
+
+### Sat 7 Nov, 06:24-08:15 - the independent review, and what it found
+
+The review ran on Opus, as Fable needed usage credits we didn't spend. It agreed the clerk, the ledger, replay and the fence around shared-expense trips were sound. It also found what our tests had missed, because they checked the logic and not what people would do:
+
+- **Critical: a member could fake a confirmation on everyone's screen.** Typing a line shaped like a clerk post into the group room changed the figures in every person's app, and could take every app down. The balances underneath were right, but nobody would have known. Figures and slips now read only the clerk's posts, identified by sender. `verify` got the same fix, and a live forged line now changes nothing.
+- A treasurer who never pressed "start" could replace a statement mid-collection, shifting the lines their agent had bound. Ask, then Check again, left no way to confirm. A member with no statement couldn't answer a refund. Figures went wrong past 200 posts in the room. `recheck` was refused in the one state the spec said it was for.
+- **A person following the app's own plan couldn't reach "Everyone's square"** if they paid after the trip's last day, because our live story happened to date everything on the 19th. Paying in and settling now run to 30 days after the trip. The model's window didn't move.
+- **The docs promised a treasurer could skip the model,** and there was no way to. Spending and refunds can now be filed by hand.
+- The board could read "Everyone's square" with nothing ever counted.
+
+Every fix started with a test that failed. Re-run afterwards, on the fixed code:
+
+| Run | Result |
+|---|---|
+| Unit and scenario tests | All pass, the original 184 unmodified |
+| Pot trip, no model, with `--attack` | 68 of 68, every attempt refused |
+| `--plant word`, `ref`, `chain` | `verify` failed each time, naming what was planted |
+| `--restart-midway` | 68 of 68 |
+| Pot trip, real model | 68 of 68 |
+| Six people, real model, three in a row | 61 of 61 each, same balances, no resends |
+| Dollars | 28 of 28 |
+
+**Not re-run:** the three-person rehearsal and `gate1d_release_live.py`. They use port 7100, which the owner's demo holds in the main checkout, and we said we'd ask first. The fixes also came after `gate1_spike.py`, `gate1b_humans.py` and `gate1c_llm_sandbox.py` last ran.
+
+**Not merged.** `feat/pot-trip` lives in `../Kitty-pot`, and `feat/kitty-mvp` is unchanged apart from the documents.

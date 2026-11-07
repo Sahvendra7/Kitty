@@ -41,9 +41,10 @@ Indian groups often run shared money through one person's own UPI account. That 
 2. **The treasurer asks for money:** `call 5000`. A request never creates a debt. Only released expenses do.
 3. **Each member pays in their own UPI app,** then their agent finds the debit, or they type what they paid. Nothing counts yet.
 4. **The treasurer's agent looks for the credit,** and tells them privately: found it, a different amount, or nothing yet. "Nothing yet" never means "not received", because a bank export is usually out of date.
-5. **The treasurer decides:** confirm, ask, or say it didn't arrive. A confirmation with no statement behind it is shown to everyone as "on Asha's word".
-6. **A wrong decision is corrected in the open.** The old decision stays, the new one is added, and the group sees what it does to the balance.
-7. **Everyone settles through the treasurer.** Money going back to a member is confirmed by that member, so nobody can mark their own payment as done.
+5. **Nobody has to send statement lines to a model.** Payments, spending and money paid back can all be filed by hand on the desk. "Go through my statement" is optional.
+6. **The treasurer decides:** confirm, ask, or say it didn't arrive. A confirmation with no statement behind it is shown to everyone as "on Asha's word".
+7. **A wrong decision is corrected in the open.** The old decision stays, the new one is added, and the group sees what it does to the balance.
+8. **Everyone settles through the treasurer.** Money going back to a member is confirmed by that member, so nobody can mark their own payment as done.
 
 ![The trip board: who has paid in, what Asha should be holding by the records, and the payments that settle it through Asha](docs/assets/pot/pot-board.png)
 
@@ -57,7 +58,7 @@ Indian groups often run shared money through one person's own UPI account. That 
 - **One payment for several people** keeps balances right, but the roll-call shows the others as unpaid.
 - **The treasurer can't change once the group opens,** and there's no override if they vanish, because nobody else has the money.
 - **A member's wrong confirmation of a refund** has no correction path yet.
-- **Settling has to be dated within the trip.** Set the last day to allow for it.
+- **Paying in and settling have a window:** from the collection start to 30 days after the trip. Spending has to be within the trip's dates.
 - **Synthetic statements only.** Real 12-digit UPI references are refused by the importer, on purpose. A real group would need real statement formats, a hosted server and a phone-friendly app. Under-18s and India's DPDP rules need a lawyer's view first. We make no compliance claim.
 - **No user research.** That treasurers want this is our assumption. See the [spec](docs/POT_TRIP_SPEC.md), section 15, for the five questions to ask them.
 - **Not built yet:** proof on request, `several` candidates (a parent's payment falls to a manual confirm), `dispute`, and resync after a crash between logging and posting. See [the plan](docs/superpowers/plans/2026-11-07-pot-trip-core.md).
@@ -173,12 +174,13 @@ These are real runs, and the output is in [`docs/evidence/`](docs/evidence/).
 
 | Check | Result |
 |---|---|
-| Unit and scenario tests, no Switch, no model | 574 of 574 |
+| Unit and scenario tests, no Switch, no model | 632 of 632 |
 | **Pot trip:** six people, through the app's routes, no model (`pot_trip.py`) | Finished clean, `verify` 68 of 68, balances equal to the [hand-worked numbers](data/synthetic/pot/expected.md) |
 | **Pot trip:** six people, real model | Finished clean, `verify` 68 of 68, same balances, no resends |
 | **Pot trip:** every process stopped mid-collection, and a confirmation sent while they were down (`--restart-midway`) | Finished clean, `verify` 68 of 68. The confirmation kept the minute it was sent |
 | **Pot trip:** confirming as a member, and as each agent, live (`--attack`) | All refused, `verify` 68 of 68 |
 | **Pot trip:** planting a statement word, a reference and a broken chain in the group room (`--plant`) | `verify` fails each time, and names what was planted |
+| **Pot trip:** a member typing a forged confirmation in the group room | Changes nobody's figures, and shows as that person's own message |
 | Six people, real model, three runs in a row, created and played through the app's routes (`rehearse_six.sh`), and a fourth after a stack restart | 4 of 4 runs clean, `verify` 61 of 61 each time, balances equal to the [hand-worked numbers](data/synthetic/six/expected.md) each time |
 | Two people, in dollars, real model (`usd_smoke.py`) | Finished clean, `verify` 28 of 28 |
 | Six people again, with every process stopped mid-trip and a release sent while they were down (`--restart-midway`) | Finished clean, `verify` 61 of 61 |
@@ -213,6 +215,7 @@ Read these before believing the tagline.
 - **It runs on one laptop.** The processes are separate and hold separate credentials, but one OS user could read all of `state/`. Switch enforces room boundaries. The operating system doesn't enforce boundaries between these folders here.
 - **No real banks.** CSV only, in one made-up format. The app refuses unmasked account columns and long digit runs and asks you to confirm the data is made up, but it can't tell whether a file is real. Don't upload real statements.
 - **The home app has no login.** It trusts whoever can reach `127.0.0.1:7000` on this laptop, and it can see each unused invite link. An organiser could open someone's link first. That person would then find it already used, so it's detected and not prevented. The trip board has no login either. It shows only what the group room shows.
+- **The three-person demo and the live-clerk attacks (`rehearse.sh`, `gate1d_release_live.py`) haven't been re-run on the Pot trip branch,** as they need the demo's own ports. Everything else in this table has.
 - **Mattermost's free edition stops at 250 active users.** Every person on every trip counts. After about 35 six-person trips on one server, new trips fail at the account step, and Mattermost's error names its safety limit. `just reset` clears it, along with everything else on that server.
 - **Six people is the most we've run live,** and only on a set of statements we wrote. A trip allows up to twelve. Dollars have one live two-person run (`scripts/usd_smoke.py`, `verify` 28 of 28). Euros and pounds have no live run.
 - **The roster is fixed once the group room opens.** There's no adding someone later, and no changing a split after release (see ADR-015).

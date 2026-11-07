@@ -6,3 +6,12 @@
 [06:03:40] story finished in 101s. Now the independent check.
 PASS  the board's balances equal the recomputed ones
 68/68 checks passed
+=== Pot trip, six people, real model, after the review's fixes, Sat Nov  7 08:09:12 IST 2026
+[08:08:11] PASS  six people provisioned in 50s
+[08:08:52] PASS  balances equal the hand-worked numbers: {'Asha': 390000, 'Rohan': -110000, 'Meera': -310000, 'Dev': 250000, 'Esha': -110000, 'Farhan'
+[08:08:54] PASS  the correction moves only Asha and Meera
+[08:09:09] PASS  a forged confirmation typed by a member changes nobody's figures
+[08:09:09] messages people had to resend: 0 
+[08:09:09] story finished in 109s. Now the independent check.
+PASS  the board's balances equal the recomputed ones
+68/68 checks passed
