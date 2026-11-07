@@ -462,3 +462,38 @@ The owner authorised one final six-person attempt, and deactivating only test-ma
 
 Mattermost ends at 246 active people against 250. Live testing for this submission is finished.
 
+### Sat 7 Nov, 22:30-23:00 - the sixth room, investigated (on `fix/six-person-setup`, not merged or pushed)
+
+The owner asked for the six-person set-up failure to be fixed, not worked around. This was done in a separate worktree. Switch wasn't restarted, no accounts were made, and nothing was deleted. The whole account is in `docs/SIX_PERSON_SETUP_ROOT_CAUSE.md`.
+
+**Found, from Switch's own log:**
+
+- **What fails.** All four failures are `RemoteDisconnected` from Mattermost inside `create_room`. Each sits in a burst where about 255 Switch-to-Mattermost bot websockets fail together, at +0, +5 and +10 seconds. Each burst starts within a second of the newest agent's registration, though most registrations cause none.
+- **Mattermost** logs nothing at those seconds.
+- **The same step on the same identities works later.** Kitty's Try again finished `rooms:farhan` on `coorg-weekend-96fa`, and left no orphan channel.
+
+**Refuted:**
+
+- a connection cap: 550 connections held fine;
+- a stale keep-alive inside Switch, which opens a new connection per request;
+- exhaustion of host ports, TIME_WAIT or descriptors;
+- the config save, which comes 49 seconds earlier;
+- Docker's routine polling.
+
+**Not found:** what drops every connection at once.
+
+**Found along the way, not fixed:** the shared Postgres allows 100 connections, and Mattermost alone may use 100. Fixing that needs restarts.
+
+**Fixed in Kitty:**
+
+- A Switch 500 was reported as `unexpected`. It's now `service_error`.
+- A `service_error` step is now retried once, after 25 seconds, and recorded. 18 tests, with a control that fails without the retry.
+- `rehearse.sh` no longer deletes `logs/`.
+
+**Live:**
+
+- `six_person.py --existing` played the full story on `coorg-weekend-96fa`, already set up, with the real model and no new accounts: **`verify` 61 of 61**, balances equal to the hand-worked numbers, and 0 resends. That shows the workflow on current code. **It doesn't test set-up.**
+- **The new retry hasn't run live.** A fresh set-up needs 7 accounts, and 4 are free.
+
+**Verdict: mitigated, not fixed.**
+
