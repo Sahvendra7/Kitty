@@ -1,6 +1,6 @@
 # The Pot trip: product specification
 
-**Status: proposed. Not approved, and nothing here is built.** Written Sat 7 Nov 2026, against `feat/kitty-mvp` at `4ba9d82`: clean working tree, level with its remote, 184 of 184 tests passing. Pre-sprint checkpoint: tag `checkpoint/pre-product-sprint`, commit `0c28571`, plus `~/Desktop/Switch/checkpoints/`.
+**Status: approved, and Core is built.** What Core leaves out is listed in `docs/superpowers/plans/2026-11-07-pot-trip-core.md`, and later changes are in `docs/BUILD_JOURNEY.md`, section E. Written Sat 7 Nov 2026, against `feat/kitty-mvp` at `4ba9d82`: clean working tree, level with its remote, 184 of 184 tests passing. Pre-sprint checkpoint: tag `checkpoint/pre-product-sprint`, commit `0c28571`, plus `~/Desktop/Switch/checkpoints/`.
 
 Background research: `../research/kitty-india-expense-workflows.md`. Decision record: ADR-016. No code was changed to write this.
 
@@ -43,7 +43,7 @@ Everyone must be 18 or over for now (§12).
 | Claim dates | Trip dates only | Contributions also from `collect_from`, as people pay before a trip |
 | Member statement | Required | Optional. A member can type "I paid" |
 | Group command | `balances`, `settle`, `status` | The same, plus `pot` |
-| Status | Live tested | **Not built** |
+| Status | Live tested | Live tested, six people |
 
 **The setting is fixed once the group room opens,** like the roster (ADR-010). There are no separate engines, spaces or group types.
 

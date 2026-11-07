@@ -333,6 +333,15 @@ Every fix started with a test that failed. Re-run afterwards, on the fixed code:
 | Six people, real model, three in a row | 61 of 61 each, same balances, no resends |
 | Dollars | 28 of 28 |
 
-**Not re-run:** the three-person rehearsal and `gate1d_release_live.py`. They use port 7100, which the owner's demo holds in the main checkout, and we said we'd ask first. `gate1_spike.py`, `gate1b_humans.py` and `gate1c_llm_sandbox.py` were re-run on the fixed code: 28 of 28, 26 of 26, 8 of 8.
+`gate1_spike.py`, `gate1b_humans.py` and `gate1c_llm_sandbox.py` were re-run on the fixed code: 28 of 28, 26 of 26, 8 of 8.
 
-**Not merged.** `feat/pot-trip` lives in `../Kitty-pot`, and `feat/kitty-mvp` is unchanged apart from the documents.
+### Sat 7 Nov, 08:21-08:30 - the last checks, then the merge (done)
+
+The three-person rehearsal and `gate1d_release_live.py` need port 7100, so we asked first, and the owner said yes. Before stopping anything we listed what the rehearsal's stop patterns would hit: only the three-person demo, and not the owner's own trip, whose processes carry a tag for exactly this.
+
+| Run | Result |
+|---|---|
+| Three people, real model, three in a row | 37 of 37 each, balances before settling identical to every earlier run |
+| Attacks on the live clerk, and a planted leak | 10 of 10 |
+
+Merged into `feat/kitty-mvp` as a fast-forward at the owner's request. Not pushed.
