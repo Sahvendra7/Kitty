@@ -83,3 +83,80 @@ def confirmed(clerk, who="rohan", credit=TOKEN_A, **kw) -> str:
     pid = review(clerk, who, "exact", credit, **kw)
     human(clerk, "asha", f"confirm {pid}")
     return pid
+
+
+# ---- the same rooms the live server enforces, with real agents ----------------------------------------
+
+
+STATEMENT_HEAD = "txn_date,txn_time,narration,ref,debit,credit,balance,account\n"
+ASHA_CSV = STATEMENT_HEAD + """2026-10-01,09:00,SALARY NEFT SYNTHETIC CANARY-SALARY-ASHA,N200101,,85000.00,132000.00,XXXXXX2101
+2026-10-05,18:00,UPI/CR/NEHACANARY K/700001/GPAY,U700001,,5000.00,137000.00,XXXXXX2101
+2026-10-09,14:02,UPI/CR/ROHAN K/441001/GPAY,U441001,,5000.00,142000.00,XXXXXX2101
+2026-10-12,10:30,RENT LANDLORD CANARY-RENT-ASHA,N200301,30000.00,,112000.00,XXXXXX2101
+2026-10-17,20:00,NETFLIX CANARY-NETFLIX-ASHA,C200202,649.00,,111351.00,XXXXXX2101
+"""
+ROHAN_CSV = STATEMENT_HEAD + """2026-10-09,14:02,UPI/DR/ASHA M/441001/GPAY,U441001,5000.00,,20000.00,XXXXXX3301
+2026-10-17,12:00,UPI/DR/MEERA S/441002/GPAY,U441002,700.00,,19300.00,XXXXXX3301
+"""
+DIRECTORY = {"ASHA M": "asha", "ROHAN K": "rohan", "MEERA S": "meera", "DEV P": "dev"}
+NAMES = {p: p.title() for p in PEOPLE}
+KEY = b"test-pot-key"
+
+
+def rows_from(text: str, tmp_path, name: str = "s.csv"):
+    from kitty import statements as S
+
+    path = tmp_path / name
+    path.write_text(text)
+    return S.parse(path)
+
+
+class PotWorld:
+    """Rooms as the server enforces them. A message reaches a clerk or an agent only if it's in that room."""
+
+    def __init__(self, statements: dict[str, list] | None = None) -> None:
+        from kitty.agent import RulesBrain
+        from kitty.pot_agent import PotAgent
+
+        self.clerk = make()
+        self.log: dict[str, list[str]] = {}
+        self.brain_calls: list = []
+        world = self
+
+        class Recording(RulesBrain):
+            def classify(self, rows, owner_name, trip_name):
+                world.brain_calls.append(("classify", rows))
+                return super().classify(rows, owner_name, trip_name)
+
+            def read_answer(self, question, answer, people):
+                world.brain_calls.append(("read_answer", question))
+                return super().read_answer(question, answer, people)
+
+        self.agents = {
+            p: PotAgent(p, TRIP, NAMES, DIRECTORY, (statements or {}).get(p, []), Recording(), f"@human-{p}", "@clerk", "Goa", cfg=CFG, pot_key=KEY)
+            for p in PEOPLE
+        }
+
+    def send(self, room: str, sender: str, text: str) -> None:
+        self.log.setdefault(room, []).append(text)
+        out = []
+        if (room == GROUP or room.startswith("desk-")) and sender != "@clerk":
+            out += [("@clerk", p.room_id, p.text) for p in self.clerk.handle(room, sender, text)]
+        for pid, agent_ in self.agents.items():
+            if room in (f"private-{pid}", f"desk-{pid}") and sender != f"@agent-{pid}":
+                out += [(f"@agent-{pid}", f"{p.room}-{pid}", p.text) for p in agent_.handle(room.split("-")[0], sender, text)]
+        for who, target, body in out:
+            self.send(target, who, body)
+
+    def say(self, who: str, room: str, text: str) -> None:
+        self.send(GROUP if room == "group" else f"{room}-{who}", f"@human-{who}", text)
+
+    def begin(self, who: str) -> None:
+        for p in self.agents[who].start():
+            self.send(f"{p.room}-{who}", f"@agent-{who}", p.text)
+
+    def texts(self, *rooms: str) -> str:
+        return "\n".join(t for r in rooms for t in self.log.get(GROUP if r == "group" else r, []))
+
+    def not_private(self) -> str:
+        return "\n".join(t for r, texts in self.log.items() if not r.startswith("private") for t in texts)

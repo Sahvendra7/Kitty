@@ -530,7 +530,12 @@ class PotBook:
         if reason not in C.WITHDRAW_REASONS:
             return self._refuse(clerk, owner, "bad_reason")
         text = f"**{rec.id} withdrawn by {owner.name}.** {WITHDRAW_WHY[reason]} It isn't counted, so balances don't change."
-        return [Post(owner.desk_room, f"{rec.id} withdrawn."), self._publish(clerk, text, owner.human_sender, "withdraw", rec.id, code=reason), *self.square_posts(clerk)]
+        return [
+            Post(owner.desk_room, f"{rec.id} withdrawn."),
+            self._publish(clerk, text, owner.human_sender, "withdraw", rec.id, code=reason),
+            Post(clerk.people[self.cfg.treasurer].desk_room, f"{rec.id} withdrawn."),
+            *self.square_posts(clerk),
+        ]
 
     # ---- from the treasurer, on their own desk ---------------------------------------------
 
@@ -657,12 +662,12 @@ class PotBook:
         if state == "confirmed" and code in CORRECT_OUT_CODES:
             after = before - rec.claim.amount_paise
             text = f"**Correction of {pid}:** {owner.name} no longer confirms it ({code}). {member}'s {money} no longer counts. {member}'s balance goes from {clerk._money(before)} to {clerk._money(after)}."
-            return [Post(owner.desk_room, f"{pid} corrected."), self._publish(clerk, text, owner.human_sender, "correct_out", pid, code=code)]
+            return [Post(owner.desk_room, f"{pid} corrected: not counted."), self._publish(clerk, text, owner.human_sender, "correct_out", pid, code=code)]
         if state == "rejected" and code == "received":
             if problem := self._credit_problem(rec):
                 return self._refuse(clerk, owner, problem)
             after = before + rec.claim.amount_paise
             text = f"**Correction of {pid}:** {owner.name} says it arrived after all. {member} paid {money}. {member}'s balance goes from {clerk._money(before)} to {clerk._money(after)}."
             basis = "records" if rec.credit_token else "word"
-            return [Post(owner.desk_room, f"{pid} corrected."), self._publish(clerk, text, owner.human_sender, "correct_in", pid, basis, code), *self.square_posts(clerk)]
+            return [Post(owner.desk_room, f"{pid} corrected: counted."), self._publish(clerk, text, owner.human_sender, "correct_in", pid, basis, code), *self.square_posts(clerk)]
         return self._refuse(clerk, owner, "cannot_correct")
