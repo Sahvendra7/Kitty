@@ -79,6 +79,10 @@ A trip with a treasurer adds this. Everything else on this page still applies. T
 - **The organiser's link, on an app-made trip.** They could open someone's invite before that person does. It's detected, because the link then says it's been used, but it's not prevented.
 - **On this one-laptop demo**, every process runs as the same OS user, so one could read another's folder. A model process can't, as it has no tools, but this is not a security boundary between people. A real deployment would put each person's agent on their own machine.
 - **An agent's code could post free text to its desk.** The clerk's connection would receive it. The clerk drops it, unstored and unrelayed, but it did reach the clerk process. What prevents this is that only `kitty/agent.py`'s deterministic code holds the key, and it builds every desk message from validated integers and closed lists.
+- **While the model works, its prompt is on the process command line,** so another user on the same machine could read those statement lines with `ps` for up to three minutes. Sending it on stdin is the fix, and needs a live sandbox check first (`docs/CODE_REVIEW_REPORT.md`, F8).
+- **The home app has no login.** Anything that can reach `127.0.0.1:7000` on the laptop can see and renew invite links. Other websites are stopped by Host and Origin checks, but other local users and processes aren't.
+- **Until 7 Nov, a model timeout could write the prompt to the person's log.** That's fixed (F5). Logs from before the fix may hold statement lines.
+- **On shared-expense trips set up before 7 Nov,** a person's app read the group room by text, so a friend could type something that looked like the clerk's. The clerk's figures and the board were never affected. Newer trips trust only the clerk's own account (F4).
 - **The numbers themselves carry some information.** A released ₹12,400 "shopping" claim says something, even with no merchant name.
 - **"No" is information.** Telling the clerk a payment didn't reach you discloses that fact, which is why you release that answer yourself.
 

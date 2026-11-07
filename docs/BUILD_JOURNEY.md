@@ -406,3 +406,23 @@ The cat doesn't invent any of these.
 
 `app/film.html` and `scripts/film.py` weren't changed or run, and `film.html` still loads its old fonts. Check the film's framing against the new pages before recording. The video wasn't recorded.
 
+## G. Release-hardening review
+
+### Sat 7 Nov, 19:50-20:30 - a code review, and seven fixes (on `fix/kitty-release-hardening`, not merged or pushed)
+
+A full review of the merged code, in a separate worktree so the running apps weren't touched. It was tagged first: `checkpoint/pre-hardening-review` at `6fd0204`. The baseline reproduced: 660 tests passed, and the browser check found 0 problems. Two read-only reviewers looked at the frontend and the agent side. Their findings were checked before acting on them.
+
+**Found and fixed, each with a test that failed first:**
+
+- **F1.** A withdrawn payment could still be confirmed by the receiver's held answer. It moved balances by the full amount.
+- **F2.** Three people releasing the same expense counted it twice, once one of them dropped theirs.
+- **F3.** A message Switch delivered twice was applied twice. Only `call` was hurt: it asked everyone again.
+- **F4.** On a shared trip, a friend could type text that every other person's app, and the cat, treated as the clerk's: "confirmed", "Everyone's square". The board and balances were never affected.
+- **F5.** A model timeout wrote the prompt, with statement lines, to the person's log. `PRIVACY.md` said this couldn't happen.
+- **F6.** A failed send cleared the form and said "Filed". The new browser check then found something older: the error was wiped by the next poll within a second.
+- **F14.** `setup_trip.py` briefly left credentials readable under the umask.
+
+**Now:** 736 tests pass, the Mode A golden transcripts are unchanged, and the browser check finds 0 problems.
+
+**Not done:** the live runs weren't re-run on this branch, so the README's 68/68, 61/61 and 37/37 are still from `6fd0204`. Several findings are deferred, with reasons, in `docs/CODE_REVIEW_REPORT.md`. The main ones: the model's "shared" label isn't named on the desk, the prompt is on the command line, the home app has no login, and the clerk has no outbox. The Mattermost-to-Switch lost message is still unexplained. It can't be detected; a resend is safe, which is the only recovery.
+
