@@ -178,15 +178,15 @@ Mattermost is at <http://localhost:8065>. Each person's login is in `state/<pers
 
 These are real runs, and the output is in [`docs/evidence/`](docs/evidence/).
 
-### On the current code (after the 7 Nov review fixes, `feat/kitty-mvp` from `59398cd`)
+### On the current code (after the 7 Nov review and set-up fixes, `feat/kitty-mvp` from `59398cd` and `5c10305`)
 
 | Check | Result |
 |---|---|
-| Unit and scenario tests, no Switch, no model | 736 of 736 (the 660 below, plus 76 from the review) |
+| Unit and scenario tests, no Switch, no model | 754 of 754 (the 660 below, 76 from the review, and 18 for six-person set-up) |
 | Browser check, 35 states at 3 widths, with axe and a failed-send interaction (`ui_check.py`) | 0 problems |
 | **Pot trip:** six people, real model, with live attacks and a mid-collection restart (`pot_trip.py --attack --restart-midway`) | Finished clean, `verify` 68 of 68 |
 | Three-person story, real model, one run (`rehearse.sh 1`) | `verify` 37 of 37 |
-| **Six people, shared expenses** | **Not tested on this code.** Both attempts failed at set-up, when Switch made the sixth person's room. That step failed in 4 of the 6 six-person set-ups on 7 Nov evening, Pot trips included. Three were confirmed as a 500 from Switch, and the fourth's log was lost. It is recorded as an infrastructure limit, not a pass. See `docs/BUILD_JOURNEY.md`, section G |
+| **Six people, shared expenses,** fresh set-up through the app, real model (`six_person.py`, 23:03) | Set-up reached live in 76s, with no step failed or retried. `verify` 61 of 61, balances equal to the hand-worked numbers, 0 resends. One run. Two earlier attempts on this code failed at set-up when Switch dropped its Mattermost connections, and set-up now retries such a step once: see [`docs/SIX_PERSON_SETUP_ROOT_CAUSE.md`](docs/SIX_PERSON_SETUP_ROOT_CAUSE.md) |
 
 The review that led to these fixes is in [`docs/CODE_REVIEW_REPORT.md`](docs/CODE_REVIEW_REPORT.md).
 

@@ -137,3 +137,27 @@ The fix is in commit `d99a4c3`.
 2. **The retry is unproven live.** Prove it with one fresh six-person set-up once accounts are freed. Expect either no burst, or a `retried` entry in the status followed by `live`.
 3. **An outage longer than 25 seconds** still stops set-up. It now names the right cause, and Try again works.
 4. **The Mattermost account limit** (246 of 250) blocks any further six-person set-up until test accounts are deactivated.
+
+## 9. Fresh set-up validation (added 23:10 IST, after the merge decision)
+
+With the owner's approval, 7 accounts were deactivated, not deleted: the accounts of `goa-pot-4f19`, a Pot test trip whose set-up failed at 20:17 and never went live. That took Mattermost to 239 of 250. One fresh six-person set-up was then run through a second home app on port 7030, on this branch's code, with the real model.
+
+| Check | Result |
+|---|---|
+| Set-up (`coorg-weekend-05eb`, 23:03:14) | **live in 76s.** No step failed or retried, so `retried` is `{}` |
+| Connection burst during set-up | Yes, but smaller: about 17 sockets per wave at 23:04:00, 05, 10 and 15, after Esha's agent was registered. No `create_room` landed in it, and Farhan's account steps waited it out (his agent registered at 23:04:18) |
+| Duplicates | None: exactly 7 new accounts (`…9fdc`) and 7 bots, one try for every room, and one channel per room |
+| `verify` | **61 of 61** |
+| Balances | Equal to the hand-worked numbers |
+| Resends | 0 |
+| Duplicate dinner | Raised once, cleared once, counted once |
+
+**What this shows:** a fresh six-person set-up on the new code reached live, and the whole workflow passed. **What it doesn't:** the new retry wasn't triggered, so it is proven by the 18 unit tests and their control, **not by a live outage.** The trigger of Switch's dropped connections is still unknown, so the verdict stays "mitigated".
+
+**After this,** the branch was fast-forwarded into `feat/kitty-mvp` (`5c10305`):
+
+- 754 tests pass in the main checkout.
+- The home app on 7000 was restarted on the merged code, and its trips, the owner's `dp-break-trip-a2c0` and the 7100 demo all answer.
+- `ui_check.py --axe` finds 0 problems.
+- Nothing was pushed.
+

@@ -497,3 +497,24 @@ The owner asked for the six-person set-up failure to be fixed, not worked around
 
 **Verdict: mitigated, not fixed.**
 
+### Sat 7 Nov, 23:00-23:10 - a fresh six-person set-up passes, and the set-up fix is merged
+
+**Accounts.** The owner approved deactivating the 7 accounts of the failed test trip `goa-pot-4f19`, by name. They were deactivated, not deleted, which took Mattermost from 246 to 239 active people.
+
+**One fresh run,** through a second home app on the branch's code, with the real model:
+
+- set-up reached live in 76s, with no step failed or retried;
+- `verify` gave 61 of 61;
+- balances were exact, with 0 resends, and the dinner conflict was counted once;
+- there were no duplicate accounts, bots or rooms.
+
+Switch did drop a smaller wave of connections during set-up, about 17 sockets, but no room creation landed in it. **So the retry still hasn't run live.**
+
+**Merged.** `fix/six-person-setup` was fast-forwarded into `feat/kitty-mvp` (`5c10305`):
+
+- 754 tests pass;
+- the home app on 7000 was restarted on the merged code, and the owner's trip and the 7100 demo still answer;
+- the browser check finds 0 problems.
+
+Not pushed. Mattermost is at 246 of 250.
+

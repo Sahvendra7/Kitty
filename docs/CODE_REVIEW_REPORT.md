@@ -307,3 +307,8 @@ None found.
 | Six people, shared expenses | **Not tested on this code.** Two attempts, at 22:16 and 22:24, both failed when Switch made the sixth person's room. The first was a confirmed 500, and the second's HTTP status was lost with the home app's log. It is recorded as an infrastructure limit. The six-person 61/61 is a historical result, from `6fd0204` |
 
 Across all six-person set-ups on the evening of 7 Nov, Pot trips included, 4 of 6 failed at that step, and the three-person set-up didn't. The cause is in Switch, or its link to Mattermost, and isn't understood. Connection counts were 501 for some failures and 243 for others.
+
+**Update, 23:10 IST.**
+- **Six people, shared expenses:** a fresh set-up and the full story passed on the current code, 61/61, after the set-up fix in `docs/SIX_PERSON_SETUP_ROOT_CAUSE.md`. That's one run.
+- **What makes Switch drop its Mattermost connections** is still unknown.
+
