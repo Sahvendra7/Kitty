@@ -10,7 +10,10 @@ for i in $(seq 1 "$N"); do
   echo "=== rehearsal $i of $N, $(date)" | tee -a "$OUT"
   pkill -f 'scripts/run_all.py'; sleep 2; pkill -f 'kitty\.(person_app [a-z]+ [0-9]+|agent_runner [a-z]+|clerk_daemon)$'; sleep 1
   uv run python scripts/setup_trip.py > /tmp/kitty-setup.$$ 2>&1 || { tail -3 /tmp/kitty-setup.$$ | tee -a "$OUT"; echo "setup FAILED" | tee -a "$OUT"; exit 1; }
-  rm -rf logs
+  # Move the demo's old logs aside rather than deleting them: the home app writes logs/home_app.log while it runs,
+  # and a failure's evidence must survive the next run.
+  old="logs/runs/rehearse-$(date +%Y%m%d-%H%M%S)"; mkdir -p "$old"
+  find logs -maxdepth 1 -type f -name '*.log' ! -name 'home_app.log' -exec mv {} "$old"/ \;
   (nohup uv run python scripts/run_all.py > /dev/null 2>&1 &)
   sleep 8
   start=$(date +%s)
