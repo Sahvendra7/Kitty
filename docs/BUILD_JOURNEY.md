@@ -390,7 +390,7 @@ The owner asked for Kitty to stop looking like a prototype, with an original cat
 | Six people, real model | 61 of 61 |
 | Three people, real model | 37 of 37, twice |
 
-The three-person and six-person runs came before the last CSS-only commit, which changed touch sizes and the board's payments-left count. The second three-person run already had the count. The final Pot trip run has everything.
+The six-person run and the first three-person run came before the last interface commit, which changed touch sizes and the board's payments-left count. The second three-person run already had the count. The final Pot trip run has everything.
 
 **What this doesn't show:** Chromium only, so Safari and Firefox are untested. No real phone: touch was emulated in Chromium. No screen reader was used: axe checks the markup, not the experience. Nobody but us has seen it. The README's stills are from real runs. The `widths-*-fixture.png` images are from the check's fixtures, and are named so.
 
