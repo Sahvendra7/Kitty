@@ -1,6 +1,6 @@
 {
  "switch_commit": "fa933012b",
- "run": "696a4b",
+ "run": "bd9f23",
  "results": [
   {
    "check": "real Mattermost accounts linked to separate Switch owners",
@@ -90,37 +90,37 @@
   {
    "check": "meera-agent hears Meera in her private room",
    "pass": true,
-   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meera696a4b:localhost"
+   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meerabd9f23:localhost"
   },
   {
    "check": "clerk receives the agent's typed claim in the desk room",
    "pass": true,
-   "detail": "@switch-agent-f93833e4:localhost"
+   "detail": "@switch-agent-00bad566:localhost"
   },
   {
    "check": "clerk receives Meera's release from Mattermost",
    "pass": true,
-   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meera696a4b:localhost"
+   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meerabd9f23:localhost"
   },
   {
    "check": "release sender id differs from her agent's id (ids compared, never parsed)",
    "pass": true,
-   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meera696a4b:localhost vs @switch-agent-f93833e4:localhost"
+   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meerabd9f23:localhost vs @switch-agent-00bad566:localhost"
   },
   {
    "check": "same human id in private and desk rooms",
    "pass": true,
-   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meera696a4b:localhost / @switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meera696a4b:localhost"
+   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meerabd9f23:localhost / @switch-mattermost-494b32da-1239-4909-8040-17addef4738c-meerabd9f23:localhost"
   },
   {
    "check": "an agent typing release carries the agent's sender id, so it can be refused",
    "pass": true,
-   "detail": "@switch-agent-f93833e4:localhost"
+   "detail": "@switch-agent-00bad566:localhost"
   },
   {
    "check": "Arjun in the group room has a different sender id from Meera",
    "pass": true,
-   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-arjun696a4b:localhost"
+   "detail": "@switch-mattermost-494b32da-1239-4909-8040-17addef4738c-arjunbd9f23:localhost"
   },
   {
    "check": "private canary and merchant absent from every room the clerk can read",

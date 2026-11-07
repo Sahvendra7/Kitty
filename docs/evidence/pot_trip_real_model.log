@@ -1,0 +1,8 @@
+=== Pot trip, six people, real model, Sat Nov  7 06:03:43 IST 2026
+[06:02:53] PASS  six people provisioned in 54s
+[06:03:25] PASS  balances equal the hand-worked numbers: {'Asha': 390000, 'Rohan': -110000, 'Meera': -310000, 'Dev': 250000, 'Esha': -110000, 'Farhan'
+[06:03:27] PASS  the correction moves only Asha and Meera
+[06:03:40] messages people had to resend: 0 
+[06:03:40] story finished in 101s. Now the independent check.
+PASS  the board's balances equal the recomputed ones
+68/68 checks passed

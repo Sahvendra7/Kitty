@@ -27,6 +27,49 @@ All data here is synthetic. Kitty never moves money and gives no financial advic
 | ![Adding a statement](docs/assets/app/app-statement-add.png) | ![Errors name a line and a column, and never repeat a value](docs/assets/app/app-statement-errors.png) |
 | ![What goes where, and the exact lines the model provider would get](docs/assets/app/app-statement-ready.png) | ![Two people claimed the same dinner](docs/assets/app/app-conflict.png) |
 
+## The Pot trip: when one person holds the money
+
+Indian groups often run shared money through one person's own UPI account. That person gets a pile of screenshots that prove nothing, and has to open their bank app for each one. The others want to see the money, and the only proof is a statement that also shows salary, rent and everything else.
+
+**On a Pot trip, a screenshot never counts. A payment counts only when the person holding the money confirms it arrived, from their own account.** Their agent checks their own statement first, in plain code with no model. The group sees who has paid, and none of the statement.
+
+| | |
+|---|---|
+| ![Asha's desk: Rohan's ₹5,000, found on her own statement, waiting for her to confirm](docs/assets/pot/pot-treasurer-review.png) | ![Rohan's desk: asked, confirmed and outstanding, and his payment waiting for Asha](docs/assets/pot/pot-member-waiting.png) |
+
+1. **When opening a trip,** pick who holds the money, and the day people can start paying in. Leave it on "Nobody" and everything works as it always did.
+2. **The treasurer asks for money:** `call 5000`. A request never creates a debt. Only released expenses do.
+3. **Each member pays in their own UPI app,** then their agent finds the debit, or they type what they paid. Nothing counts yet.
+4. **The treasurer's agent looks for the credit,** and tells them privately: found it, a different amount, or nothing yet. "Nothing yet" never means "not received", because a bank export is usually out of date.
+5. **The treasurer decides:** confirm, ask, or say it didn't arrive. A confirmation with no statement behind it is shown to everyone as "on Asha's word".
+6. **A wrong decision is corrected in the open.** The old decision stays, the new one is added, and the group sees what it does to the balance.
+7. **Everyone settles through the treasurer.** Money going back to a member is confirmed by that member, so nobody can mark their own payment as done.
+
+![The trip board: who has paid in, what Asha should be holding by the records, and the payments that settle it through Asha](docs/assets/pot/pot-board.png)
+
+**What the clerk checks without seeing a statement:** the sender, the amount, that one credit isn't used twice, and that references agree. It compares keyed tokens it can't read, and it never receives a reference or a narration.
+
+**What this can't do, so we don't claim it:**
+
+- **A confirmation is a person's word.** A treasurer can lie, and can edit a file before adding it. A treasurer and a member colluding can't be detected.
+- **Whoever hosts Switch or Mattermost can read private rooms,** including the treasurer's chits. A treasurer who is also the host isn't bound by room boundaries. The organiser's page says so.
+- **The history is tamper-evident, not tamper-proof.** Each decision is chained to the last, so an edit or a gap shows up against an earlier copy. Someone rewriting the database and every copy goes unnoticed.
+- **One payment for several people** keeps balances right, but the roll-call shows the others as unpaid.
+- **The treasurer can't change once the group opens,** and there's no override if they vanish, because nobody else has the money.
+- **A member's wrong confirmation of a refund** has no correction path yet.
+- **Settling has to be dated within the trip.** Set the last day to allow for it.
+- **Synthetic statements only.** Real 12-digit UPI references are refused by the importer, on purpose. A real group would need real statement formats, a hosted server and a phone-friendly app. Under-18s and India's DPDP rules need a lawyer's view first. We make no compliance claim.
+- **No user research.** That treasurers want this is our assumption. See the [spec](docs/POT_TRIP_SPEC.md), section 15, for the five questions to ask them.
+- **Not built yet:** proof on request, `several` candidates (a parent's payment falls to a manual confirm), `dispute`, and resync after a crash between logging and posting. See [the plan](docs/superpowers/plans/2026-11-07-pot-trip-core.md).
+
+To run it, start a home app (`KITTY_BRAIN=rules` runs it with no model at all), then the scripted six-person story:
+
+```bash
+uv run python scripts/pot_trip.py
+```
+
+Add `--attack` to try confirming as a member and as each agent, `--restart-midway` to stop everything mid-collection, or `--plant word|ref|chain` to plant something that `verify` must then catch. The numbers were [worked by hand first](data/synthetic/pot/expected.md).
+
 ## How Kitty uses Switch
 
 Take Switch away and this stops working: its server is what keeps the agents apart.
@@ -130,7 +173,12 @@ These are real runs, and the output is in [`docs/evidence/`](docs/evidence/).
 
 | Check | Result |
 |---|---|
-| Unit and scenario tests, no Switch, no model | 184 of 184 |
+| Unit and scenario tests, no Switch, no model | 574 of 574 |
+| **Pot trip:** six people, through the app's routes, no model (`pot_trip.py`) | Finished clean, `verify` 68 of 68, balances equal to the [hand-worked numbers](data/synthetic/pot/expected.md) |
+| **Pot trip:** six people, real model | Finished clean, `verify` 68 of 68, same balances, no resends |
+| **Pot trip:** every process stopped mid-collection, and a confirmation sent while they were down (`--restart-midway`) | Finished clean, `verify` 68 of 68. The confirmation kept the minute it was sent |
+| **Pot trip:** confirming as a member, and as each agent, live (`--attack`) | All refused, `verify` 68 of 68 |
+| **Pot trip:** planting a statement word, a reference and a broken chain in the group room (`--plant`) | `verify` fails each time, and names what was planted |
 | Six people, real model, three runs in a row, created and played through the app's routes (`rehearse_six.sh`), and a fourth after a stack restart | 4 of 4 runs clean, `verify` 61 of 61 each time, balances equal to the [hand-worked numbers](data/synthetic/six/expected.md) each time |
 | Two people, in dollars, real model (`usd_smoke.py`) | Finished clean, `verify` 28 of 28 |
 | Six people again, with every process stopped mid-trip and a release sent while they were down (`--restart-midway`) | Finished clean, `verify` 61 of 61 |
@@ -165,6 +213,7 @@ Read these before believing the tagline.
 - **It runs on one laptop.** The processes are separate and hold separate credentials, but one OS user could read all of `state/`. Switch enforces room boundaries. The operating system doesn't enforce boundaries between these folders here.
 - **No real banks.** CSV only, in one made-up format. The app refuses unmasked account columns and long digit runs and asks you to confirm the data is made up, but it can't tell whether a file is real. Don't upload real statements.
 - **The home app has no login.** It trusts whoever can reach `127.0.0.1:7000` on this laptop, and it can see each unused invite link. An organiser could open someone's link first. That person would then find it already used, so it's detected and not prevented. The trip board has no login either. It shows only what the group room shows.
+- **Mattermost's free edition stops at 250 active users.** Every person on every trip counts. After about 35 six-person trips on one server, new trips fail at the account step, and Mattermost's error names its safety limit. `just reset` clears it, along with everything else on that server.
 - **Six people is the most we've run live,** and only on a set of statements we wrote. A trip allows up to twelve. Dollars have one live two-person run (`scripts/usd_smoke.py`, `verify` 28 of 28). Euros and pounds have no live run.
 - **The roster is fixed once the group room opens.** There's no adding someone later, and no changing a split after release (see ADR-015).
 - **A from-source Switch at a pinned commit**, which isn't the released product.

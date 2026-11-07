@@ -38,6 +38,27 @@ A model gets no tools, no MCP servers and no settings. The CLI's own report show
 
 Each person's name, the name on their payments, whether they've opened their invite, and whether they've added a statement, as yes or no. The upload screen says so. The organiser's page gets no passwords, keys, room ids, sender ids or error text from a server, and `six_person.py` checks that on a real run. They don't see anyone's statement, chits or private room.
 
+## On a Pot trip
+
+A trip with a treasurer adds this. Everything else on this page still applies. The treasurer's account is often a personal one, so it gets its own table.
+
+| Information | Treasurer | Their agent's code | Model provider | Clerk | Members | **Whoever hosts Switch and Mattermost** |
+|---|---|---|---|---|---|---|
+| Statement file | Yes | Yes | **No**, for collection | **No** | **No** | **No**, it isn't in Switch, though on this one-laptop setup it's on the same disk |
+| Credit lines being checked | Yes | Yes, plain code | **No** | **No** | **No** | **No** |
+| "Found it: 9 Oct" on a private chit | Yes | Yes | **No** | **No** (403) | **No** (403) | **Yes, they can read private rooms** |
+| Candidate result and keyed tokens | Yes | Yes | **No** | Yes | **No** | **Yes** |
+| Spending lines inside the trip dates | Yes | Yes | **Yes, but only if the treasurer presses "Go through my statement"** | **No** | **No** | Only what's discussed in rooms |
+| A member's claim, once released | Yes | Yes | **No** | Yes | Yes | **Yes** |
+
+**Only these reach the group room:** who, the amount claimed, the status, the amount confirmed, the time the treasurer decided, and the last four characters of a reference if the member ticked the box. The default is off. The bank's credit time stays private.
+
+**Checking a payment never calls a model.** "Go through my statement" is a separate step, with the same preview of the exact lines. A treasurer can skip it and keep their personal spending away from the provider. A test with a recording model proves no credit and no pre-trip line reaches a prompt.
+
+**References don't cross.** A full reference becomes a keyed token, using a key held by personal agents and not by the clerk. Anyone holding the key could brute-force a short reference. On this one-laptop setup, every process could read it.
+
+**We don't promise privacy against the infrastructure host.** They can read every room, including the treasurer's private chits. There's no end-to-end encryption. If the treasurer is also the host, room boundaries don't bind them, and the organiser's page says so.
+
 ## What's enforced, and by what
 
 | Boundary | Enforced by | How we know |

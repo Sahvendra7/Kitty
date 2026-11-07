@@ -288,3 +288,25 @@ Reading also found that replay gives every clerk record a new time, so the "deci
 **A correction to our own numbers.** The report guessed 3 to 4 hours for this work, before we'd read this much. The spec covers more, and now gives 2 to 3 hours for a smaller Core, plus evidence and the rest on top. These are still guesses, from commit times this sprint.
 
 Nothing is approved for building. No application code changed, and no video was recorded.
+
+### Sat 7 Nov, 05:27-06:15 - Pot trip Core built (on `feat/pot-trip`, not merged)
+
+Built test-first in a separate worktree, because the owner's home app was running from the main checkout and reads its pages from disk. Before any change, the shared-expense transcripts and prompts were frozen at `4ba9d82` as a golden test, and changing one word in a clerk post made it fail, so we know it can.
+
+| Run | Result |
+|---|---|
+| Six people, through the app's routes, no model | First live run clean: `verify` 68 of 68, balances equal to the numbers worked by hand |
+| `--attack`: confirming as a member, and as each agent | All refused, 68 of 68 |
+| `--plant word`, `--plant ref`, `--plant chain` | `verify` failed each time, and named what was planted |
+| `--restart-midway`: everything stopped, a confirmation sent while down | 68 of 68. The confirmation kept the minute it was sent |
+| Six people, real model | 68 of 68, same balances, no resends |
+| Isolation, real people, model under attack | 28 of 28, 26 of 26, 8 of 8 |
+| Dollars | 28 of 28 |
+
+**Reading a real screenshot caught what the tests didn't.** The "I paid" form rendered as the page's dark chat bar, with its button cut off, because a bare `form{}` rule applied to it. Every test passed with that form broken. Fixed, and looked at again. The board also said "0 payments confirmed by both sides" on a Pot trip.
+
+**Writing the agent tests found a design hole in the plan.** A row offered to one claim stayed used after that claim was withdrawn, so a refiled claim would have found nothing. The clerk now tells the treasurer's desk when a claim stops counting.
+
+**We used up Mattermost's free user limit.** Regressions began failing with `ERROR_SAFETY_LIMITS_EXCEEDED`: the free edition stops at 250 active users, every person on every trip counts, and this project's test runs had reached it. New trips would have failed for everyone on this server, the owner's included. We deactivated only the accounts this worktree's test trips had made, which is reversible, and that brought it down to 159. This is now in the README's limits.
+
+**Something we haven't explained.** Twice, at 06:08:05 and 06:12:09, every connection from Switch to Mattermost was reset within a second or two, and each time a six-person set-up failed at its last room with a 500 from Switch. Mattermost's own log and Docker's show nothing at those moments, the container didn't restart, and Switch held over 500 connections to port 8065 by then. Each trip adds bots, and Switch keeps a connection per bot, so accumulated load is our guess, not a finding. Pressing "Try again" is the designed response, and we didn't add a silent retry.

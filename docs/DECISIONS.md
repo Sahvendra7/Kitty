@@ -164,7 +164,7 @@ A wrongly shared line could be dropped from the desk, but a line wrongly marked 
 
 ## ADR-016: The Pot trip: one engine, one `treasurer` setting, and only the recipient's confirmation counts
 
-**Decided:** 7 Nov 2026, direction by the owner. **Status:** specified in `docs/POT_TRIP_SPEC.md`. **Not built. Implementation waits for the owner's approval of the spec.**
+**Decided:** 7 Nov 2026, direction by the owner. **Status:** Core built on `feat/pot-trip`, per `docs/superpowers/plans/2026-11-07-pot-trip-core.md`. **Not built:** `several` candidates, `dispute`, crash resync, the prompt after a later reversal, proof on request. Spec: `docs/POT_TRIP_SPEC.md`.
 
 **The ask:** make Kitty useful for Indian groups whose money runs through one organiser's personal UPI account, without anyone exposing their financial records.
 
