@@ -108,7 +108,7 @@ function draw(d){
   $("title").textContent=square?"Everyone's square.":d.trip.name;
   const nExp=d.expenses.filter(e=>e.status==="released").length;
   const nConf=d.transfers.filter(t=>t.status==="confirmed").length;
-  $("sub").textContent=`${dm(d.trip.start)} to ${dm(d.trip.end)}. ${nExp} expense${nExp===1?"":"s"} counted, ${nConf} payment${nConf===1?"":"s"} confirmed by both sides${d.held_count?`, ${d.held_count} waiting on their owner's release`:""}.`;
+  $("sub").textContent=`${dm(d.trip.start)} to ${dm(d.trip.end)}. ${nExp} expense${nExp===1?"":"s"} counted, ${d.pot?`${d.pot.contributions.filter(c=>c.status==="confirmed").length} payment${d.pot.contributions.filter(c=>c.status==="confirmed").length===1?"":"s"} into the pot confirmed by ${esc(d.pot.treasurer)}, ${nConf} back out confirmed by whoever received it`:`${nConf} payment${nConf===1?"":"s"} confirmed by both sides`}${d.held_count?`, ${d.held_count} waiting on their owner's release`:""}.`;
   bars(d);
   $("potWrap").hidden=!d.pot;
   if(d.pot){

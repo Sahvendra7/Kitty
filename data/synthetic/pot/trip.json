@@ -1,0 +1,17 @@
+{
+  "name": "Goa pot",
+  "start": "2026-10-16",
+  "end": "2026-10-19",
+  "currency": "INR",
+  "treasurer": "asha",
+  "collect_from": "2026-09-25",
+  "people": [
+    {"name": "Asha", "statement_name": "ASHA M"},
+    {"name": "Rohan", "statement_name": "ROHAN K"},
+    {"name": "Meera", "statement_name": "MEERA S"},
+    {"name": "Dev", "statement_name": "DEV P"},
+    {"name": "Esha", "statement_name": "ESHA R"},
+    {"name": "Farhan", "statement_name": "FARHAN S"}
+  ],
+  "synthetic_notice": "All statements are invented. No real person, account or transaction."
+}

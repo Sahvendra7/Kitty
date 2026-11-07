@@ -115,6 +115,11 @@ nav button[data-t=desk][aria-current=page]{background:var(--white)}
 nav button[data-t=group][aria-current=page]{background:var(--marigold)}
 nav i{font-style:normal;display:inline-block;min-width:19px;margin-left:5px;border-radius:999px;background:var(--marigold);color:var(--ink);font-size:13px;line-height:19px}
 .error{background:var(--hibiscus);color:var(--white);padding:8px 18px;font-size:14px}
+form.pot-form{display:grid;grid-template-columns:1fr;gap:12px;background:none;padding:12px 0 0;margin:0;position:static;border:0;box-shadow:none}
+form.pot-form label{display:grid;gap:6px;font-size:15px;color:var(--ink)}
+form.pot-form input:not([type=checkbox]){width:100%;box-sizing:border-box;min-width:0;background:var(--white);color:var(--ink);border:1px solid var(--ink-2);border-radius:10px;padding:10px 12px;font:inherit}
+form.pot-form .attest{display:flex;gap:8px;align-items:center;color:var(--ink)}
+form.pot-form .btn{justify-self:start}
 @media (prefers-reduced-motion:reduce){.chit.dropping{animation:none;opacity:.4}main{scroll-behavior:auto}}
 </style>
 </head>
@@ -192,6 +197,9 @@ function privateView(d){
     for(const p of others) html+=`<button class="ask quiet" data-pick="${esc(p.id)}" aria-pressed="${picked.has(p.id)}">${esc(p.name)}</button>`;
     if(picked.size) html+=`<button class="ask" data-share>Shared with ${[...picked].map(id=>esc(d.people.find(p=>p.id===id).name)).join(" and ")}</button>`;
     html+=`</div>`;
+  } else if(/Did it arrive\?/.test(t)){
+    const id=(t.match(/`received (t\d+)`/)||[])[1];
+    if(id) html+=`<div class="asks"><button class="ask" data-say="private" data-text="received ${id}">Yes, it arrived</button><button class="ask quiet" data-say="private" data-text="not received ${id}">No</button></div>`;
   } else if(/I can't reach the model|Something went wrong on my side/.test(t)){
     html+=`<div class="asks"><button class="ask" data-say="private" data-text="rescan">Try again</button></div>`;
   } else if(/failed and was reversed/.test(t)){
@@ -214,12 +222,12 @@ function potCard(d){
   if(p.is_treasurer){
     const rows=p.roll.map(r=>`<li><span>${esc(r.name)}</span><span>${r.outstanding?`${cash(r.outstanding)} to come`:r.asked?"Paid":"Not asked"}${r.above?`, ${cash(r.above)} above ask`:""}</span></li>`).join("");
     return `<article class="chit"><div class="amt">The pot</div><p class="what">You hold the group's money. Only you can confirm it arrived. Checking a payment uses your statement on this laptop, and no model. "Go through my statement" is separate, and only for your spending.</p><ul>${rows}</ul>
-      <form data-pot="call" class="stack"><label>Ask for money<input name="ask" inputmode="decimal" placeholder="5000" value="${inv("ask")}"></label><label>Only these people (leave empty for everyone)<input name="who" placeholder="rohan meera" value="${inv("who")}"></label><div class="acts"><button class="btn go">Ask</button></div></form></article>`;
+      <form data-pot="call" class="pot-form"><label>Ask for money<input name="ask" inputmode="decimal" placeholder="5000" value="${inv("ask")}"></label><label>Only these people (leave empty for everyone)<input name="who" placeholder="rohan meera" value="${inv("who")}"></label><div class="acts"><button class="btn go">Ask</button></div></form></article>`;
   }
   const m=p.mine;
   return `<article class="chit"><div class="amt">Your contribution</div><p class="what">${esc(p.treasurer)} holds the group's money. It counts once ${esc(p.treasurer)} confirms it arrived.</p>
     <ul><li><span>Asked</span><span>${cash(m.asked)}</span></li><li><span>Confirmed</span><span>${cash(m.credited)}</span></li><li><span>Outstanding</span><span>${cash(m.outstanding)}</span></li>${m.above?`<li><span>Above ask</span><span>${cash(m.above)}</span></li>`:""}</ul>
-    <form data-pot="paid" class="stack"><label>I paid<input name="amount" inputmode="decimal" placeholder="5000" value="${inv("amount")}"></label><label>On<input type="date" name="day" value="${inv("day")}"></label><label>UPI reference, if you have it<input name="ref" maxlength="16" value="${inv("ref")}"></label><label class="attest"><input type="checkbox" name="show" ${potForm.show?"checked":""}><span>Show the last 4 in the group</span></label><div class="acts"><button class="btn go">File it</button></div></form></article>`;
+    <form data-pot="paid" class="pot-form"><label>I paid<input name="amount" inputmode="decimal" placeholder="5000" value="${inv("amount")}"></label><label>On<input type="date" name="day" value="${inv("day")}"></label><label>UPI reference, if you have it<input name="ref" maxlength="16" value="${inv("ref")}"></label><label class="attest"><input type="checkbox" name="show" ${potForm.show?"checked":""}><span>Show the last 4 in the group</span></label><div class="acts"><button class="btn go">File it</button></div></form></article>`;
 }
 function potChit(s){
   const id=s.id,askBtns=`<details><summary>Ask ${s.kind==="pot_review"?esc(s.from):""}</summary><div class="acts"><button class="btn no" data-say="desk" data-text="ask ${id} amount_differs">The amount differs</button><button class="btn no" data-say="desk" data-text="ask ${id} date_differs">The date differs</button><button class="btn no" data-say="desk" data-text="ask ${id} not_found_yet">I can't find it yet</button></div></details>`;
@@ -227,7 +235,7 @@ function potChit(s){
   let what="",acts="",state="",cls="chit";
   if(s.kind==="contribution"){
     what=`You paid ${esc(s.to)} on ${esc(s.date)}.`;
-    const undo=`<button class="btn no" data-say="desk" data-text="withdraw ${id} mistaken">Withdraw it</button><button class="btn warn" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw: the payment failed</button>`;
+    const undo=`<button class="btn no" data-say="desk" data-text="withdraw ${id} mistaken">Withdraw it</button><button class="btn no" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw: the payment failed</button>`;
     if(s.state==="waiting") acts=`<div class="acts"><button class="btn go" data-release="${id}">Release</button><button class="btn no" data-say="desk" data-text="drop ${id}">Drop</button></div>`;
     else state={submitted:`Waiting for ${esc(s.to)}. Not counted yet.`,needs_clarification:`${esc(s.to)} can't confirm this yet.${s.note?" "+esc(s.note):""}`,confirmed:`${esc(s.to)} confirmed it arrived.`,rejected:`${esc(s.to)} says it didn't arrive. It isn't counted.`,withdrawn:"Withdrawn.",dropped:"Dropped. The group never saw it."}[s.state]||"";
     if(["submitted","needs_clarification","rejected"].includes(s.state)) acts=`<div class="acts">${undo}</div>`;

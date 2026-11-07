@@ -21,8 +21,10 @@ import httpx
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from kitty import claims as C  # noqa: E402
 from kitty import ledger as L  # noqa: E402
 from kitty import paths as P  # noqa: E402
+from kitty import statements as S  # noqa: E402
 from kitty.switch_client import Agent, Mattermost  # noqa: E402
 
 # A trip made in the app: KITTY_TRIP_DIR=trips/<id> uv run python scripts/verify.py
@@ -30,7 +32,11 @@ WHERE = P.current()
 DATA = ROOT / "data/synthetic"
 TRIP = json.loads(WHERE.trip_json.read_text())
 PEOPLE = TRIP["people"]
+POT = TRIP.get("treasurer")  # Set on a Pot trip only. A trip without one runs exactly the checks it always did.
 results: list[tuple[str, bool, str]] = []
+
+
+PEOPLE_IDS = {d["name"]: pid for pid, d in PEOPLE.items()}
 
 
 def check(name: str, ok: bool, detail: str = "") -> None:
@@ -78,10 +84,15 @@ def forbidden_terms() -> set[str]:
     noise = {"UPI", "GPAY", "PHONEPE", "NEFT", "ORDER", "TRANSFER", "SYNTHETIC", "SESSION", "INDIA", "ROOM", "FAILED"} | names
     terms: set[str] = set()
     for pid in PEOPLE:
-        with (WHERE.statement(pid) if WHERE.in_app else DATA / f"{pid}.csv").open() as handle:
+        path = WHERE.statement(pid) if WHERE.in_app else DATA / f"{pid}.csv"
+        if POT and not path.exists():  # On a Pot trip a member may have typed their claims instead.
+            continue
+        with path.open() as handle:
             for row in csv.DictReader(handle):
                 terms.add(row["ref"])
                 terms.add(row["account"])
+                if POT and pid == POT and row["balance"]:
+                    terms.update((row["balance"], C.money(S.to_paise(row["balance"]))))
                 for word in re.findall(r"[A-Za-z0-9-]{4,}", row["narration"]):
                     if word.upper() not in noise and not word.isdigit():
                         terms.add(word)
@@ -158,6 +169,12 @@ def main() -> int:
             payments.append(L.Payment(ids[m.group(2)], ids[m.group(3)], rupees_to_paise(m.group(4))))
         if m := re.match(r"^\*\*(t\d+) withdrawn by", text):
             withdrawn_or_held.add(m.group(1))
+    room = None
+    if POT:
+        from kitty.pot import parse_room
+
+        room = parse_room(group_text, ids)
+        payments.extend(room.payments)
     check("group lines were actually parsed (otherwise everything below is vacuous)", len(lines) >= 1 and len(lines) == len(shown), f"{len(lines)} lines")
     check("allocated shares sum to the total on every group line", all(sum(v for _, v in x.shares) == x.amount_paise for x in lines), f"{len(lines)} lines")
     net = L.balances(list(PEOPLE), lines, payments)
@@ -241,15 +258,79 @@ def main() -> int:
         senders = {e["sender"] for e in events if re.match(rf"^\s*release\s+{tid}\s*$", e["body"], re.I)}
         check(f"{tid} was released by both people's human accounts", len(senders) == 2 and senders <= set(humans.values()), f"{len(senders)} releases")
     if not any(net.values()):
-        check("balances are zero, and only because of confirmed payments", any("Everyone's square" in t for t in group_text) and bool(confirmed_ids))
+        check("balances are zero, and only because of confirmed payments", any("Everyone's square" in t for t in group_text) and bool(confirmed_ids or (room and room.payments)))
     else:
         print(f"NOTE  not square yet: {net}. Balanced on paper is not the same as paid.")
+
+    if POT:
+        pot_checks(room, group_text, events, clerk_cfg, agents, agents_cfg, board, net, lines, terms)
 
     failed = [n for n, ok, _ in results if not ok]
     print(f"\n{len(results) - len(failed)}/{len(results)} checks passed")
     out = WHERE.logs / "verify_output.json" if WHERE.in_app else ROOT / "docs/evidence/verify_output.json"
     out.write_text(json.dumps({"results": [{"check": n, "pass": ok, "detail": d} for n, ok, d in results], "net": net}, indent=1, ensure_ascii=False))
     return 1 if failed else 0
+
+
+def pot_checks(room, group_text, events, clerk_cfg, agents, agents_cfg, board, net, lines, terms) -> None:
+    """A Pot trip's own promises, checked from the room's text, the log and the live server."""
+    from kitty.clerk_daemon import apply_event, build_clerk
+    from kitty.pot import chain_check
+
+    humans = {p: d["human_sender"] for p, d in clerk_cfg["people"].items()}
+    desk = clerk_cfg["people"][POT]["desk_room"]
+    agent_senders = {d["agent_sender"] for d in clerk_cfg["people"].values()}
+    confirmed = [cid for cid, c in room.contributions.items() if c["status"] == "confirmed"]
+    check("pot: contributions were actually read from the room", bool(room.contributions) and bool(confirmed), f"{len(room.contributions)} read, {len(confirmed)} confirmed")
+
+    if board:
+        check("pot: balances recomputed from room text equal the board", {PEOPLE_IDS[b["name"]]: b["paise"] for b in board["balances"]} == net)
+        shares = sum(dict(x.shares).get(POT, 0) for x in lines)
+        check("pot: board pot position equals -net[treasurer] - treasurer's shares", board["pot"]["position"] == -net[POT] - shares, f"{board['pot']['position']}")
+        check("pot: the board's roll-call equals the room's asked amounts", all(r["asked"] == room.asked[PEOPLE_IDS[r["name"]]] for r in board["pot"]["roll"]))
+        check("pot: every hub plan payment involves the treasurer", all(PEOPLE[POT]["name"] in (p["from"], p["to"]) for p in board["plan"]), f"{len(board['plan'])} payments")
+
+    def decided_by_treasurer(cid: str) -> bool:
+        last = [e for e in events if re.match(rf"^\s*(confirm\s+{cid}(\s+manual)?|correct\s+{cid}\s+received)\s*$", e["body"], re.I)]
+        return bool(last) and any(e["room"] == desk and e["sender"] == humans[POT] for e in last)
+
+    check("pot: every confirmed contribution traces to the treasurer's account on the treasurer's desk", all(decided_by_treasurer(c) for c in confirmed), f"{len(confirmed)} confirmed")
+
+    # Rebuild the book from the log alone, so nothing here trusts the running clerk.
+    rebuilt = build_clerk(clerk_cfg, TRIP)
+    for event in events:
+        apply_event(rebuilt, event)
+    book = rebuilt.pot
+    actors = {d.actor for d in book.decisions if d.kind not in ("match",)}
+    check("pot: no decision command from any agent took effect", not actors & agent_senders, f"{len(book.decisions)} decisions")
+    check("pot: rebuilt from the log, every contribution has the status the room shows", all(book.status(cid) == c["status"] for cid, c in room.contributions.items()))
+    tokens = [r.credit_token for r in book.records.values() if book.status(r.id) == "confirmed" and r.credit_token]
+    check("pot: no credit token was confirmed twice", len(tokens) == len(set(tokens)), f"{len(tokens)} tokens")
+
+    tagged = [t for t in group_text if re.search(r" \[d\d+ [0-9a-f]{12}\]$", t)]
+    broken = chain_check(group_text)
+    check("pot: decision chain is unbroken", bool(tagged) and broken is None, f"{len(tagged)} decisions" + (f", broken at {broken}" if broken else ""))
+
+    statement_refs = {t for t in terms if re.fullmatch(r"[A-Z]\d{5,}", t)}
+    rooms = [*group_text, *(m["body"] for p in PEOPLE for m in history(agents[p], clerk_cfg["people"][p]["desk_room"]))]
+    check("pot: no full statement reference in any room the clerk can read", bool(statement_refs) and not any(r in t for r in statement_refs for t in rooms), f"{len(statement_refs)} refs")
+    digits = [t for t in tagged if re.search(r"\d{5,}", re.sub(r" \[d\d+ [0-9a-f]{12}\]$", "", t))]
+    check("pot: no run of 5 or more digits in a group pot line", not digits, str(digits[:2]) if digits else "")
+
+    private = "\n".join(m["body"] for m in history(agents[POT], agents_cfg[POT]["private_room"]))
+    leaks = [w for w in ("SALARY", "LANDLORD", "NEHACANARY", "UPI/CR", "UPI/DR") if w in private]
+    check("pot: the treasurer's private chits carry no narration", bool(private) and not leaks, str(leaks) if leaks else f"{len(private)} characters")
+
+    clerk_text = (WHERE.state / "clerk.json").read_text()
+    keys = {agents_cfg[p].get("pot_key") for p in PEOPLE}
+    check("pot: clerk.json holds no pot_key, and each person's file does", "pot_key" not in clerk_text and len(keys) == 1 and None not in keys)
+
+    login = agents_cfg[POT]["mattermost"]
+    session = Mattermost(login["username"], login["password"])
+    codes = {p: session.channel(agents_cfg[p]["mattermost"]["channels"]["private"]).status_code for p in PEOPLE if p != POT}
+    check("pot: the treasurer is refused every other person's private room", all(c in (403, 404) for c in codes.values()), str(codes))
+    own = session.channel(login["channels"]["private"]).status_code
+    check("pot: control, the treasurer can open their own private room", own == 200, str(own))
 
 
 def cid_of(body: str) -> str:
