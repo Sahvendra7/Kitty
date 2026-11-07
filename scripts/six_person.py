@@ -100,7 +100,9 @@ class Person:
     def __init__(self, name: str, port: int, invite: str) -> None:
         self.name = name
         self.slug = name.lower()
-        self.http = httpx.Client(base_url=f"http://127.0.0.1:{port}", timeout=30)
+        # A fresh connection each time. Reusing one that sat idle past uvicorn's 5-second keep-alive can hit a
+        # socket the app has just closed, a reset that says nothing about the app. Seen on 7 Nov, 20:15.
+        self.http = httpx.Client(base_url=f"http://127.0.0.1:{port}", timeout=30, limits=httpx.Limits(max_keepalive_connections=0))
         self.invite = invite
         self.corrected: dict[str, int] = {}
         self.dropped_dinner = False
@@ -223,7 +225,7 @@ def main() -> int:
     ap.add_argument("--shots", help="Save stills of the pages to this folder, for the README and blog.")
     args = ap.parse_args()
     shots = Shots(args.shots)
-    home = httpx.Client(base_url=HOME, timeout=30)
+    home = httpx.Client(base_url=HOME, timeout=30, limits=httpx.Limits(max_keepalive_connections=0))  # See Person.__init__.
     began = time.time()
     log("Scripted people, through the same routes the pages use.")
     shots.take("app-home", HOME + "/")

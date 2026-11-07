@@ -426,3 +426,16 @@ A full review of the merged code, in a separate worktree so the running apps wer
 
 **Not done:** the live runs weren't re-run on this branch, so the README's 68/68, 61/61 and 37/37 are still from `6fd0204`. Several findings are deferred, with reasons, in `docs/CODE_REVIEW_REPORT.md`. The main ones: the model's "shared" label isn't named on the desk, the prompt is on the command line, the home app has no login, and the clerk has no outbox. The Mattermost-to-Switch lost message is still unexplained. It can't be detected; a resend is safe, which is the only recovery.
 
+### Sat 7 Nov, 20:12-20:20 - merged, then the live runs stalled on Switch
+
+At the owner's request, `fix/kitty-release-hardening` was fast-forwarded into `feat/kitty-mvp` (`59398cd`). It isn't pushed. 736 tests pass in the main checkout. The home app on 7000 was restarted on the merged code. The owner's `dp-break-trip-a2c0` was left running on its own processes, and its board answers. The 7100 demo wasn't touched.
+
+**Pot trip, `--attack --restart-midway`, three attempts. None got as far as the story's checks:**
+
+- **20:14:15.** Provisioned in 62s, then the script's own request to Dev's app was reset. The script's HTTP client had reused a connection idle about 5s, which is uvicorn's keep-alive limit. Dev's app was healthy, and its log had no error. This is a harness race, not an app fault. `six_person.py` and `pot_trip.py` now open a fresh connection per request, and don't retry, so nothing can be posted twice.
+- **20:16:06 and 20:17:35.** Set-up failed at `rooms:farhan` with a 500 from Switch's `create_room`. This is the failure from section E, at 06:08-06:16. Switch was again holding about 500 connections to Mattermost (501 at 20:19). On the first of these trips, Kitty's own Try again carried it on to live within 20 seconds, which is the designed recovery.
+
+**Not re-run on the merged code:** the Pot trip's 68 checks, six people 61/61, three people 37/37, and the live clerk attacks. The README's numbers are still from `6fd0204`.
+
+Mattermost: 228 active people against the limit of 250. The three test trips `goa-pot-6dfb`, `goa-pot-31c5` and `goa-pot-4f19` are ours, and their processes are stopped.
+

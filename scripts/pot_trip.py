@@ -68,7 +68,7 @@ def main() -> int:
     ap.add_argument("--shots", help="Save stills of the pages to this folder.")
     args = ap.parse_args()
     shots = Shots(args.shots)
-    home = httpx.Client(base_url=HOME, timeout=30)
+    home = httpx.Client(base_url=HOME, timeout=30, limits=httpx.Limits(max_keepalive_connections=0))  # See Person.__init__.
     began = time.time()
     log("Scripted people, through the same routes the pages use.")
     tid = home.post("/api/trips", json={k: TRIP[k] for k in ("name", "start", "end", "currency")}).json()["id"]
