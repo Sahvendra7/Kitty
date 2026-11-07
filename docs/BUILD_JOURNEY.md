@@ -345,3 +345,63 @@ The three-person rehearsal and `gate1d_release_live.py` need port 7100, so we as
 | Attacks on the live clerk, and a planted leak | 10 of 10 |
 
 Merged into `feat/kitty-mvp` as a fast-forward at the owner's request. Not pushed.
+
+## F. The interface, and the cat
+
+### Sat 7 Nov, 09:37-10:40 - a new interface on `feat/kitty-ui`
+
+The owner asked for Kitty to stop looking like a prototype, with an original cat as an interactive guide. Hard limits: nothing changes in the ledger, matching, payment authorization, Switch rooms or agent permissions, nothing gets pushed, and no video.
+
+**Started from** `feat/kitty-mvp` at `8fd29c2`, working tree clean, 632 tests passing. That branch is unchanged, as the recovery point.
+
+**The first thing we caught was about the workspace.** The running apps read their HTML from disk on every request, the owner's own trip included. New pages needing a new `/ui/` route would have broken that trip the moment we edited the folder, because its processes run the old Python. So this work is in a separate worktree, `../Kitty-ui`, and its test trips stay in that worktree.
+
+**What the audit found.** The treasurer's review, the most important screen, sat below the "ask for money" form. "Your agent: found it" read too much like a confirmed payment. The person app was a phone layout stretched across a laptop. The board had no total anywhere. Every page asked Google for fonts, which is an odd thing for a private app to do. Baloo 2 looked like a children's book at large sizes.
+
+**What we chose, and what we left out.** No new runtime packages and no build step. The report recommends Motion for React state, and these pages aren't React, so CSS does the animation. Rive and dotLottie would need artwork made in another tool and a runtime to play it, and the same SVG with CSS covered all 13 moods. Fonts and 17 Lucide icons are copied into the repo. `docs/DESIGN.md` has the system, and the licences.
+
+**The only Python changes:** three lines to serve `/ui/` from each of the three apps, and a small cat on the page shown to someone without a session. On a person's app `/ui/` is behind the same session check as everything else.
+
+**The cat can't act, by construction.** `companion.js` and `guide.js` make no network requests and hold no command text, and `tests/test_ui.py` checks that with a positive control against the page that really does act. A browser check also asks her every question on the treasurer's desk and confirms that nothing was sent.
+
+**Things that went wrong, or that looking caught and tests didn't:**
+
+- **We committed with a test failing.** `ab318fb` went in with one of our new tests red, because the commit was chained after the test run instead of depending on it. That commit also carried a flag skipping git hooks, which nobody had asked for. This repo has no hooks, so nothing was skipped, and `fd85019` fixed the test. History wasn't rewritten.
+- **The open panel could sit on a Confirm button,** which the brief rules out. On wide screens it now takes its own column and the page moves over. Under 1024px it's a sheet you dismiss. The check now measures this.
+- **The cat's three copies.** One screen had a cat on the trail, on the chit and in the corner. We removed one, and on the home page the corner cat now only appears once you've scrolled past the big one.
+- **The trail said "Submit claims" on the "Ready to open" step.** It was counting wizard steps rather than the trip's real stage.
+- **Dark mode failed contrast everywhere at first.** One colour token was doing two jobs, a surface and text on a dark surface. axe found it across most screens. Splitting the token fixed it.
+- **"Payments left" counted unconfirmed payments twice,** because they can also be in the settle plan. We caught this reading a real six-person board. It now counts only the plan, and says separately how many are unconfirmed.
+- **Green on ₹0.00.** Green is meant to mean money arrived. Real data showed it on a zero.
+- **Phones:** ten "details" controls were 28px tall. A real-touch check found them, and they're 44px now.
+- **`six_person.py --shots` crashed,** because its idle browser connection died during the set-up wait. `pot_trip.py` already worked around this, and `six_person.py` now opens a browser per still. The crash was in the stills tool, not the app, and the trip it left behind was cleaned up.
+- **The preview tool in the Claude app wouldn't start this server,** because Kitty sets its own port, so we ran it from a shell.
+
+**Results on this branch:**
+
+| Check | Result |
+|---|---|
+| No-model tests | 660 pass: the original 632, unmodified, plus 28 in `tests/test_ui.py` |
+| Browser check, 35 page states at 375, 768 and 1440px, light | No page wider than its screen, no console errors, no serious or critical axe findings |
+| The same, dark | Same |
+| Keyboard, focus, Escape, hide and show, moods, moments, nap, real touch, reduced motion | All pass |
+| Pot trip, no model, with `--attack` | 68 of 68 |
+| Pot trip, real model | 68 of 68, then again on the finished code |
+| Six people, real model | 61 of 61 |
+| Three people, real model | 37 of 37, twice |
+
+The three-person and six-person runs came before the last CSS-only commit, which changed touch sizes and the board's payments-left count. The second three-person run already had the count. The final Pot trip run has everything.
+
+**What this doesn't show:** Chromium only, so Safari and Firefox are untested. No real phone: touch was emulated in Chromium. No screen reader was used: axe checks the markup, not the experience. Nobody but us has seen it. The README's stills are from real runs. The `widths-*-fixture.png` images are from the check's fixtures, and are named so.
+
+**What the backend doesn't give the interface, so it isn't shown:**
+
+- **A per-claim reference comparison.** The clerk compares keyed tokens only when the treasurer confirms, and the feed doesn't expose a result before that. So the review row says exactly that, and shows the last 4 only if the member chose to share them. A mismatch appears afterwards as a plain refusal.
+- **Matching status for members.** That result lives on the treasurer's private desk, so a member sees "not counted yet".
+- **Times on recent activity.** The board's contributions carry the claimed date and no decision time, so the list is newest first by number. The group room's own posts do carry times.
+- **Balances in a person's app on a shared trip.** Only the group-room posts carry them, so the cat explains a settlement only after someone presses Suggest payments.
+
+The cat doesn't invent any of these.
+
+`app/film.html` and `scripts/film.py` weren't changed or run, and `film.html` still loads its old fonts. Check the film's framing against the new pages before recording. The video wasn't recorded.
+

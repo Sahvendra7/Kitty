@@ -27,6 +27,12 @@ All data here is synthetic. Kitty never moves money and gives no financial advic
 | ![Adding a statement](docs/assets/app/app-statement-add.png) | ![Errors name a line and a column, and never repeat a value](docs/assets/app/app-statement-errors.png) |
 | ![What goes where, and the exact lines the model provider would get](docs/assets/app/app-statement-ready.png) | ![Two people claimed the same dinner](docs/assets/app/app-conflict.png) |
 
+## The interface, and the cat
+
+![Kitty's cat in each of her moods](docs/assets/ui/cat-moods.png)
+
+Her mood comes from what the page already knows, and she only reacts to changes that really happen. She explains the screen and points at things. She has no network access, so she can't approve a payment or change a figure, and `tests/test_ui.py` holds her to that. [docs/DESIGN.md](docs/DESIGN.md) has the design system, what's in it, and the licences.
+
 ## The Pot trip: when one person holds the money
 
 Indian groups often run shared money through one person's own UPI account. That person gets a pile of screenshots that prove nothing, and has to open their bank app for each one. The others want to see the money, and the only proof is a statement that also shows salary, rent and everything else.
@@ -207,6 +213,8 @@ The model score is a small sample on data we wrote and labelled ourselves, so it
 | The clerk's rules and arithmetic | In `play_story.py` and `six_person.py`, the people are scripted, though they act through real accounts and real app routes |
 
 ## Limits
+
+- **The interface has been checked in Chromium only,** with emulated touch and automated accessibility checks. It hasn't been tried in Safari or Firefox, on a real phone, or with a screen reader.
 
 Read these before believing the tagline.
 

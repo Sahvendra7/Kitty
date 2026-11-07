@@ -214,7 +214,19 @@ The first version needed a command to create a trip, and worked with three peopl
 
 **The results:** three real-model runs in a row with six people, each with verify at 61 of 61 and balances matching numbers we worked out by hand first. A run with every process stopped mid-trip and a release sent while they were down also finished clean. The original three-person story still passes 37 of 37. It's a small test, on statements we wrote ourselves.
 
-## 12. What we learned
+## 12. Giving it a face
+
+Late on, Kitty worked and looked like a prototype. So it got a cat: a kitty is a pot of money, after all. She's a ginger street cat with a nick in one ear and a rupee coin on her collar, drawn as one SVG. Her 13 moods are all CSS on those same shapes, so she can't drift off-model.
+
+The interesting part was deciding what she isn't allowed to do. In an app about who can see what, and who has said money arrived, a chatty assistant would be the wrong thing. So she has no network access. She reads what the page already has, explains it, and points at things. A test fails if her code ever contains a request or a command. On the treasurer's desk she'll tell you why a payment is unmatched, and she can't confirm it.
+
+She also only reacts to things that happen. A board that was already square when you opened it gets a calm cat with a stamped chit. Petals fall only when you watch the last payment land. And what her magnifying glass finds is labelled "possible match", with a dashed outline and "not counted yet" beside it, because the difference between a candidate and a confirmed payment is the whole product.
+
+Two smaller lessons. Self-hosting the fonts removed a request to a font service from every private page. And our automated checks were clean on several things that looked wrong the moment we read real screenshots: a green ₹0.00, and a count that could include the same payment twice.
+
+Everything under the interface stayed as it was. All 632 earlier tests pass unmodified, and so do the end-to-end runs.
+
+## 13. What we learned
 
 - **Test the boundary before building on it.** The test changed our architecture on day one.
 - **Put limits in the server, then in code, and last in prompts.** We ended up with no prompt-based security at all.
@@ -222,7 +234,7 @@ The first version needed a command to create a trip, and worked with three peopl
 - **Asking a person is a feature.** "Yes, but Meera had gone to bed" is the best line in the demo, and no statement contains it.
 - **Read the server log first.** A retry would have papered over a 50-member limit.
 
-## 13. Try it
+## 14. Try it
 
 `[GAP: repository link. The repository is private at the time of drafting]`
 `[GAP: demo video link]`
