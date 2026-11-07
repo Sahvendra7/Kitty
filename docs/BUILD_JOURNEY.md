@@ -333,6 +333,6 @@ Every fix started with a test that failed. Re-run afterwards, on the fixed code:
 | Six people, real model, three in a row | 61 of 61 each, same balances, no resends |
 | Dollars | 28 of 28 |
 
-**Not re-run:** the three-person rehearsal and `gate1d_release_live.py`. They use port 7100, which the owner's demo holds in the main checkout, and we said we'd ask first. The fixes also came after `gate1_spike.py`, `gate1b_humans.py` and `gate1c_llm_sandbox.py` last ran.
+**Not re-run:** the three-person rehearsal and `gate1d_release_live.py`. They use port 7100, which the owner's demo holds in the main checkout, and we said we'd ask first. `gate1_spike.py`, `gate1b_humans.py` and `gate1c_llm_sandbox.py` were re-run on the fixed code: 28 of 28, 26 of 26, 8 of 8.
 
 **Not merged.** `feat/pot-trip` lives in `../Kitty-pot`, and `feat/kitty-mvp` is unchanged apart from the documents.
