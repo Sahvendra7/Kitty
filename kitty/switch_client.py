@@ -76,6 +76,14 @@ class Gateway:
             r.raise_for_status()
 
 
+class SwitchOpError(RuntimeError):
+    """An agent operation Switch answered with an error status. It keeps the status, never the reply, which could hold anything."""
+
+    def __init__(self, operation: str, status: int) -> None:
+        super().__init__(f"{operation}: {status}")
+        self.status = status
+
+
 @dataclass
 class Event:
     kind: str
@@ -124,7 +132,7 @@ class Agent:
     def result(self, operation: str, /, **args: Any) -> Any:
         r = self.op(operation, **args)
         if r.status_code != 200:
-            raise RuntimeError(f"{self.name}.{operation}: {r.status_code} {r.text[:300]}")
+            raise SwitchOpError(f"{self.name}.{operation}", r.status_code)
         return r.json()["result"]
 
     def post(self, room_id: str, content: str) -> httpx.Response:

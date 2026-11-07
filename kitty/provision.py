@@ -27,7 +27,7 @@ import httpx
 
 from kitty import access
 from kitty.paths import ROOT, for_trip
-from kitty.switch_client import Agent, Gateway, Mattermost
+from kitty.switch_client import Agent, Gateway, Mattermost, SwitchOpError
 from kitty.trips import read_json, write_json
 
 log = logging.getLogger("kitty.provision")
@@ -45,6 +45,11 @@ ERRORS = {
     "unexpected": "Something went wrong on this step, and nothing was lost. Try again to carry on.",
 }
 STOP_EVERYTHING = {"switch_unreachable", "mattermost_unreachable"}
+# Switch's own 5xx, seen on 7 Nov while every Switch-to-Mattermost connection had just dropped. That lasted
+# 10-15 seconds, and the same step worked when run again later. Every step is safe to run again, so one
+# retry after a pause is tried, and recorded. Anything else, or a second failure, stops as before.
+RETRY_ONCE = {"service_error"}
+TRANSIENT_WAIT_SECONDS = 25
 
 
 def classify(exc: Exception) -> str:
@@ -61,6 +66,8 @@ def classify(exc: Exception) -> str:
         return "timed_out"
     if isinstance(exc, httpx.HTTPStatusError):
         return "service_error" if exc.response.status_code >= 500 else "service_refused"
+    if isinstance(exc, SwitchOpError):
+        return "service_error" if exc.status >= 500 else "service_refused"
     if isinstance(exc, RefusedByService):
         return "service_refused"
     return "unexpected"
@@ -218,6 +225,7 @@ class Provisioner:
     faults: set[str] = field(default_factory=set)
     secrets_doc: dict = field(default_factory=dict)
     status: dict = field(default_factory=dict)
+    transient_wait: float = TRANSIENT_WAIT_SECONDS
 
     def __post_init__(self) -> None:
         self.paths = for_trip(self.folder)
@@ -281,7 +289,7 @@ class Provisioner:
     # ---- the run ---------------------------------------------------------------------------------
 
     def run(self) -> str:
-        self.status.update(state="running", failed={}, current=None, started_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
+        self.status.update(state="running", failed={}, retried={}, current=None, started_at=datetime.now(timezone.utc).isoformat(timespec="seconds"))
         self._write_status()
         blocked: set[str] = set()
         failed_any = False
@@ -298,10 +306,21 @@ class Provisioner:
             self.status["current"] = step.id
             self._write_status()
             try:
-                if step.id in self.faults:
-                    self.faults.discard(step.id)
-                    raise InjectedFault(step.id)
-                step.run()
+                try:
+                    if step.id in self.faults:
+                        self.faults.discard(step.id)
+                        raise InjectedFault(step.id)
+                    step.run()
+                except Exception as first:
+                    code = classify(first)
+                    if code not in RETRY_ONCE:
+                        raise
+                    log.warning("step %s failed: %s (%s); trying once more in %ds", step.id, code, type(first).__name__, self.transient_wait)
+                    self.status["retried"][step.id] = code
+                    self._write_status()
+                    if self.transient_wait:
+                        time.sleep(self.transient_wait)
+                    step.run()
             except Exception as exc:
                 code = classify(exc)
                 # The type only. A server's reply or a URL could hold something private.
