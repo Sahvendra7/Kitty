@@ -14,9 +14,11 @@ import os
 import queue
 import re
 import threading
+import time
 from datetime import date, datetime, timezone
 from pathlib import Path
 
+import httpx
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
@@ -57,7 +59,34 @@ def event_line(room: str, sender: str, body: str, raw: dict, pot: bool) -> dict:
         stamp = (raw.get("payload") or {}).get("timestamp")
         moment = datetime.fromtimestamp(stamp / 1000, timezone.utc) if stamp else datetime.now(timezone.utc)
         line["at"] = moment.isoformat(timespec="seconds")
+    mid = (raw.get("payload") or {}).get("message_id")
+    if mid:
+        line["mid"] = mid
     return line
+
+
+def seen_ids(lines: list[dict]) -> set[str]:
+    """Message ids already in the event log. Older lines have none, and are never treated as seen."""
+    return {line["mid"] for line in lines if line.get("mid")}
+
+
+def is_duplicate(line: dict, seen: set[str]) -> bool:
+    """Switch can deliver a message again, for example after a crash between the log and the cursor."""
+    return bool(line.get("mid")) and line["mid"] in seen
+
+
+def say_with_retry(agent: Agent, room_id: str, text: str, attempts: int = 3, wait: float = 0.5) -> bool:
+    """Retries only when the request never reached Switch, so a retry can't post the same decision twice."""
+    for attempt in range(attempts):
+        try:
+            agent.say(room_id, text)
+            return True
+        except httpx.ConnectError:
+            time.sleep(wait * 2**attempt)
+        except (RuntimeError, httpx.HTTPError):
+            break
+    log.error("clerk could not post to room %s; the state change stands but the room did not hear it", room_id)
+    return False
 
 
 def apply_event(clerk: Clerk, event: dict) -> list:
@@ -113,6 +142,9 @@ def main() -> None:
         for e in lines:
             apply_event(clerk, e)  # Replay. Outputs were already posted.
         log.info("replayed %d events", len(lines))
+    else:
+        lines = []
+    seen = seen_ids(lines)
 
     app = FastAPI(title="Kitty trip board")
     app.mount("/ui", StaticFiles(directory=ROOT / "app" / "ui"), name="ui")
@@ -157,15 +189,19 @@ def main() -> None:
         if not should_log(e.body, is_pot):
             continue
         line = event_line(e.room_id, e.sender, e.body, e.raw, is_pot)
+        if is_duplicate(line, seen):
+            log.info("skipped a message delivered twice")
+            continue
         with events_path.open("a") as handle:
             handle.write(json.dumps(line, ensure_ascii=False) + "\n")
+            handle.flush()
+            os.fsync(handle.fileno())
+        if line.get("mid"):
+            seen.add(line["mid"])
         with CLERK_LOCK:
             posts = apply_event(clerk, line)
         for post in posts:
-            try:
-                agent.say(post.room_id, post.text)
-            except RuntimeError:
-                log.exception("clerk could not post")
+            say_with_retry(agent, post.room_id, post.text)
         if where.in_app:
             write_json(cursor_path, {"cursor": e.raw.get("sequence")})
 
