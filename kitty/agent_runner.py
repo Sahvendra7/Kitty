@@ -12,6 +12,7 @@ import json
 import logging
 import os
 import queue
+import re
 import sys
 from datetime import date
 from pathlib import Path
@@ -33,14 +34,30 @@ GREETING_IN_APP = "Hi {name}. I'm your own agent, and I only work for you. Add y
 GREETING = "Hi {name}. I'm your own agent, and I only work for you. Say `start` and I'll go through your statement for {trip}. Nothing leaves this room unless you release it on your desk."
 
 
+def build_core(me: str, trip_doc: dict, config: dict, rows: list[S.Row], brain) -> PersonalAgent:
+    trip = C.Trip(trip_doc["trip_id"], date.fromisoformat(trip_doc["start"]), date.fromisoformat(trip_doc["end"]), tuple(trip_doc["people"]), trip_doc.get("currency", C.CURRENCY))
+    names = {p: d["name"] for p, d in trip_doc["people"].items()}
+    directory = {d["statement_name"]: p for p, d in trip_doc["people"].items()}
+    args = (me, trip, names, directory, rows, brain, config["owner_sender"], config["clerk_sender"], trip_doc["name"])
+    if not trip_doc.get("treasurer"):
+        return PersonalAgent(*args)
+    from kitty.pot import PotConfig
+    from kitty.pot_agent import PotAgent
+
+    return PotAgent(*args, cfg=PotConfig(trip_doc["treasurer"], date.fromisoformat(trip_doc["collect_from"])), pot_key=bytes.fromhex(config["pot_key"]))
+
+
+def needs_statement(body: str, pot: bool) -> bool:
+    """On a Pot trip a member can say what they paid, or whether something arrived, with no statement at all."""
+    return not (pot and bool(re.match(r"^\s*(paid\b|(not\s+)?received\b)", body, re.I)))
+
+
 def main(me: str) -> None:
     logging.basicConfig(level=logging.INFO, format=f"%(asctime)s {me} %(levelname)s %(message)s")
     where = P.current()
     config = json.loads((where.state / f"{me}.json").read_text())
     trip_doc = json.loads(where.trip_json.read_text())
-    trip = C.Trip(trip_doc["trip_id"], date.fromisoformat(trip_doc["start"]), date.fromisoformat(trip_doc["end"]), tuple(trip_doc["people"]), trip_doc.get("currency", C.CURRENCY))
     names = {p: d["name"] for p, d in trip_doc["people"].items()}
-    directory = {d["statement_name"]: p for p, d in trip_doc["people"].items()}
     brain = RulesBrain() if os.environ.get("KITTY_BRAIN") == "rules" else LlmBrain()
     statement = where.statement(me)
 
@@ -48,7 +65,8 @@ def main(me: str) -> None:
         # A trip made in the app starts with no statement, until its owner adds one.
         return S.parse(statement) if statement.exists() else []
 
-    core = PersonalAgent(me, trip, names, directory, rows(), brain, config["owner_sender"], config["clerk_sender"], trip_doc["name"])
+    core = build_core(me, trip_doc, config, rows(), brain)
+    is_pot = bool(trip_doc.get("treasurer"))
     agent = Agent(config["agent_id"], config["api_key"], config["name"])
     memory_path = where.people / me / "agent_memory.json"
     memory = read_json(memory_path) if where.in_app else None
@@ -73,7 +91,7 @@ def main(me: str) -> None:
             log.error("event from a room that is not mine; ignoring")
             continue
         core.rows = rows()
-        if room == "private" and e.sender == config["owner_sender"] and not statement.exists():
+        if room == "private" and e.sender == config["owner_sender"] and not statement.exists() and needs_statement(e.body, is_pot):
             agent.say(targets["private"], NO_STATEMENT)
             continue
         try:

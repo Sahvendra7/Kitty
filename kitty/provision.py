@@ -427,9 +427,13 @@ class Provisioner:
             "run": self.run_suffix,
         })
         invites = read_json(state / "invites.json") or {}
+        pot = {}
+        if self.trip.get("treasurer"):  # For personal agents only: the clerk compares tokens it can't read.
+            pot = {"pot_key": self.secrets_doc.setdefault("pot_key", secrets.token_hex(32))}
+            self._save()
         for slug, p in people.items():
             write_json(state / f"{slug}.json", {
-                "me": slug, "agent_id": p["agent_id"], "api_key": p["api_key"], "name": p["agent_name"],
+                **pot, "me": slug, "agent_id": p["agent_id"], "api_key": p["api_key"], "name": p["agent_name"],
                 "private_room": p["rooms"]["private"], "desk_room": p["rooms"]["desk"],
                 "owner_sender": p["senders"]["human"], "clerk_sender": p["senders"]["clerk"],
                 "mattermost": {"username": p["username"], "password": p["password"], "channels": p["channels"]},

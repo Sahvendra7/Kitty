@@ -14,7 +14,7 @@ import os
 import queue
 import re
 import threading
-from datetime import date
+from datetime import date, datetime, timezone
 from pathlib import Path
 
 import uvicorn
@@ -31,23 +31,48 @@ ROOT = Path(__file__).resolve().parent.parent
 log = logging.getLogger("kitty.clerk")
 CLERK_LOCK = threading.Lock()
 RELEVANT = re.compile(r"^\s*(release|drop|withdraw|balances|settle|status)\b", re.I)
+POT_RELEVANT = re.compile(r"^\s*(?:(?:confirm|reject|ask|recheck|correct)\s+p[0-9]|cancel\s+k[0-9]|call\s+[₹0-9]|pot\s*$)", re.I)
 
 
 def build_clerk(config: dict, trip_doc: dict) -> Clerk:
     trip = C.Trip(trip_doc["trip_id"], date.fromisoformat(trip_doc["start"]), date.fromisoformat(trip_doc["end"]), tuple(trip_doc["people"]), trip_doc.get("currency", C.CURRENCY))
     people = {pid: Person(**p) for pid, p in config["people"].items()}
-    return Clerk(trip, people, config["group_room"])
+    clerk = Clerk(trip, people, config["group_room"])
+    if trip_doc.get("treasurer"):
+        from kitty.pot import PotBook, PotConfig
+
+        clerk.pot = PotBook(PotConfig(trip_doc["treasurer"], date.fromisoformat(trip_doc["collect_from"])))
+    return clerk
 
 
-def should_log(body: str) -> bool:
-    return body.startswith(C.PREFIX) or bool(RELEVANT.match(body))
+def should_log(body: str, pot: bool = False) -> bool:
+    return body.startswith(C.PREFIX) or bool(RELEVANT.match(body)) or (pot and bool(POT_RELEVANT.match(body)))
+
+
+def event_line(room: str, sender: str, body: str, raw: dict, pot: bool) -> dict:
+    """On a Pot trip the server's time goes in the log, because decisions are shown with it and must survive a restart."""
+    line = {"room": room, "sender": sender, "body": body}
+    if pot:
+        stamp = (raw.get("payload") or {}).get("timestamp")
+        moment = datetime.fromtimestamp(stamp / 1000, timezone.utc) if stamp else datetime.now(timezone.utc)
+        line["at"] = moment.isoformat(timespec="seconds")
+    return line
+
+
+def apply_event(clerk: Clerk, event: dict) -> list:
+    if "at" in event:
+        at = event["at"]
+        clerk.now = lambda: at
+    return clerk.handle(event["room"], event["sender"], event["body"])
 
 
 def board(clerk: Clerk, trip_doc: dict) -> dict:
     """The public view: exactly what the group room already shows."""
     with CLERK_LOCK:
         name = {p: clerk.people[p].name for p in clerk.people}
+        extra = {"pot": clerk.pot.board_view(clerk)} if clerk.pot is not None else {}
         return {
+            **extra,
             "trip": {"name": trip_doc["name"], "start": trip_doc["start"], "end": trip_doc["end"], "currency": clerk.trip.currency},
             "people": [{"id": p, "name": name[p]} for p in clerk.trip.participants],
             "expenses": [
@@ -67,7 +92,8 @@ def board(clerk: Clerk, trip_doc: dict) -> dict:
 def clerk_plan(clerk: Clerk, name: dict) -> list[dict]:
     from kitty import ledger as L
 
-    return [{"from": name[p.from_id], "to": name[p.to_id], "paise": p.amount_paise} for p in L.settle(clerk.balances())]
+    plan = clerk.pot.plan(clerk) if clerk.pot is not None else L.settle(clerk.balances())
+    return [{"from": name[p.from_id], "to": name[p.to_id], "paise": p.amount_paise} for p in plan]
 
 
 def main() -> None:
@@ -84,7 +110,7 @@ def main() -> None:
     if events_path.exists():
         lines = [json.loads(line) for line in events_path.read_text().splitlines()]
         for e in lines:
-            clerk.handle(e["room"], e["sender"], e["body"])  # Replay. Outputs were already posted.
+            apply_event(clerk, e)  # Replay. Outputs were already posted.
         log.info("replayed %d events", len(lines))
 
     app = FastAPI(title="Kitty trip board")
@@ -125,12 +151,14 @@ def main() -> None:
             continue
         if e.sender not in {p.human_sender for p in clerk.people.values()} | {p.agent_sender for p in clerk.people.values()}:
             continue
-        if not should_log(e.body):
+        is_pot = clerk.pot is not None
+        if not should_log(e.body, is_pot):
             continue
+        line = event_line(e.room_id, e.sender, e.body, e.raw, is_pot)
         with events_path.open("a") as handle:
-            handle.write(json.dumps({"room": e.room_id, "sender": e.sender, "body": e.body}, ensure_ascii=False) + "\n")
+            handle.write(json.dumps(line, ensure_ascii=False) + "\n")
         with CLERK_LOCK:
-            posts = clerk.handle(e.room_id, e.sender, e.body)
+            posts = apply_event(clerk, line)
         for post in posts:
             try:
                 agent.say(post.room_id, post.text)

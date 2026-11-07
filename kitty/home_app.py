@@ -24,7 +24,7 @@ from kitty import access, provision, runtime
 from kitty.claims import CURRENCIES
 from kitty.paths import ROOT, for_trip, trips_root
 from kitty.provision import Provisioner
-from kitty.trips import MAX_PEOPLE, MIN_PEOPLE, Invalid, TripStore, clean_person, clean_trip, read_json, write_json
+from kitty.trips import MAX_PEOPLE, MIN_PEOPLE, Invalid, TripStore, clean_person, clean_pot, clean_trip, read_json, write_json
 
 log = logging.getLogger("kitty.home")
 PORT = int(os.environ.get("KITTY_HOME_PORT", "7000"))
@@ -94,6 +94,7 @@ class Home:
                 item["app_url"] = f"http://127.0.0.1:{rt['apps'][slug]}/"
             people.append(item)
         out = {**self.summary(trip), "people": people, "provision": prov, "editable": self.editable(trip), "running": self.is_running(trip["trip_id"]), "apps_up": up, "limits": {"min": MIN_PEOPLE, "max": MAX_PEOPLE}}
+        out["treasurer"], out["collect_from"] = trip.get("treasurer"), trip.get("collect_from")
         if up:
             out["board_url"] = f"http://127.0.0.1:{rt['board']}/"
             try:
@@ -166,6 +167,18 @@ def create_app(home: Home, port: int = PORT) -> FastAPI:
         home.store.save(doc)
         return JSONResponse(home.detail(doc))
 
+    @app.put("/api/trips/{trip_id}/pot")
+    async def set_pot(trip_id: str, request: Request) -> JSONResponse:
+        doc = home.store.get(trip_id)
+        if not home.editable(doc):
+            return locked()
+        fields = clean_pot(await request.json(), doc)
+        doc.pop("treasurer", None)
+        doc.pop("collect_from", None)
+        doc.update(fields)
+        home.store.save(doc)
+        return JSONResponse(home.detail(doc))
+
     @app.delete("/api/trips/{trip_id}")
     def delete_trip(trip_id: str) -> JSONResponse:
         doc = home.store.get(trip_id)
@@ -194,6 +207,9 @@ def create_app(home: Home, port: int = PORT) -> FastAPI:
         if slug not in doc["people"]:
             raise KeyError(slug)
         del doc["people"][slug]
+        if doc.get("treasurer") == slug:
+            doc.pop("treasurer")
+            doc.pop("collect_from", None)
         home.store.save(doc)
         home.provisioner(doc).forget_person(slug)
         return JSONResponse(home.detail(doc))
@@ -204,6 +220,8 @@ def create_app(home: Home, port: int = PORT) -> FastAPI:
         doc = home.store.get(trip_id)
         if not MIN_PEOPLE <= len(doc["people"]) <= MAX_PEOPLE:
             return JSONResponse({"error": f"A trip needs at least {MIN_PEOPLE} people."}, status_code=422)
+        if doc.get("treasurer"):
+            clean_pot(doc, doc)  # Dates or people may have changed since it was chosen.
         if home.stage(doc) == "live":
             return JSONResponse(home.detail(doc))
         if not home.begin(doc):

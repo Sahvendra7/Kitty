@@ -103,6 +103,26 @@ def clean_person(body: dict, existing: dict[str, dict]) -> tuple[str, dict]:
     return slug, {"name": name[0].upper() + name[1:], "statement_name": statement}
 
 
+def clean_pot(body: dict, doc: dict) -> dict:
+    """Who holds the group's money, if anyone. An empty answer means everyone pays and they settle up."""
+    treasurer = body.get("treasurer")
+    if not treasurer:
+        return {}
+    errors: dict[str, str] = {}
+    if treasurer not in doc["people"]:
+        errors["treasurer"] = "Choose someone on this trip."
+    collect, start = _date(body.get("collect_from")), date.fromisoformat(doc["start"])
+    if collect is None:
+        errors["collect_from"] = "Choose the day people could start paying in."
+    elif collect > start:
+        errors["collect_from"] = "Collecting has to start by the trip's first day."
+    elif (start - collect).days > MAX_DAYS:
+        errors["collect_from"] = f"Collecting can start up to {MAX_DAYS} days before the trip."
+    if errors:
+        raise Invalid(errors)
+    return {"treasurer": treasurer, "collect_from": collect.isoformat()}
+
+
 def _short(name: str) -> str:
     return re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")[:20].strip("-") or "trip"
 
