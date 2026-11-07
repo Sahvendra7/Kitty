@@ -81,10 +81,13 @@ class Clerk:
     audit: list[dict] = field(default_factory=list)
     _counters: dict = field(default_factory=dict)
     _seen_refs: set = field(default_factory=set)
+    pot: object | None = None  # A kitty.pot.PotBook on a trip with a treasurer. None means shared expenses, as ever.
 
     # ---- routing -------------------------------------------------------------
 
     def handle(self, room_id: str, sender: str, body: str) -> list[Post]:
+        if self.pot is not None and (posts := self.pot.handle(self, room_id, sender, body)) is not None:
+            return posts
         if room_id == self.group_room:
             return self._group(sender, body)
         owner = next((p for p in self.people.values() if p.desk_room == room_id), None)
@@ -304,6 +307,8 @@ class Clerk:
         return [Post(self.group_room, self.status_text())]
 
     def _square_check(self) -> list[Post]:
+        if self.pot is not None:
+            return self.pot.square_posts(self)
         counted = [r for r in self.expenses.values() if r.status == "released"]
         if counted and not self.open_items() and not any(self.balances().values()):
             return [Post(self.group_room, "**Everyone's square.** Every balance is zero, and every payment was confirmed by both sides.")]
@@ -315,7 +320,8 @@ class Clerk:
         return [L.Line(r.claim.payer_id, r.claim.amount_paise, r.claim.shares) for r in self.expenses.values() if r.status == "released"]
 
     def confirmed(self) -> list[L.Payment]:
-        return [L.Payment(r.claim.from_id, r.claim.to_id, r.claim.amount_paise) for r in self.transfers.values() if r.status == "confirmed"]
+        moved = [L.Payment(r.claim.from_id, r.claim.to_id, r.claim.amount_paise) for r in self.transfers.values() if r.status == "confirmed"]
+        return moved + self.pot.confirmed_payments() if self.pot is not None else moved
 
     def balances(self) -> dict[str, int]:
         return L.balances(self.trip.participants, self.lines(), self.confirmed())
@@ -323,7 +329,7 @@ class Clerk:
     def open_items(self) -> list[str]:
         out = [r.id for r in self.expenses.values() if r.status in ("held", "conflict_hold")]
         out += [r.id for r in self.transfers.values() if r.status in ("held", "awaiting_receiver", "challenged")]
-        return out
+        return out + self.pot.open_ids() if self.pot is not None else out
 
     def balances_text(self) -> str:
         net = self.balances()
@@ -333,6 +339,8 @@ class Clerk:
         return f"| Person | Balance | |\n|---|---:|---|\n{rows}{note}"
 
     def settle_text(self) -> str:
+        if self.pot is not None:
+            return self.pot.settle_text(self)
         plan = L.settle(self.balances())
         if not plan:
             return "Nothing to settle. Everyone's square." if self.lines() else "No released expenses yet."
