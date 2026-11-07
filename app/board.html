@@ -4,77 +4,125 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kitty trip board</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ui/kitty.css">
 <style>
-:root{
-  --monsoon:#0E3B43; --marigold:#F2A81D; --marigold-soft:#FFF1CF; --hibiscus:#C8175D;
-  --ink:#10272B; --ink-2:#4A6367; --rule:rgba(16,39,43,.16); --mid:#7D8F92;
-  --owes:#16505A; --owed:#F2A81D;
-  --display:"Baloo 2","Mukta",system-ui,sans-serif; --body:"Mukta",system-ui,sans-serif;
+/* The board is the group room's page, so it wears the group room's marigold. */
+body{min-height:100vh;transition:background .6s}
+.top{background:var(--marigold);color:var(--on-accent)}
+.top-in{max-width:1180px;margin:0 auto;padding:18px clamp(16px,3vw,32px) 18px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+.top h1{font-size:clamp(28px,4.4vw,48px);overflow-wrap:anywhere}
+.top p{margin-top:6px;font-weight:500;max-width:62em;line-height:1.35}
+.board{max-width:1180px;margin:0 auto;padding:0 clamp(16px,3vw,32px) 40px}
+section{padding-top:30px}
+h2{margin-bottom:10px;font-size:22px}
+#catdock .kc-btn kitty-cat{width:64px;height:64px}
+#catdock .kc-show{background:rgba(20,40,44,.14);color:var(--on-accent)}
+@media (min-width:1280px){
+  #catdock{position:fixed;right:28px;bottom:24px;z-index:30}
+  html.kp-open #catdock{visibility:hidden}
+  #catdock .kc-btn kitty-cat{width:84px;height:84px}
+  #catdock .kc-show{background:var(--sunk);color:var(--ink)}
 }
-*{box-sizing:border-box;margin:0}
-[hidden]{display:none!important}
-html{background:var(--marigold-soft)}
-body{font:400 16px/1.45 var(--body);color:var(--ink);background:var(--marigold-soft);min-height:100vh;transition:background .6s}
-.top{background:var(--marigold);padding:18px 24px 16px}
-.top h1{font:800 clamp(30px,5vw,46px)/1 var(--display)}
-.top p{margin-top:4px;font-weight:500}
-section{padding:18px 24px 6px}
-h2{font:700 21px/1.2 var(--display);margin-bottom:10px}
 
-/* The memorable thing: one bar per person, from a shared zero. */
-.standings{display:grid;gap:12px}
-.person{display:grid;grid-template-columns:minmax(64px,88px) 1fr;align-items:center;gap:10px}
-.person .nm{font:700 18px/1 var(--display)}
-.track{position:relative;height:42px}
-.track::before{content:"";position:absolute;left:50%;top:0;bottom:0;width:2px;margin-left:-1px;background:var(--mid)}
-.bar{position:absolute;top:8px;height:26px;transition:width .7s cubic-bezier(.2,.8,.2,1),left .7s cubic-bezier(.2,.8,.2,1)}
-.bar.owed{left:50%;background:var(--owed);border-radius:0 4px 4px 0;margin-left:1px}
-.bar.owes{background:var(--owes);border-radius:4px 0 0 4px;margin-right:1px}
-.val{position:absolute;top:0;line-height:42px;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
-.key{display:flex;justify-content:space-between;color:var(--ink-2);font-size:14px;margin:0 0 4px 98px}
+/* The ledger: three figures and one bar, with the cat sitting where the confirmed money has got to. */
+.ledger{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px clamp(16px,4vw,48px)}
+.stat{min-width:0}
+.stat span{display:block;color:var(--ink-2);font-size:16px;font-weight:500}
+.stat .figure{display:block;color:var(--ink);font-size:clamp(19px,4vw,46px);overflow-wrap:anywhere}
+.stat.good .figure{color:var(--good)}
+.road{position:relative;margin-top:64px;grid-column:1/-1}
+.road .meter{height:14px}
+.road kitty-cat{position:absolute;bottom:6px;left:0;width:66px;height:66px;transform:translateX(-33px);transition:left .9s var(--ease)}
+.road-line{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-top:8px;font-size:15.500px;color:var(--ink-2);grid-column:1/-1}
+.road-line b{color:var(--ink)}
+
+.columns>div{min-width:0}
+.columns{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:0 clamp(28px,5vw,64px);align-items:start}
+
+/* One row per person, from a shared zero. */
+.standings{display:grid;gap:14px}
+.person{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 10px;align-items:baseline}
+.person .nm{font-weight:650;font-size:17px;overflow-wrap:anywhere}
+.val{font-weight:600;font-variant-numeric:tabular-nums;font-size:15.500px;text-align:right}
+.track{position:relative;height:14px;grid-column:1/-1;border-radius:3px;background:var(--sunk)}
+.track::before{content:"";position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;margin-left:-1px;background:var(--ink-2)}
+.bar{position:absolute;top:0;height:14px;transition:width .7s var(--ease),left .7s var(--ease)}
+.bar.owed{left:50%;background:var(--marigold);border-radius:0 3px 3px 0}
+.bar.owes{background:var(--monsoon-3);border-radius:3px 0 0 3px}
+.key{display:flex;justify-content:space-between;color:var(--ink-2);font-size:14px;margin:0 0 6px}
+
+.scroll{overflow-x:auto}
+.exp{width:100%;border-collapse:collapse}
+.exp td,.exp th{padding:8px 10px 8px 0;border-top:1.5px solid var(--rule);text-align:left;font-weight:400;vertical-align:baseline}
+.exp th{color:var(--ink-2);font-size:14.500px;border-top:0;padding-top:0;font-weight:500;white-space:nowrap}
+.exp td:not(:first-child),.exp th:not(:first-child){text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap;padding-right:0;padding-left:12px}
+.exp td:first-child{overflow-wrap:anywhere;min-width:96px}
+.exp small{color:var(--ink-2);display:block}
+.roll td:first-child{font-weight:600}
+.roll .row-meter{height:5px;margin-top:5px;max-width:160px}
+.roll .done{color:var(--good);font-weight:600}
+#potLine{margin-bottom:12px;color:var(--ink-2)}
 
 .plan{list-style:none;padding:0}
-.plan li{padding:7px 0;border-top:1.5px solid var(--rule);font-size:17px}
-.plan b{font:700 19px/1 var(--display)}
-.plan small{display:block;color:var(--ink-2);font-size:14px}
+.plan li{padding:9px 0;border-top:1.5px solid var(--rule);font-size:17px;display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.plan b{font-weight:700;font-variant-numeric:tabular-nums}
 
-.pay{display:grid;grid-template-columns:1fr auto;gap:0 12px;padding:9px 0;border-top:1.5px solid var(--rule)}
-.pay .who{font-weight:600}
-.pay .amt{font:700 18px/1.3 var(--display);text-align:right}
-.pay small{grid-column:1/-1;color:var(--ink-2);font-size:14px}
-.pay.challenged small{color:var(--hibiscus);font-weight:600}
+.pay{display:grid;grid-template-columns:1fr auto;gap:0 12px;padding:10px 0;border-top:1.5px solid var(--rule)}
+.pay .who{font-weight:600;overflow-wrap:anywhere}
+.pay .amt{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.pay small{grid-column:1/-1;color:var(--ink-2);font-size:15px;line-height:1.35;display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:3px}
+.pay.challenged small{color:var(--bad);font-weight:600}
 .pay.withdrawn .who,.pay.withdrawn .amt{text-decoration:line-through;color:var(--ink-2)}
 .pay.challenged{animation:pulse 1.2s ease-out 1}
-@keyframes pulse{from{background:rgba(200,23,93,.2)}to{background:transparent}}
+@keyframes pulse{from{background:var(--bad-wash)}to{background:transparent}}
 
-.exp{width:100%;border-collapse:collapse}
-.exp td,.exp th{padding:6px 0;border-top:1.5px solid var(--rule);text-align:left;font-weight:400;vertical-align:baseline}
-.exp th{color:var(--ink-2);font-size:14px;border-top:0;padding-top:0}
-.exp td:last-child,.exp th:last-child{text-align:right;font-variant-numeric:tabular-nums}
-.exp small{color:var(--ink-2)}
 .empty{color:var(--ink-2)}
-footer{padding:14px 24px 24px;color:var(--ink-2);font-size:14px;max-width:70ch}
+.loading{padding-top:40px;color:var(--ink-2)}
+footer{max-width:1180px;margin:0 auto;padding:18px clamp(16px,3vw,32px) 36px;color:var(--ink-2);font-size:14.500px}
+footer p{max-width:70ch}
 
 /* Everyone's square: the page itself turns marigold. */
-body.square{background:var(--marigold);--ink-2:#10272B;--mid:#10272B}
-body.square section,body.square footer{--rule:rgba(16,39,43,.25)}
+body.square{background:var(--marigold);--ink:#14282C;--ink-2:#14282C;--rule:rgba(20,40,44,.28);--rule-strong:rgba(20,40,44,.4);--sunk:rgba(20,40,44,.14);--good:#0E3B43;--good-wash:#FFF0CC;--bad:#8A0C3B;--bad-wash:#FFF0CC;--wait:#14282C;--wait-wash:#FFF0CC;--paper:#F5A81C;color:#14282C}
 body.square .top h1{font-size:clamp(44px,9vw,84px)}
-body.square .ink-2{color:var(--ink)}
-.err{background:var(--hibiscus);color:#fff;padding:8px 24px}
-@media (prefers-reduced-motion:reduce){.bar,body{transition:none}.pay.challenged{animation:none}}
+body.square .bar.owes{background:#0E3B43}
+.err{background:#B8124F;color:#fff;padding:8px 24px}
+@media (max-width:860px){.columns{grid-template-columns:minmax(0,1fr)}}
+@media (max-width:520px){
+  .ledger{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  .stat.first{grid-column:1/-1}
+  .stat.first .figure{font-size:30px}
+  .road{margin-top:58px}
+  .top-in{align-items:flex-start}
+}
+@media (prefers-reduced-motion:reduce){.bar,body,.road kitty-cat{transition:none}.pay.challenged{animation:none}}
 </style>
 </head>
 <body>
-<div class="err" id="err" hidden></div>
-<div class="top"><h1 id="title">Kitty</h1><p id="sub"></p></div>
-<section aria-labelledby="st"><h2 id="st">Where everyone stands</h2><div class="key"><span>owes</span><span>is owed</span></div><div class="standings" id="bars"></div></section>
-<section id="potWrap" hidden aria-labelledby="pt"><h2 id="pt">Who has paid in</h2><p id="potLine"></p><table class="exp" id="potRoll"></table></section>
-<section id="planWrap" hidden aria-labelledby="pl"><h2 id="pl">Payments that would settle it</h2><ul class="plan" id="plan"></ul></section>
-<section id="payWrap" hidden aria-labelledby="pa"><h2 id="pa">Payments people have reported</h2><div id="pays"></div></section>
-<section aria-labelledby="ex"><h2 id="ex">Counted expenses</h2><div id="exps"></div></section>
-<footer>This board shows only what's in the group room: dates, amounts, categories and who shared. It never receives merchant names or statements. Kitty never moves money. All data in this demo is synthetic.</footer>
+<a class="skip" href="#board">Skip to the board</a>
+<div class="err" id="err" role="alert" hidden></div>
+<div class="top"><div class="top-in"><div><h1 id="title">Kitty</h1><p id="sub"></p></div><div id="catdock"></div></div></div>
+<main class="board" id="board" tabindex="-1">
+<p class="loading" id="loading">Loading the board.</p>
+<div id="content" hidden>
+<section id="ledgerWrap" aria-labelledby="lg"><h2 id="lg" class="sr">The ledger</h2><div class="ledger" id="ledger"></div></section>
+<div class="columns">
+  <div>
+    <section id="potWrap" hidden aria-labelledby="pt"><h2 id="pt">Who has paid in</h2><p id="potLine"></p><div class="scroll" tabindex="0" role="region" aria-labelledby="pt"><table class="exp roll" id="potRoll"></table></div></section>
+    <section id="payWrap" hidden aria-labelledby="pa"><h2 id="pa">Recent activity</h2><div id="pays"></div></section>
+    <section aria-labelledby="ex"><h2 id="ex">Counted expenses</h2><div id="exps"></div></section>
+  </div>
+  <div>
+    <section aria-labelledby="st"><h2 id="st">Where everyone stands</h2><div class="key" aria-hidden="true"><span>owes</span><span>is owed</span></div><div class="standings" id="bars"></div></section>
+    <section id="planWrap" hidden aria-labelledby="pl"><h2 id="pl">Payments that would settle it</h2><ul class="plan" id="plan"></ul></section>
+  </div>
+</div>
+</div>
+</main>
+<footer><p>This board shows only what's in the group room: dates, amounts, categories and who shared. It never receives merchant names or statements. Kitty never moves money. All data in this demo is synthetic.</p></footer>
+<script src="/ui/icons.js"></script>
+<script src="/ui/cat.js"></script>
+<script src="/ui/companion.js"></script>
+<script src="/ui/guide.js"></script>
 <script>
 const $=id=>document.getElementById(id);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -82,52 +130,98 @@ let COIN="INR";const SYMBOL={INR:"₹",USD:"$",EUR:"€",GBP:"£"};
 function money(p){const n=Math.abs(p);const w=Math.floor(n/100);const f=String(n%100).padStart(2,"0");return SYMBOL[COIN]+w.toLocaleString(COIN==="INR"?"en-IN":"en-US")+"."+f}
 const dm=d=>new Date(d+"T12:00:00").toLocaleDateString("en-IN",{day:"numeric",month:"short"});
 const NOTE={awaiting_receiver:p=>`Not counted until ${p.to} confirms.`,challenged:p=>`Not confirmed: ${p.to}'s side shows nothing. Both agents are re-checking privately.`,confirmed:()=>"Confirmed by both sides.",withdrawn:p=>p.reason==="payment_failed"?"Withdrawn: the payment failed and never arrived.":"Withdrawn."};
-let last="";
+const {guide,companion}=Kitty;
+companion.mount({dock:"#catdock"});
+let last="",seen=null;
 function bars(d){
   const max=Math.max(1,...d.balances.map(b=>Math.abs(b.paise)));
   const host=$("bars");
   d.balances.forEach(b=>{
     let row=host.querySelector(`[data-n="${CSS.escape(b.name)}"]`);
-    if(!row){row=document.createElement("div");row.className="person";row.dataset.n=b.name;row.innerHTML=`<span class="nm">${esc(b.name)}</span><div class="track"><div class="bar"></div><span class="val"></span></div>`;host.append(row)}
-    const pct=Math.abs(b.paise)/max*42,bar=row.querySelector(".bar"),val=row.querySelector(".val");
+    if(!row){row=document.createElement("div");row.className="person";row.dataset.n=b.name;row.innerHTML=`<span class="nm">${esc(b.name)}</span><span class="val"></span><div class="track" aria-hidden="true"><div class="bar"></div></div>`;host.append(row)}
+    const pct=Math.abs(b.paise)/max*50,bar=row.querySelector(".bar"),val=row.querySelector(".val");
     bar.className="bar "+(b.paise<0?"owes":"owed");
     bar.style.width=pct+"%";
     bar.style.left=b.paise<0?(50-pct)+"%":"50%";
-    const label=!d.pot&&!d.expenses.some(e=>e.status==="released")?"nothing yet":b.paise===0?"square":`${money(b.paise)} ${b.paise<0?"owes":"is owed"}`;
-    val.textContent=label;
-    row.title=`${b.name}: ${label}`;
-    row.setAttribute("aria-label",`${b.name}: ${label}`);
-    if(b.paise<0){val.style.left="";val.style.right=pct>22?`calc(50% + 10px)`:`calc(50% + ${pct}% + 8px)`;val.style.color=pct>22?"#fff":"var(--ink)"}
-    else{val.style.right="";val.style.left=pct>22?`calc(50% + 10px)`:`calc(50% + ${pct}% + 8px)`;val.style.color="var(--ink)"}
+    val.textContent=!d.pot&&!d.expenses.some(e=>e.status==="released")?"nothing yet":b.paise===0?"square":`${money(b.paise)} ${b.paise<0?"owes":"is owed"}`;
   });
+}
+/* The three figures. Each is a sum of what the clerk reported, with nothing estimated. */
+function ledger(d,mood){
+  let cells,pct,left,right;
+  if(d.pot){
+    const x=guide.potTotals(d.pot),waiting=d.pot.contributions.filter(c=>["submitted","recipient_review","needs_clarification"].includes(c.status)).length;
+    cells=[["Expected",money(x.asked),"first"],["Confirmed",money(x.credited),"good"],["Outstanding",money(x.outstanding),""]];
+    pct=x.asked?Math.min(100,x.credited/x.asked*100):0;
+    left=x.asked?`${Math.round(pct)}% of what was asked for is confirmed.`:"Nobody's been asked for money yet.";
+    right=waiting?`${waiting} waiting for ${esc(d.pot.treasurer)}. Not counted yet.`:x.above?`${money(x.above)} above what was asked.`:"";
+  }else{
+    const counted=d.expenses.filter(e=>e.status==="released"),total=counted.reduce((a,e)=>a+e.amount_paise,0);
+    const done=d.transfers.filter(t=>t.status==="confirmed").length,open=d.transfers.filter(t=>["awaiting_receiver","challenged"].includes(t.status)).length,all=done+open+d.plan.length;
+    cells=[["Counted",money(total),"first"],["Payments confirmed",String(done),"good"],["Payments left",String(open+d.plan.length),""]];
+    pct=all?done/all*100:0;
+    left=counted.length?(all?`${done} of ${all} payments confirmed by both sides.`:"No payments are needed."):"Nothing counted yet.";
+    right=d.held_count?`${d.held_count} waiting on their owner's release.`:"";
+  }
+  const had=$("roadCat");
+  if(!had){
+    $("ledger").innerHTML=`<div class="stat first" data-c="0"></div><div class="stat" data-c="1"></div><div class="stat" data-c="2"></div><div class="road"><kitty-cat id="roadCat" class="tiny"></kitty-cat><div class="meter" role="img"><i></i></div></div><div class="road-line"><span id="roadL"></span><span id="roadR"></span></div>`;
+  }
+  cells.forEach((c,i)=>{const e=$("ledger").querySelector(`[data-c="${i}"]`);e.className=`stat ${c[2]}`;e.innerHTML=`<span>${c[0]}</span><b class="figure">${c[1]}</b>`});
+  const m=$("ledger").querySelector(".meter");m.firstElementChild.style.width=pct+"%";m.setAttribute("aria-label",left);
+  $("roadCat").style.left=`clamp(33px,${pct}%,calc(100% - 33px))`;
+  $("roadCat").rest(mood);
+  $("roadL").textContent=left;$("roadR").innerHTML=right;
+}
+const STATUS={submitted:["wait","Waiting"],recipient_review:["wait","Waiting"],needs_clarification:["wait","Can't confirm yet"],confirmed:["good","Confirmed"],rejected:["bad","Not received"],withdrawn:["","Withdrawn"]};
+function activity(d){
+  const pot=d.pot?d.pot.contributions.slice().reverse().map(c=>{
+    const s=STATUS[c.status]||["",c.status];
+    const how=c.status==="confirmed"?(c.basis==="word"?`On ${esc(d.pot.treasurer)}'s word.`:`Checked against ${esc(d.pot.treasurer)}'s records.`):c.status==="rejected"?`${esc(d.pot.treasurer)} says it didn't arrive. Not counted.`:c.status==="withdrawn"?"Not counted.":`Not counted until ${esc(d.pot.treasurer)} confirms.`;
+    return `<div class="pay ${c.status==="withdrawn"?"withdrawn":""}"><span class="who">${esc(c.from)} paid ${esc(d.pot.treasurer)}</span><span class="amt">${money(c.amount_paise)}</span><small><span class="pill ${s[0]}">${s[1]}</span>${dm(c.date)}. ${how}</small></div>`}):[];
+  const out=d.transfers.slice().reverse().map(t=>`<div class="pay ${esc(t.status)}"><span class="who">${esc(t.from)} to ${esc(t.to)}</span><span class="amt">${money(t.amount_paise)}</span><small>${esc((NOTE[t.status]||(()=>t.status))(t))}</small></div>`);
+  return [...out,...pot];
 }
 function draw(d){
   COIN=d.trip.currency||"INR";
   const square=(d.pot?d.pot.square:d.expenses.some(e=>e.status==="released"))&&d.balances.every(b=>b.paise===0)&&!d.transfers.some(t=>["awaiting_receiver","challenged"].includes(t.status))&&d.held_count===0;
   document.body.classList.toggle("square",square);
   $("title").textContent=square?"Everyone's square.":d.trip.name;
+  document.title=`${d.trip.name}: Kitty trip board`;
   const nExp=d.expenses.filter(e=>e.status==="released").length;
   const nConf=d.transfers.filter(t=>t.status==="confirmed").length;
   $("sub").textContent=`${dm(d.trip.start)} to ${dm(d.trip.end)}. ${nExp} expense${nExp===1?"":"s"} counted, ${d.pot?`${d.pot.contributions.filter(c=>c.status==="confirmed").length} payment${d.pot.contributions.filter(c=>c.status==="confirmed").length===1?"":"s"} into the pot confirmed by ${esc(d.pot.treasurer)}, ${nConf} back out confirmed by whoever received it`:`${nConf} payment${nConf===1?"":"s"} confirmed by both sides`}${d.held_count?`, ${d.held_count} waiting on their owner's release`:""}.`;
+  const ctx=guide.board(d,money,square);
+  $("loading").hidden=true;$("content").hidden=false;
+  ledger(d,ctx.mood==="reconciled"?"reconciled":ctx.mood);
   bars(d);
   $("potWrap").hidden=!d.pot;
   if(d.pot){
     $("potLine").textContent=d.pot.position_line;
-    $("potRoll").innerHTML=`<tr><th>Person</th><th>Asked</th><th>Confirmed</th><th>Still to come</th></tr>`+d.pot.roll.map(r=>`<tr><td>${esc(r.name)}</td><td>${money(r.asked)}</td><td>${money(r.credited)}</td><td>${r.above?`${money(r.above)} above ask`:money(r.outstanding)}</td></tr>`).join("");
+    $("potRoll").innerHTML=`<thead><tr><th scope="col">Person</th><th scope="col">Asked</th><th scope="col">Confirmed</th><th scope="col">Still to come</th></tr></thead><tbody>`+d.pot.roll.map(r=>`<tr><td>${esc(r.name)}${r.asked?`<div class="meter row-meter" aria-hidden="true"><i style="width:${Math.min(100,r.credited/r.asked*100)}%"></i></div>`:""}</td><td>${money(r.asked)}</td><td>${money(r.credited)}</td><td>${r.above?`${money(r.above)} above ask`:r.asked&&!r.outstanding?`<span class="done">Paid in</span>`:money(r.outstanding)}</td></tr>`).join("")+"</tbody>";
   }
   $("planWrap").hidden=!d.plan.length;
-  $("plan").innerHTML=d.plan.map(p=>`<li>${esc(p.from)} pays ${esc(p.to)} <b>${money(p.paise)}</b></li>`).join("");
-  $("payWrap").hidden=!d.transfers.length;
-  $("pays").innerHTML=d.transfers.slice().reverse().map(t=>`<div class="pay ${esc(t.status)}"><span class="who">${esc(t.from)} to ${esc(t.to)}</span><span class="amt">${money(t.amount_paise)}</span><small>${esc((NOTE[t.status]||(()=>t.status))(t))}</small></div>`).join("");
+  $("plan").innerHTML=d.plan.map(p=>`<li><span>${esc(p.from)} pays ${esc(p.to)}</span><b>${money(p.paise)}</b></li>`).join("");
+  const acts=activity(d);
+  $("payWrap").hidden=!acts.length;
+  $("pays").innerHTML=acts.join("");
   const exps=d.expenses.filter(e=>e.status==="released").slice().reverse();
-  $("exps").innerHTML=exps.length?`<table class="exp"><tr><th>What</th><th>Amount</th></tr>${exps.map(e=>`<tr title="${esc(e.shares.map(s=>`${s.name} ${money(s.paise)}`).join(", "))}"><td>${esc(e.category[0].toUpperCase()+e.category.slice(1))}, paid by ${esc(e.payer)}<br><small>${dm(e.date)}. Shared by ${esc(e.shares.map(s=>s.name).join(", "))}</small></td><td>${money(e.amount_paise)}</td></tr>`).join("")}</table>`:`<p class="empty">Nothing yet. Expenses appear here once their owner releases them.</p>`;
+  $("exps").innerHTML=exps.length?`<table class="exp"><thead><tr><th scope="col">What</th><th scope="col">Amount</th></tr></thead><tbody>${exps.map(e=>`<tr title="${esc(e.shares.map(s=>`${s.name} ${money(s.paise)}`).join(", "))}"><td>${esc(e.category[0].toUpperCase()+e.category.slice(1))}, paid by ${esc(e.payer)}<small>${dm(e.date)}. Shared by ${esc(e.shares.map(s=>s.name).join(", "))}</small></td><td>${money(e.amount_paise)}</td></tr>`).join("")}</tbody></table>`:`<p class="empty">Nothing yet. Expenses appear here once their owner releases them.</p>`;
+  // Moments are for changes seen on this page, not for what was already true when it opened.
+  const now={square,confirmed:(d.pot?d.pot.contributions.filter(c=>c.status==="confirmed").length:0)+nConf};
+  if(seen){
+    if(now.square&&!seen.square){companion.moment("celebrating",3400);$("roadCat").play("celebrating",3400);Kitty.petals()}
+    else if(now.confirmed>seen.confirmed){companion.moment("paid",1800);$("roadCat").play("paid",1800)}
+  }
+  seen=now;
+  companion.set(ctx);
 }
 async function poll(){
   try{
     const r=await fetch("/api/board");if(!r.ok)throw 0;
     const d=await r.json();$("err").hidden=true;
     const s=JSON.stringify(d);if(s!==last){last=s;draw(d)}
-  }catch(e){$("err").textContent="Can't reach the clerk. Is run_all.py still going?";$("err").hidden=false}
+  }catch(e){$("err").textContent="Can't reach the clerk. Is run_all.py still going?";$("err").hidden=false;$("loading").hidden=true}
 }
 poll();setInterval(poll,800);
 </script>

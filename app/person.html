@@ -4,140 +4,228 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Kitty</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Mukta:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/ui/kitty.css">
 <style>
-:root{
-  --monsoon:#0E3B43; --monsoon-2:#16505A; --glass:#E4F3EF; --glass-2:#CFE8E1;
-  --marigold:#F2A81D; --marigold-soft:#FFF1CF; --hibiscus:#C8175D;
-  --ink:#10272B; --ink-2:#4A6367; --white:#FFFFFF;
-  --display:"Baloo 2","Mukta",system-ui,sans-serif; --body:"Mukta",system-ui,sans-serif;
-}
-*{box-sizing:border-box;margin:0}
-[hidden]{display:none!important}
+/* Room colours are the point of this page: dark for just you, pale for your desk, marigold for the group. */
 html,body{height:100%}
-body{font:400 16px/1.45 var(--body);color:var(--ink);background:var(--monsoon);display:flex;flex-direction:column;overflow:hidden}
-button,input{font:inherit;color:inherit}
-:focus-visible{outline:3px solid var(--marigold);outline-offset:2px}
-header{padding:14px 18px 10px;display:flex;align-items:baseline;justify-content:space-between;color:var(--white)}
-header h1{font:700 24px/1 var(--display)}
-header span{font-size:14px;opacity:.75}
+body{font-size:16.500px;line-height:1.45;color:var(--ink);background:var(--monsoon);display:flex;flex-direction:column;overflow:hidden}
+.rail{display:contents}
+header{order:0}.who{order:1}.error{order:2}main{order:3}#form{order:4}nav{order:5}
+header{padding:8px 14px 8px 18px;display:flex;align-items:center;gap:12px;color:var(--on-dark);background:var(--monsoon)}
+.who-am-i{flex:1;min-width:0}
+header h1{font-size:23px;line-height:1.1;font-weight:750;overflow-wrap:anywhere;letter-spacing:-.01em}
+header span{font-size:14.500px;opacity:.8;display:block;overflow-wrap:anywhere;line-height:1.25}
+#catdock .kc-btn kitty-cat{width:50px;height:50px}
+#catdock .kc-show{background:rgba(255,255,255,.14);color:#fff}
+.kc .kc-floor{opacity:.2}
 
 /* Who can see this: the one line that is always true, and always visible. */
-.who{padding:8px 18px;font-size:14px;line-height:1.3;font-weight:500}
-main{flex:1;overflow-y:auto;padding:14px 14px 18px}
-body[data-tab=private]{background:var(--monsoon)} body[data-tab=private] .who{background:var(--monsoon-2);color:var(--glass)}
-body[data-tab=desk]{background:var(--monsoon)} body[data-tab=desk] .who{background:var(--glass-2);color:var(--ink)} body[data-tab=desk] main{background:var(--glass)}
-body[data-tab=group]{background:var(--monsoon)} body[data-tab=group] .who{background:var(--marigold);color:var(--ink)} body[data-tab=group] main{background:var(--marigold-soft)}
+.who{padding:7px 18px;font-size:14.500px;line-height:1.3;font-weight:500;display:flex;gap:8px;align-items:center}
+.who svg{flex:none}
+main{flex:1;overflow-y:auto;padding:16px 14px 20px;min-height:0}
+main:focus{outline:0}
+.booting{color:var(--on-monsoon)}
+body[data-tab=private] .who,body[data-tab=statement] .who{background:var(--monsoon-2);color:var(--on-monsoon)}
+body[data-tab=private] main,body[data-tab=statement] main{background:var(--monsoon)}
+body[data-tab=desk] .who{background:var(--glass-2);color:var(--ink)} body[data-tab=desk] main{background:var(--glass);color:var(--ink)}
+body[data-tab=group] .who{background:var(--marigold);color:var(--on-accent)} body[data-tab=group] main{background:var(--marigold-wash);color:var(--ink)}
 
 /* Just you */
-.bubble{max-width:86%;padding:9px 13px;margin:0 0 8px;border-radius:4px 14px 14px 14px;background:var(--monsoon-2);color:var(--white);white-space:pre-wrap;overflow-wrap:anywhere}
+.bubble{max-width:86%;padding:9px 13px;margin:0 0 8px;border-radius:4px 14px 14px 14px;background:var(--monsoon-2);color:#fff;white-space:pre-wrap;overflow-wrap:anywhere}
 .bubble.mine{margin-left:auto;background:var(--glass);color:var(--ink);border-radius:14px 4px 14px 14px}
-.bubble code{font:600 14px var(--body);background:rgba(255,255,255,.16);padding:0 5px;border-radius:4px}
+.bubble code{font-weight:600;font-size:14.500px;background:rgba(255,255,255,.16);padding:0 5px;border-radius:4px}
 .bubble.mine code{background:rgba(0,0,0,.08)}
 .asks{display:flex;flex-wrap:wrap;gap:8px;margin:2px 0 12px}
-.ask{border:0;border-radius:999px;padding:7px 14px;background:var(--marigold);color:var(--ink);font-weight:600;cursor:pointer}
-.ask.quiet{background:transparent;color:var(--glass);box-shadow:inset 0 0 0 1.5px var(--glass)}
-.ask.danger{background:var(--hibiscus);color:var(--white)}
+.ask{border:0;border-radius:999px;min-height:40px;padding:7px 15px;background:var(--marigold);color:var(--on-accent);font-weight:600;cursor:pointer;transition:background .14s}
+.ask:hover{background:var(--marigold-hover)}
+.ask.quiet{background:transparent;color:var(--on-monsoon);box-shadow:inset 0 0 0 1.5px var(--on-monsoon)}
+.ask.quiet:hover{background:rgba(255,255,255,.1)}
+.ask.danger{background:#C2185B;color:#fff}
 .ask[aria-pressed=true]{background:var(--glass);color:var(--ink);box-shadow:none}
-.lede{color:var(--glass);margin-bottom:12px}
-form{display:flex;gap:8px;padding:10px 12px;background:var(--monsoon-2)}
-form input{flex:1;min-width:0;border:0;border-radius:999px;padding:9px 14px;background:var(--white)}
-form button{border:0;border-radius:999px;padding:9px 16px;background:var(--marigold);font-weight:600;cursor:pointer}
+.lede{color:var(--on-monsoon);margin-bottom:12px}
+#form{display:flex;gap:8px;padding:10px 12px;background:var(--monsoon-2)}
+#form input{flex:1;min-width:0;margin:0;border:0;border-radius:999px;padding:9px 16px;background:var(--surface);min-height:44px}
+#form button{border:0;border-radius:999px;padding:9px 18px;background:var(--marigold);color:var(--on-accent);font-weight:600;cursor:pointer}
 
-/* Your desk: only chits get a torn edge, because only chits travel. */
-.chit{position:relative;background:var(--white);padding:16px 16px 14px;margin:0 2px 16px;
-  --t:7px;-webkit-mask:conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/calc(2*var(--t)) 51% repeat-x,linear-gradient(#000 0 0) bottom/100% 50% no-repeat;mask:conic-gradient(from 135deg at top,#0000,#000 1deg 89deg,#0000 90deg) top/calc(2*var(--t)) 51% repeat-x,linear-gradient(#000 0 0) bottom/100% 50% no-repeat}
-.chit .amt{font:700 28px/1.1 var(--display)}
-.chit .what{color:var(--ink-2);margin:2px 0 10px}
-.chit ul{list-style:none;padding:0;margin:0 0 12px;display:grid;grid-template-columns:1fr auto;gap:0 12px;font-size:15px}
+/* Your desk */
+.desk{display:grid;gap:18px;align-items:start}
+.desk.side-first .side{order:-1}
+.queue{display:grid;gap:14px;min-width:0}
+.side{min-width:0;display:grid;gap:14px}
+.queue-head{display:flex;align-items:center;gap:10px}
+.queue-head kitty-cat{width:64px;height:64px}
+.queue-head h2{font-size:22px}
+.queue-head p{font-size:15px;color:var(--ink-2);line-height:1.3}
+.queue-head>div{flex:1;min-width:0}
+.queue-count{flex:none;min-width:38px;height:38px;padding:0 10px;display:grid;place-items:center;border-radius:999px;background:var(--monsoon);color:var(--on-dark);font-weight:700;font-size:19px}
+.past-head{font-size:18px;margin-top:6px}
+.chit{padding:16px 16px 14px;margin:7px 0 0}
+.chit-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap}
+.chit .amt{font-size:29px;font-weight:750;font-stretch:110%;line-height:1.1;font-variant-numeric:tabular-nums;letter-spacing:-.01em;overflow-wrap:anywhere}
+.chit .amt.word{font-size:24px;font-stretch:108%}
+.chit .what{color:var(--ink-2);margin:3px 0 10px;overflow-wrap:anywhere}
+.chit ul{list-style:none;padding:0;margin:0 0 12px;display:grid;grid-template-columns:1fr auto;gap:2px 12px;font-size:15.500px}
 .chit li{display:contents}
 .chit li span:last-child{text-align:right;font-variant-numeric:tabular-nums}
-.chit .acts{display:flex;gap:8px;flex-wrap:wrap}
-.btn{border:0;border-radius:8px;padding:8px 14px;font-weight:600;cursor:pointer}
-.btn.go{background:var(--marigold);color:var(--ink)} .btn.no{background:var(--glass);color:var(--ink)} .btn.warn{background:var(--hibiscus);color:var(--white)}
-.chit .state{font-weight:600;color:var(--ink-2);font-size:15px}
-.chit.done{opacity:.72}
-.chit.alert{box-shadow:inset 4px 0 0 var(--hibiscus)}
-.chit.alert .state{color:var(--hibiscus)}
+.chit .acts,.sheet .acts{display:flex;gap:8px;flex-wrap:wrap}
+.chit .state{font-weight:600;color:var(--ink-2);font-size:15px;margin-top:6px}
+.chit.done{box-shadow:none;background:var(--surface);opacity:.92}
+.chit.alert{box-shadow:var(--lift),inset 4px 0 0 var(--bad)}
+.chit.alert .state{color:var(--bad)}
+.chit.alert.soft{box-shadow:var(--lift),inset 4px 0 0 var(--marigold)}
+.chit.alert.soft .state{color:var(--wait)}
 .chit.dropping{animation:drop .55s cubic-bezier(.4,0,.8,.3) forwards}
 @keyframes drop{to{transform:translateY(-180px) rotate(-6deg) scale(.6);opacity:0}}
-.empty{color:var(--ink-2);padding:18px 4px}
-details{margin-top:18px;color:var(--ink-2);font-size:14px}
-summary{cursor:pointer;font-weight:600}
-pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.4 ui-monospace,Menlo,monospace;background:var(--glass-2);padding:8px;margin-top:6px;border-radius:6px}
-.notice{background:var(--white);border-left:4px solid var(--hibiscus);padding:8px 10px;margin-bottom:12px;font-size:15px}
+.btn{min-height:42px;padding:8px 15px;border-radius:10px}
+details{margin-top:12px;color:var(--ink-2);font-size:15px}
+summary{cursor:pointer;font-weight:600;min-height:28px}
+summary:hover{color:var(--ink)}
+details .acts{margin-top:8px}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;font:13px/1.4 ui-monospace,Menlo,monospace;background:var(--sunk);color:var(--ink);padding:8px;margin-top:6px;border-radius:6px}
+.notice{background:var(--surface);color:var(--ink);box-shadow:inset 4px 0 0 var(--bad);border-radius:var(--r-s);padding:9px 12px;font-size:15px}
+.empty-state{display:flex;align-items:center;gap:12px;padding:10px 4px;color:var(--ink-2)}
+.empty-state kitty-cat{width:72px;height:72px}
+
+/* A payment under review: what they say, what your statement shows, and how far apart those are. */
+.compare{display:grid;gap:0;margin:0 0 12px;border-top:1.5px dashed var(--rule-strong)}
+.compare div{display:grid;grid-template-columns:112px minmax(0,1fr);gap:0 10px;padding:7px 0;border-bottom:1.5px dashed var(--rule-strong);align-items:baseline}
+.compare dt{font-size:14.500px;color:var(--ink-2)}
+.compare dd{margin:0;font-size:15.500px;line-height:1.35;overflow-wrap:anywhere}
+.compare dd .pill{margin:0 6px 3px 0;vertical-align:baseline}
+.pill.maybe{box-shadow:none;outline:0;background:none;border:1.5px dashed var(--ink-2);padding:0 9px}
+.pill.nofind{background:var(--sunk)}
+.chit.review-open{box-shadow:var(--lift),inset 4px 0 0 var(--marigold)}
+
+/* A member's claim: three steps, and who has to take the next one. */
+.claim-steps{list-style:none;padding:0;margin:0 0 12px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));font-size:14.500px;line-height:1.2;color:var(--ink-2)}
+.chit .claim-steps li{display:block;position:relative;padding-top:18px;font-weight:600}
+.claim-steps li::before{content:"";position:absolute;left:0;top:5px;width:12px;height:12px;border-radius:50%;background:var(--surface);box-shadow:inset 0 0 0 2px var(--rule-strong);z-index:1}
+.claim-steps li::after{content:"";position:absolute;left:0;right:0;top:10px;height:2px;background:var(--rule-strong)}
+.claim-steps li:last-child::after{display:none}
+.claim-steps li[data-at=done]{color:var(--ink)}
+.claim-steps li[data-at=done]::before{background:var(--good);box-shadow:none}
+.claim-steps li[data-at=done]::after{background:var(--good)}
+.claim-steps li[data-at=now]{color:var(--ink)}
+.claim-steps li[data-at=now]::before{background:var(--marigold);box-shadow:0 0 0 3px var(--marigold-wash)}
+.claim-steps li[data-at=stopped]{color:var(--bad)}
+.claim-steps li[data-at=stopped]::before{background:var(--bad);box-shadow:none}
+
+/* The pot, in figures */
+.figs{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px 12px;margin:10px 0 8px}
+.figs span{display:block;font-size:14px;color:var(--ink-2);line-height:1.2}
+.figs b{display:block;font-size:clamp(17px,2.200vw,22px);font-weight:750;font-variant-numeric:tabular-nums;font-stretch:104%;overflow-wrap:anywhere;line-height:1.2}
+.figs .good b{color:var(--good)}
+.chit .roll{margin:10px 0 0}
+.chit .roll li span:first-child{overflow-wrap:anywhere;font-weight:550}
+.form-title{display:flex;align-items:center;gap:8px;font-size:18px;margin-top:16px;padding-top:12px;border-top:1.5px dashed var(--rule-strong)}
+.form-title kitty-cat{width:44px;height:44px}
 
 /* The group */
-.line{display:grid;grid-template-columns:1fr auto;gap:0 12px;padding:9px 0;border-bottom:1.5px solid rgba(16,39,43,.14)}
-.line b{font:600 18px/1.2 var(--display)}
-.line small{grid-column:1/-1;color:var(--ink-2);font-size:14px}
-.note{padding:9px 0;border-bottom:1.5px solid rgba(16,39,43,.14);overflow-wrap:anywhere}
-.note.mine{color:var(--ink-2);font-size:14px}
-.note.big{font:700 22px/1.2 var(--display);border:0;padding:14px 0}
-.note.bad{color:var(--hibiscus);font-weight:600}
-.note table{width:100%;border-collapse:collapse;margin-top:2px}.note td{padding:2px 0}.note td:nth-child(2){text-align:right;font-variant-numeric:tabular-nums;font-weight:600}.note td:nth-child(3){padding-left:10px;color:var(--ink-2)}
-.quick{display:flex;gap:8px;margin-bottom:10px}
+.feed{max-width:none}
+.line{display:grid;grid-template-columns:1fr auto;gap:0 12px;padding:10px 0;border-bottom:1.5px solid var(--rule)}
+.line b{font-size:17.500px;font-weight:650;line-height:1.25;overflow-wrap:anywhere}
+.line b:nth-child(2){font-variant-numeric:tabular-nums}
+.line small{grid-column:1/-1;color:var(--ink-2);font-size:14.500px;overflow-wrap:anywhere}
+.note{padding:10px 0;border-bottom:1.5px solid var(--rule);overflow-wrap:anywhere}
+.note.mine{color:var(--ink-2);font-size:14.500px}
+.note.big{font-size:23px;font-weight:750;font-stretch:108%;line-height:1.2;border:0;padding:14px 0}
+.note.bad{color:var(--bad);font-weight:600}
+.note table{width:100%;border-collapse:collapse;margin-top:2px}.note td{padding:2px 0}.note td:nth-child(n+2),.note th:nth-child(n+2){text-align:right;font-variant-numeric:tabular-nums;padding-left:10px;white-space:nowrap}.note td:nth-child(n+2){font-weight:600}.note th{text-align:left;font-weight:500;font-size:14px;color:var(--ink-2);padding-bottom:2px}
+.quick{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.quick .btn.no{background:var(--surface)}
 
-/* Your statement: a teal room, like the private one, because it stays with you. */
-body[data-tab=statement] .who{background:var(--monsoon-2);color:var(--glass)}
-.sheet{background:var(--white);color:var(--ink);padding:18px 16px;margin:0 0 14px}
-.sheet h2{font:700 24px/1.15 var(--display)}
+/* Your statement */
+.sheet{background:var(--surface);color:var(--ink);padding:18px 16px;margin:0 0 14px;border-radius:var(--r-m)}
+.sheet h2{font-size:24px;line-height:1.15}
 .sheet p{margin-top:6px}
-.drop{display:block;margin-top:14px;padding:22px 14px;text-align:center;box-shadow:inset 0 0 0 2px var(--ink-2);cursor:pointer;background:var(--glass);font-weight:600}
-.drop.over{background:var(--marigold-soft);box-shadow:inset 0 0 0 2px var(--marigold)}
+.drop{display:block;margin-top:14px;padding:24px 14px;text-align:center;border:2px dashed var(--ink-2);border-radius:var(--r-m);cursor:pointer;background:var(--glass);font-weight:600;position:relative;transition:background .14s}
+.drop:hover{background:var(--glass-2)}
+.drop.over{background:var(--marigold-wash);border-color:var(--marigold)}
 .drop small{display:block;font-weight:400;color:var(--ink-2)}
 .drop input{position:absolute;opacity:0;width:1px;height:1px}
-.drop:focus-within{outline:3px solid var(--marigold);outline-offset:2px}
+.drop:focus-within{outline:3px solid var(--monsoon-3);outline-offset:2px}
 .attest{display:flex;gap:10px;align-items:flex-start;margin-top:12px;font-weight:500}
-.attest input{width:20px;height:20px;margin-top:3px;flex:none}
-.problems{margin-top:12px;padding:10px 12px;background:#fdeef4;box-shadow:inset 4px 0 0 var(--hibiscus);font-size:15px}
+.attest input{width:20px;height:20px;margin-top:3px;flex:none;accent-color:var(--monsoon-2)}
+.problems{margin-top:12px;padding:10px 12px;background:var(--bad-wash);box-shadow:inset 4px 0 0 var(--bad);border-radius:var(--r-s);font-size:15px}
 .problems b{display:block}
 .problems ul{margin:4px 0 0;padding-left:18px}
-.okline{margin-top:12px;padding:10px 12px;background:var(--glass);box-shadow:inset 4px 0 0 var(--monsoon-2);font-weight:500}
+.okline{margin-top:12px;padding:10px 12px;background:var(--good-wash);box-shadow:inset 4px 0 0 var(--good);border-radius:var(--r-s);font-weight:500}
 .where{display:grid;grid-template-columns:1fr auto;gap:0 12px;margin-top:12px;font-size:16px}
-.where h3{grid-column:1/-1;font:600 18px/1.2 var(--display);margin-top:12px;padding-bottom:4px;border-bottom:1.5px solid rgba(16,39,43,.16)}
+.where h3{grid-column:1/-1;font-size:18px;line-height:1.2;margin-top:12px;padding-bottom:4px;border-bottom:1.5px solid var(--rule)}
 .where span{padding:3px 0}.where span:nth-of-type(even){text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
-.sheet .acts{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.sheet .acts{margin-top:14px}
 .sending{color:var(--ink-2);font-weight:600;font-size:15px}
-.retry-note{color:var(--hibiscus);font-weight:600;font-size:15px;margin-bottom:6px}
-.linkish{border:0;background:none;padding:0;font-weight:600;text-decoration:underline;cursor:pointer;color:inherit}
-.preview{margin-top:12px;color:var(--ink-2);font-size:14px}
+.retry-note{color:var(--bad);font-weight:600;font-size:15px;margin-bottom:6px}
+.preview{margin-top:12px;color:var(--ink-2);font-size:14.500px}
 .preview summary{font-size:15px}
-nav{display:grid;grid-template-columns:repeat(3,1fr);background:var(--ink)}
+
+/* The rooms */
+nav{display:grid;grid-template-columns:repeat(3,1fr);background:#0B2024}
 nav.four{grid-template-columns:repeat(4,1fr)}
-nav button[data-t=statement][aria-current=page]{background:var(--glass)}
-@media (max-width:380px){nav button{font-size:14px}}
-nav button{border:0;background:none;color:var(--glass);padding:11px 2px 12px;cursor:pointer;font-weight:600;position:relative}
-nav button[aria-current=page]{color:var(--ink)}
-nav button[data-t=private][aria-current=page]{background:var(--glass)}
-nav button[data-t=desk][aria-current=page]{background:var(--white)}
-nav button[data-t=group][aria-current=page]{background:var(--marigold)}
-nav i{font-style:normal;display:inline-block;min-width:19px;margin-left:5px;border-radius:999px;background:var(--marigold);color:var(--ink);font-size:13px;line-height:19px}
-.error{background:var(--hibiscus);color:var(--white);padding:8px 18px;font-size:14px}
-form.pot-form{display:grid;grid-template-columns:1fr;gap:12px;background:none;padding:12px 0 0;margin:0;position:static;border:0;box-shadow:none}
-form.pot-form label{display:grid;gap:6px;font-size:15px;color:var(--ink)}
-form.pot-form input:not([type=checkbox]){width:100%;box-sizing:border-box;min-width:0;background:var(--white);color:var(--ink);border:1px solid var(--ink-2);border-radius:10px;padding:10px 12px;font:inherit}
-form.pot-form .attest{display:flex;gap:8px;align-items:center;color:var(--ink)}
+nav button{border:0;background:none;color:var(--on-monsoon);padding:8px 2px 9px;cursor:pointer;font-weight:600;font-size:14.500px;line-height:1.15;position:relative;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:54px;transition:background .14s}
+nav button:hover:not([aria-current=page]){background:rgba(255,255,255,.07)}
+nav button[aria-current=page]{color:#14282C}
+nav button[data-t=private][aria-current=page],nav button[data-t=statement][aria-current=page]{background:#E4F3EF}
+nav button[data-t=desk][aria-current=page]{background:#fff}
+nav button[data-t=group][aria-current=page]{background:#F5A81C}
+nav i{font-style:normal;position:absolute;top:4px;left:calc(50% + 8px);min-width:19px;padding:0 4px;border-radius:999px;background:var(--marigold);color:#14282C;font-size:13px;line-height:19px;text-align:center}
+nav button[aria-current=page] i{background:#14282C;color:#fff}
+.error{background:#B8124F;color:#fff;padding:8px 18px;font-size:14.500px}
+form.pot-form{display:grid;grid-template-columns:1fr;gap:12px;padding:12px 0 0;margin:0}
+form.pot-form label{display:grid;gap:2px;font-size:15px;color:var(--ink)}
+form.pot-form .attest{display:flex;gap:8px;align-items:center}
 form.pot-form .btn{justify-self:start}
+form.pot-form .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:380px){nav button{font-size:13.500px}}
+
+/* From a tablet up, the rooms move to a rail and there's room to work. */
+@media (min-width:960px){
+  body{display:grid;grid-template-columns:272px minmax(0,1fr);grid-template-rows:auto auto minmax(0,1fr) auto;background:var(--monsoon)}
+  .rail{display:flex;flex-direction:column;grid-column:1;grid-row:1/5;min-height:0;overflow-y:auto}
+  header{flex-direction:column-reverse;align-items:flex-start;gap:6px;padding:22px 20px 14px}
+  header h1{font-size:30px}
+  #catdock .kc-btn kitty-cat{width:112px;height:112px}
+  nav,nav.four{display:flex;flex-direction:column;gap:4px;background:var(--monsoon);padding:8px 12px}
+  nav button{flex-direction:row;justify-content:flex-start;gap:12px;padding:12px 14px;font-size:16.500px;border-radius:var(--r-m);min-height:0}
+  nav i{position:static;margin-left:auto}
+  .who{grid-column:2;grid-row:1;padding:10px clamp(20px,3vw,40px);font-size:15.500px}
+  .error{grid-column:2;grid-row:2}
+  main{grid-column:2;grid-row:3;padding:24px clamp(20px,3vw,40px) 32px}
+  #form{grid-column:2;grid-row:4;padding:12px clamp(20px,3vw,40px)}
+  main>*{max-width:780px;margin-inline:auto}
+  main>.desk{max-width:1160px;grid-template-columns:minmax(0,1.25fr) minmax(320px,1fr);gap:clamp(20px,3vw,36px)}
+  main>.desk.side-first .side{order:0}
+  .side{position:sticky;top:0}
+  html.kp-open main>.desk{grid-template-columns:minmax(0,1fr)}
+  html.kp-open .side{position:static}
+}
 @media (prefers-reduced-motion:reduce){.chit.dropping{animation:none;opacity:.4}main{scroll-behavior:auto}}
 </style>
 </head>
 <body data-tab="private">
-<header><h1 id="name">Kitty</h1><span id="trip"></span></header>
-<div class="who" id="who"></div>
-<div class="error" id="err" hidden></div>
-<main id="main" tabindex="-1"></main>
-<form id="form" autocomplete="off"><input id="input" aria-label="Message your agent" placeholder="Tell your agent"><button>Send</button></form>
+<a class="skip" href="#main">Skip to the page</a>
+<div class="rail"><header><div class="who-am-i"><h1 id="name">Kitty</h1><span id="trip"></span></div><div id="catdock"></div></header>
 <nav aria-label="Rooms" id="nav">
   <button data-t="statement" hidden>Statement</button>
   <button data-t="private">Just you</button>
   <button data-t="desk">Your desk<i id="count" hidden></i></button>
   <button data-t="group">The group</button>
-</nav>
+</nav></div>
+<div class="who" id="who"></div>
+<div class="error" id="err" role="alert" hidden></div>
+<main id="main" tabindex="-1"><p class="booting">Opening your rooms.</p></main>
+<form id="form" autocomplete="off"><input id="input" aria-label="Message your agent" placeholder="Tell your agent"><button>Send</button></form>
+<script src="/ui/icons.js"></script>
+<script src="/ui/cat.js"></script>
+<script src="/ui/companion.js"></script>
+<script src="/ui/guide.js"></script>
 <script>
 const WHO={statement:"Only you can see this. Your friends and the clerk never get your file.",private:"Only you and your agent are here. The clerk can't get in.",desk:"You, your agent and the clerk. Nothing goes further until you release it.",group:"Everyone on the trip can see this."};
 const $=id=>document.getElementById(id);
+const {guide,companion}=Kitty;
+const ROOM_ICON={statement:"file-text",private:"lock",desk:"inbox",group:"users"};
+document.querySelectorAll("nav button").forEach(b=>b.insertAdjacentHTML("afterbegin",Kitty.icon(ROOM_ICON[b.dataset.t],20)));
+companion.mount({dock:"#catdock"});
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 const inline=s=>esc(s).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`(.+?)`/g,"<code>$1</code>");
 let lastCount=0,tab="private",data=null,last="",picked=new Set(),dropping=null,tabChosen=false;
@@ -235,45 +323,75 @@ function potSpentForm(d){
 function potCard(d){
   const p=d.pot,inv=s=>esc(potForm[s]),w=p.window,note=potNote?`<div class="okline" role="status">${esc(potNote)}</div>`:"";
   if(p.is_treasurer){
+    const asked=p.roll.reduce((a,r)=>a+r.asked,0),credited=p.roll.reduce((a,r)=>a+r.credited,0),left=p.roll.reduce((a,r)=>a+r.outstanding,0);
     const rows=p.roll.map(r=>`<li><span>${esc(r.name)}</span><span>${r.outstanding?`${cash(r.outstanding)} to come`:r.asked?"Paid":"Not asked"}${r.above?`, ${cash(r.above)} above ask`:""}</span></li>`).join("");
-    const calls=p.calls.length?`<details><summary>What you've asked for</summary>${p.calls.map(c=>`<div class="acts"><span class="what">${cash(c.amount)} from ${esc(c.who)}</span><button class="btn no" data-say="desk" data-text="cancel ${esc(c.id)}">Cancel this</button></div>`).join("")}</details>`:"";
+    const calls=p.calls.length?`<details><summary>What you've asked for</summary>${p.calls.map(c=>`<div class="acts"><span class="what">${cash(c.amount)} from ${esc(c.who)}</span><button class="btn no small" data-say="desk" data-text="cancel ${esc(c.id)}">Cancel this</button></div>`).join("")}</details>`:"";
     const others=d.people.filter(x=>x.id!==d.me.id);
-    return `<article class="chit"><div class="amt">The pot</div><p class="what">You hold the group's money. Only you can confirm it arrived. Checking a payment uses your statement on this laptop, and no model.</p>${note}<ul>${rows}</ul>${calls}
+    return `<article class="chit"><div class="amt word">The pot</div><p class="what">You hold the group's money. Only you can confirm it arrived. Checking a payment uses your statement on this laptop, and no model.</p>${note}
+      <div class="figs"><div><span>Expected</span><b>${cash(asked)}</b></div><div class="good"><span>Confirmed</span><b>${cash(credited)}</b></div><div><span>Outstanding</span><b>${cash(left)}</b></div></div>
+      ${asked?`<div class="meter" role="img" aria-label="${Math.round(credited/asked*100)} percent of what you asked for is confirmed"><i style="width:${Math.min(100,credited/asked*100)}%"></i></div>`:""}
+      <ul class="roll">${rows}</ul>${calls}
       <form data-pot="call" class="pot-form"><label>Ask for money<input name="ask" inputmode="decimal" placeholder="5000" value="${inv("ask")}"></label><label>Only these people (leave empty for everyone)<input name="who" placeholder="rohan meera" value="${inv("who")}"></label>${potFlag("call")}<div class="acts"><button class="btn go">Ask</button></div></form>
       <details><summary>File spending or money paid back by hand</summary>${potSpentForm(d)}
       <form data-pot="refund" class="pot-form"><label>I paid back<input name="rAmount" inputmode="decimal" placeholder="1000" value="${inv("rAmount")}"></label><label>On<input type="date" name="rDay" min="${esc(w.from)}" max="${esc(w.to)}" value="${inv("rDay")}"></label><label>To<select name="rTo">${others.map(x=>`<option value="${esc(x.id)}" ${potForm.rTo===x.id?"selected":""}>${esc(x.name)}</option>`).join("")}</select></label>${potFlag("refund")}<div class="acts"><button class="btn no">File it</button></div></form></details></article>`;
   }
   const m=p.mine;
-  return `<article class="chit"><div class="amt">Your contribution</div><p class="what">${esc(p.treasurer)} holds the group's money. It counts once ${esc(p.treasurer)} confirms it arrived.</p>${note}
-    <ul><li><span>Asked</span><span>${cash(m.asked)}</span></li><li><span>Confirmed</span><span>${cash(m.credited)}</span></li><li><span>Outstanding</span><span>${cash(m.outstanding)}</span></li>${m.above?`<li><span>Above ask</span><span>${cash(m.above)}</span></li>`:""}</ul>
-    <form data-pot="paid" class="pot-form"><label>I paid<input name="amount" inputmode="decimal" placeholder="5000" value="${inv("amount")}"></label><label>On<input type="date" name="day" min="${esc(w.from)}" max="${esc(w.to)}" value="${inv("day")}"></label><label>UPI reference, if you have it<input name="ref" maxlength="16" value="${inv("ref")}"></label><label class="attest"><input type="checkbox" name="show" ${potForm.show?"checked":""}><span>Show the last 4 in the group</span></label>${potFlag("paid")}<div class="acts"><button class="btn go">File it</button></div></form>
+  return `<article class="chit"><div class="amt word">Your contribution</div><p class="what">${esc(p.treasurer)} holds the group's money. It counts once ${esc(p.treasurer)} confirms it arrived.</p>${note}
+    <div class="figs"><div><span>Asked</span><b>${cash(m.asked)}</b></div><div class="good"><span>Confirmed</span><b>${cash(m.credited)}</b></div><div><span>Outstanding</span><b>${cash(m.outstanding)}</b></div></div>
+    ${m.asked?`<div class="meter" role="img" aria-label="${Math.round(Math.min(1,m.credited/m.asked)*100)} percent confirmed"><i style="width:${Math.min(100,m.credited/m.asked*100)}%"></i></div>`:""}
+    ${m.above?`<p class="small muted" style="margin-top:6px">${cash(m.above)} above what was asked.</p>`:""}
+    <h3 class="form-title"><kitty-cat class="tiny" mood="filing"></kitty-cat>Paid in your usual app?</h3>
+    <form data-pot="paid" class="pot-form" style="padding-top:4px"><div class="two"><label>I paid<input name="amount" inputmode="decimal" placeholder="5000" value="${inv("amount")}"></label><label>On<input type="date" name="day" min="${esc(w.from)}" max="${esc(w.to)}" value="${inv("day")}"></label></div><label>UPI reference, if you have it<input name="ref" maxlength="16" value="${inv("ref")}"></label><label class="attest"><input type="checkbox" name="show" ${potForm.show?"checked":""}><span>Show the last 4 in the group</span></label>${potFlag("paid")}<div class="acts"><button class="btn go">File it</button></div></form>
     <details><summary>I spent money for the group</summary>${potSpentForm(d)}</details></article>`;
 }
+/* Where a member's claim has got to. Nothing here decides anything: it reads the state the clerk reported. */
+function claimSteps(s){
+  const to=esc(s.to),st=s.state;
+  const a=st==="waiting"?["done","now","next"]:st==="submitted"?["done","done","now"]:st==="confirmed"?["done","done","done"]:st==="needs_clarification"?["done","done","now"]:st==="rejected"?["done","done","stopped"]:null;
+  if(!a) return "";
+  return `<ol class="claim-steps" aria-label="Where this payment has got to"><li data-at="${a[0]}">Filed</li><li data-at="${a[1]}">Released</li><li data-at="${a[2]}">${st==="rejected"?`${to} says no`:st==="confirmed"?`${to} confirmed`:`${to} confirms`}</li></ol>`;
+}
+const CLAIM_PILL={waiting:["","Not released"],submitted:["wait","Not counted yet"],needs_clarification:["wait","Can't confirm yet"],confirmed:["good","Confirmed"],rejected:["bad","Not received"],withdrawn:["","Withdrawn"],dropped:["","Dropped"]};
+/* The last four of a reference, if the member chose to show them. Only the clerk's own group post counts. */
+function refShown(d,id){
+  for(const f of d.group){if(f.type==="note"&&f.clerk){const m=f.text.match(new RegExp(`^\\*\\*${id}\\*\\* .* · ref …(\\w+)\\.`));if(m)return m[1]}}
+  return null;
+}
+const CANDIDATE={"found it":["maybe","Possible match","Your agent found a line for this. It isn't counted until you confirm."],"a different amount":["nofind","Different amount","There's a line near this date, for another amount."],"nothing yet":["nofind","Nothing found","No line on your statement for this yet."],"not checked yet":["nofind","Not checked yet","Your agent hasn't reported on this yet."]};
+function reviewCompare(s){
+  const c=CANDIDATE[s.candidate]||["nofind",s.candidate,""],shown=refShown(data,s.id);
+  return `<dl class="compare"><div><dt>${esc(s.from)} says</dt><dd>${esc(s.amount)}${s.date?` on ${esc(s.date)}`:""}</dd></div>
+    <div><dt>Your statement</dt><dd><span class="pill ${c[0]}">${c[1]}</span>${c[2]}</dd></div>
+    <div><dt>UPI reference</dt><dd>${shown?`Ends ${esc(shown)}, shown by ${esc(s.from)}. `:""}If ${esc(s.from)} gave one, Kitty compares it when you confirm, and refuses if it differs.</dd></div></dl>`;
+}
 function potChit(s){
-  const id=s.id,askBtns=`<details><summary>Ask ${s.kind==="pot_review"?esc(s.from):""}</summary><div class="acts"><button class="btn no" data-say="desk" data-text="ask ${id} amount_differs">The amount differs</button><button class="btn no" data-say="desk" data-text="ask ${id} date_differs">The date differs</button><button class="btn no" data-say="desk" data-text="ask ${id} not_found_yet">I can't find it yet</button></div></details>`;
+  const id=s.id,askBtns=`<details><summary>Ask ${s.kind==="pot_review"?esc(s.from):""}</summary><div class="acts"><button class="btn no small" data-say="desk" data-text="ask ${id} amount_differs">The amount differs</button><button class="btn no small" data-say="desk" data-text="ask ${id} date_differs">The date differs</button><button class="btn no small" data-say="desk" data-text="ask ${id} not_found_yet">I can't find it yet</button></div></details>`;
   const no=`<button class="btn warn" data-say="desk" data-text="reject ${id} not_received">It didn't arrive</button>`;
-  let what="",acts="",state="",cls="chit";
+  let what="",acts="",state="",cls="chit",pill=null,steps="",compare="";
   if(s.kind==="contribution"){
     what=`You paid ${esc(s.to)} on ${esc(s.date)}.`;
-    const undo=`<button class="btn no" data-say="desk" data-text="withdraw ${id} mistaken">Withdraw it</button><button class="btn no" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw: the payment failed</button>`;
-    if(s.state==="waiting") acts=`<div class="acts"><button class="btn go" data-release="${id}">Release</button><button class="btn no" data-say="desk" data-text="drop ${id}">Drop</button></div>`;
+    steps=claimSteps(s);
+    pill=CLAIM_PILL[s.state];
+    const undo=`<button class="btn no small" data-say="desk" data-text="withdraw ${id} mistaken">Withdraw it</button><button class="btn no small" data-say="desk" data-text="withdraw ${id} payment_failed">Withdraw: the payment failed</button>`;
+    if(s.state==="waiting"){acts=`<div class="acts"><button class="btn go" data-release="${id}">Release</button><button class="btn no" data-say="desk" data-text="drop ${id}">Drop</button></div>`;cls+=" fresh"}
     else state={submitted:`Waiting for ${esc(s.to)}. Not counted yet.`,needs_clarification:`${esc(s.to)} can't confirm this yet.${s.note?" "+esc(s.note):""}`,confirmed:`${esc(s.to)} confirmed it arrived.`,rejected:`${esc(s.to)} says it didn't arrive. It isn't counted.`,withdrawn:"Withdrawn.",dropped:"Dropped. The group never saw it."}[s.state]||"";
-    if(["submitted","needs_clarification","rejected"].includes(s.state)) acts=`<div class="acts">${undo}</div>`;
-    cls+=["rejected","needs_clarification"].includes(s.state)?" alert":["confirmed","withdrawn","dropped"].includes(s.state)?" done":"";
+    if(["submitted","needs_clarification","rejected"].includes(s.state)) acts=`<div class="acts" style="margin-top:10px">${undo}</div>`;
+    cls+=s.state==="rejected"?" alert":s.state==="needs_clarification"?" alert soft":["confirmed","withdrawn","dropped"].includes(s.state)?" done":"";
   }else{
-    what=`From ${esc(s.from)}${s.date?`, on ${esc(s.date)}`:""}. Your agent: ${esc(s.candidate)}.`;
+    what=`From ${esc(s.from)}${s.date&&s.state!=="waiting"?`, on ${esc(s.date)}`:""}.`;
     const again=`<button class="btn no" data-say="desk" data-text="recheck ${id}">Check again</button>`;
     if(s.state==="waiting"){
+      cls+=" review-open";pill=["wait","Not counted yet"];compare=reviewCompare(s);
       if(s.candidate==="found it") acts=`<div class="acts"><button class="btn go" data-say="desk" data-text="confirm ${id}">Confirm it arrived</button>${no}</div>${askBtns}`;
-      else if(s.candidate==="not checked yet"){what=`From ${esc(s.from)}. Your agent hasn't reported on this yet.`;acts=`<div class="acts">${again}</div>`}
+      else if(s.candidate==="not checked yet"){what=`From ${esc(s.from)}.`;acts=`<div class="acts">${again}</div>`}
       else if(s.candidate==="nothing yet") acts=`<div class="acts">${again}${no}</div>${askBtns}<details><summary>Confirm by hand</summary><p class="what">Only if you can see it in your bank app. The group will see that this is on your word.</p><div class="acts"><button class="btn go" data-say="desk" data-text="confirm ${id} manual">Confirm by hand</button></div></details>`;
       else acts=`<div class="acts">${again}${no}</div>${askBtns}`;
-    }else if(s.state==="needs_clarification"){state="You asked about this.";acts=`<div class="acts">${again}${no}</div>`}
-    else if(s.state==="confirmed"){state=s.basis==="word"?"Confirmed, on your word.":"Confirmed.";acts=`<details><summary>Correct this</summary><p class="what">The group will see the correction, and it changes who owes what.</p><div class="acts"><button class="btn warn" data-say="desk" data-text="correct ${id} reversed">It came back</button><button class="btn warn" data-say="desk" data-text="correct ${id} not_received">It never arrived</button><button class="btn warn" data-say="desk" data-text="correct ${id} mistaken">My mistake</button></div></details>`;cls+=" done"}
-    else if(s.state==="rejected"){state="You said it didn't arrive. It isn't counted.";acts=`<details><summary>Correct this</summary><p class="what">The group will see the correction, and it changes who owes what.</p><div class="acts"><button class="btn go" data-say="desk" data-text="correct ${id} received">It did arrive</button></div></details>`;cls+=" alert"}
-    else{state="Withdrawn.";cls+=" done"}
+    }else if(s.state==="needs_clarification"){state="You asked about this.";pill=["wait","Can't confirm yet"];compare=reviewCompare(s);cls+=" review-open";acts=`<div class="acts">${again}${no}</div>`}
+    else if(s.state==="confirmed"){state=s.basis==="word"?"Confirmed, on your word.":"Confirmed.";pill=["good",s.basis==="word"?"On your word":"Confirmed"];acts=`<details><summary>Correct this</summary><p class="what">The group will see the correction, and it changes who owes what.</p><div class="acts"><button class="btn warn" data-say="desk" data-text="correct ${id} reversed">It came back</button><button class="btn warn" data-say="desk" data-text="correct ${id} not_received">It never arrived</button><button class="btn warn" data-say="desk" data-text="correct ${id} mistaken">My mistake</button></div></details>`;cls+=" done"}
+    else if(s.state==="rejected"){state="You said it didn't arrive. It isn't counted.";pill=["bad","Not received"];acts=`<details><summary>Correct this</summary><p class="what">The group will see the correction, and it changes who owes what.</p><div class="acts"><button class="btn go" data-say="desk" data-text="correct ${id} received">It did arrive</button></div></details>`;cls+=" alert"}
+    else{state="Withdrawn.";pill=["","Withdrawn"];cls+=" done"}
   }
-  return `<article class="${cls}"><div class="amt">${esc(s.amount)}</div><p class="what">${what}</p>${state?`<p class="state">${state}</p>`:""}${acts}</article>`;
+  return `<article class="${cls}"><div class="chit-top"><div class="amt">${esc(s.amount)}</div>${pill?`<span class="pill ${pill[0]}">${pill[1]}</span>`:""}</div><p class="what">${what}</p>${steps}${compare}${state?`<p class="state">${state}</p>`:""}${acts}</article>`;
 }
 function chit(s){
   if(s.kind==="contribution"||s.kind==="pot_review") return potChit(s);
@@ -287,6 +405,7 @@ function chit(s){
     head=s.amount;what=s.received?`From ${esc(s.from)}. Your agent found that it reached you.`:`From ${esc(s.from)}. Your agent found that it did not reach you.`;
   }
   if(s.state==="waiting"){
+    cls+=" fresh";
     const key=s.kind==="answer"?id+"?":id,at=pressed[key];
     if(at&&Date.now()-at<SENT_PATIENCE){
       acts=`<p class="sending" role="status">Sending</p>`;
@@ -303,20 +422,42 @@ function chit(s){
   return `<article class="${cls}"><div class="amt">${esc(head)}</div><p class="what">${what}</p>${rows}${state?`<p class="state">${esc(state)}</p>`:""}${acts}</article>`;
 }
 
+/* A refusal from the clerk is a code when nothing plainer came with it. */
+const REFUSED={reference_differs:"That line's UPI reference doesn't match the one they gave, so nothing was confirmed.",credit_already_used:"That line on your statement already backs another confirmed payment, so nothing was confirmed.",amount_differs:"The amount differs, so nothing was confirmed. Ask them to withdraw it and claim the right amount.",manual_only_when_nothing_found:"Confirm by hand is only for when your agent found nothing."};
+const plainNotice=n=>{const m=n.match(/^Refused: (\w+)\.(?: (.+))?$/s);return !m?n:m[2]||REFUSED[m[1]]||n};
+const emptyState=(mood,text)=>`<div class="empty-state"><kitty-cat class="tiny" mood="${mood}"></kitty-cat><p>${text}</p></div>`;
 function deskView(d){
   const slips=d.desk.slips,waiting=slips.filter(s=>s.state==="waiting"),rest=slips.filter(s=>s.state!=="waiting");
-  let html=d.desk.notices.slice(-1).map(n=>`<div class="notice">${esc(n)}</div>`).join("");
-  if(d.pot) html+=potCard(d);
-  if(!slips.length) html+=`<p class="empty">Nothing here yet. When your agent files something, it waits here for you.</p>`;
+  const notices=d.desk.notices.slice(-1).map(n=>`<div class="notice" role="status">${esc(plainNotice(n))}</div>`).join("");
+  const raw=d.desk.raw.length?`<details><summary>See exactly what the clerk receives</summary><pre>${esc(d.desk.raw.join("\n\n"))}</pre></details>`:"";
+  if(d.pot&&d.pot.is_treasurer){
+    const open=slips.filter(s=>s.kind==="pot_review"&&["waiting","needs_clarification"].includes(s.state));
+    const other=slips.filter(s=>!open.includes(s));
+    const mine=other.filter(s=>s.state==="waiting"),past=other.filter(s=>s.state!=="waiting").slice().reverse();
+    const asked=d.pot.calls.length>0;
+    return `<div class="desk ${!open.length&&!asked?"side-first":""}"><section class="queue" aria-labelledby="revH">${notices}
+      <div class="queue-head"><kitty-cat class="tiny" mood="${open.length?"reviewing":"idle"}"></kitty-cat><div><h2 id="revH">Needs your review</h2><p>${open.length?"Nothing counts until you confirm it.":"Nothing's waiting on you."}</p></div>${open.length?`<span class="queue-count" aria-label="${open.length} waiting">${open.length}</span>`:""}</div>
+      ${open.map(chit).join("")}${mine.map(chit).join("")}
+      ${past.length?`<h3 class="past-head">What you've decided</h3>${past.map(chit).join("")}`:""}${raw}</section>
+      <aside class="side" aria-label="The pot">${potCard(d)}</aside></div>`;
+  }
+  if(d.pot){
+    const act=slips.some(s=>s.state==="waiting"||["needs_clarification","rejected"].includes(s.state));
+    return `<div class="desk ${act?"":"side-first"}"><section class="queue" aria-labelledby="clH">${notices}<h2 id="clH">Your payments</h2>
+      ${slips.length?waiting.map(chit).join("")+rest.slice().reverse().map(chit).join(""):emptyState("curious","Nothing filed yet. When you've paid, tell Kitty here, and it comes back as a chit for you to release.")}${raw}</section>
+      <aside class="side" aria-label="Your contribution">${potCard(d)}</aside></div>`;
+  }
+  let html=notices;
+  if(!slips.length) html+=emptyState("idle","Nothing here yet. When your agent files something, it waits here for you.");
   html+=waiting.map(chit).join("")+rest.slice().reverse().map(chit).join("");
-  if(d.desk.raw.length) html+=`<details><summary>See exactly what the clerk receives</summary><pre>${esc(d.desk.raw.join("\n\n"))}</pre></details>`;
-  return html;
+  return `<div class="queue">${html}${raw}</div>`;
 }
 
 function table(text){
   const rows=text.split("\n").filter(l=>l.startsWith("|")&&!/^\|[-:|\s]+\|$/.test(l)&&!/^\| Person/.test(l));
   const rest=text.split("\n").filter(l=>!l.startsWith("|")).join(" ").trim();
-  return "<table>"+rows.map(r=>"<tr>"+r.split("|").slice(1,-1).map(c=>`<td>${esc(c.trim())}</td>`).join("")+"</tr>").join("")+"</table>"+(rest?`<p>${inline(rest)}</p>`:"");
+  const head=/^\| Person \| Asked/.test(text)?"<tr><th scope=\"col\">Person</th><th scope=\"col\">Asked</th><th scope=\"col\">Confirmed</th><th scope=\"col\">Outstanding</th></tr>":"";
+  return "<table>"+head+rows.map(r=>"<tr>"+r.split("|").slice(1,-1).map(c=>`<td>${esc(c.trim())}</td>`).join("")+"</tr>").join("")+"</table>"+(rest?`<p>${inline(rest)}</p>`:"");
 }
 function groupView(d){
   let html=`<div class="quick">${d.pot?`<button class="btn go" data-say="group" data-text="pot">Who has paid in</button>`:""}<button class="btn go" data-say="group" data-text="balances">Show balances</button><button class="btn no" data-say="group" data-text="settle">Suggest payments</button></div>`;
@@ -392,16 +533,45 @@ function render(){
   document.querySelector('nav button[data-t=statement]').hidden=!inApp;
   $("nav").classList.toggle("four",inApp);
   if(inApp&&!tabChosen){tab=d.statement&&d.statement.state==="reviewing"?"private":"statement";tabChosen=true}
-  document.body.dataset.tab=tab;$("who").textContent=WHO[tab];
+  document.body.dataset.tab=tab;$("who").innerHTML=Kitty.icon(ROOM_ICON[tab],16)+`<span>${esc(WHO[tab])}</span>`;
   $("form").hidden=tab!=="private"||(inApp&&d.statement.state!=="reviewing");
   document.querySelectorAll("nav button").forEach(b=>b.dataset.t===tab?b.setAttribute("aria-current","page"):b.removeAttribute("aria-current"));
   const waiting=d.desk.slips.filter(s=>s.state==="waiting").length;
   $("count").hidden=!waiting;$("count").textContent=waiting;
   const main=$("main");const nearEnd=main.scrollHeight-main.scrollTop-main.clientHeight<80;
+  const keep=remember(main);
   main.innerHTML=tab==="statement"&&inApp?statementView(d):tab==="private"?privateView(d):tab==="desk"?deskView(d):groupView(d);
+  keep();
   if(tab==="statement"&&inApp) wireStatement();
   if(tab==="private"&&(nearEnd||lastCount!==d.private.length)) main.scrollTop=main.scrollHeight;
   lastCount=d.private.length;
+  companion.set(guide.person(d,tab,cash));
+  moments(d);
+}
+/* A poll can redraw the page mid-sentence. This keeps your cursor where it was, and open sections open. */
+function remember(main){
+  const a=document.activeElement,inside=a&&main.contains(a)&&a!==main;
+  const sel=!inside?null:a.name?`[name="${a.name}"]`:a.dataset.text?`[data-text="${a.dataset.text}"]`:a.dataset.release?`[data-release="${a.dataset.release}"]`:a.id?`#${a.id}`:null;
+  const form=inside&&a.form?a.form.dataset.pot:null,at=inside&&a.selectionStart!=null?a.selectionStart:null;
+  const open=[...main.querySelectorAll("details[open]>summary")].map(s=>s.textContent);
+  return ()=>{
+    main.querySelectorAll("details>summary").forEach(s=>{if(open.includes(s.textContent))s.parentElement.open=true});
+    if(!sel)return;
+    const next=main.querySelector((form?`form[data-pot="${form}"] `:"")+sel);
+    if(next){next.focus({preventScroll:true});if(at!=null&&next.setSelectionRange)try{next.setSelectionRange(at,at)}catch(e){}}
+  };
+}
+/* The cat reacts to changes that really happened between two polls, never to the first load. */
+let lastSeen=null;
+function moments(d){
+  const slips=d.desk.slips.filter(s=>s.kind==="contribution"||s.kind==="pot_review");
+  const now={confirmed:slips.filter(s=>s.state==="confirmed").map(s=>s.id),trouble:slips.filter(s=>["rejected","needs_clarification"].includes(s.state)&&s.kind==="contribution").map(s=>s.id),transfers:d.desk.slips.filter(s=>s.state==="confirmed"&&s.kind==="transfer").map(s=>s.id),square:d.group.some(f=>f.type==="note"&&f.clerk!==false&&/Everyone's square/.test(f.text))};
+  if(lastSeen){
+    if(now.square&&!lastSeen.square){companion.moment("celebrating",3400);Kitty.petals()}
+    else if(now.confirmed.some(i=>!lastSeen.confirmed.includes(i))||now.transfers.some(i=>!lastSeen.transfers.includes(i)))companion.moment("paid",1800);
+    else if(now.trouble.some(i=>!lastSeen.trouble.includes(i)))companion.moment("warning",2200);
+  }
+  lastSeen=now;
 }
 function wireStatement(){
   const file=$("file"),drop=$("drop"),att=$("attest"),pv=$("pv"),rm=$("removeFile");

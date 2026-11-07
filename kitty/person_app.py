@@ -25,6 +25,7 @@ import httpx
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from kitty import access
@@ -49,6 +50,7 @@ TO_CHECK = re.compile(r"^\*\*(p\d+)\*\* to check: (\w+) says they paid you ([₹
 ASKED_ABOUT = re.compile(r"^\w+ asks about (p\d+): \w+\. (.+)$")
 DESK_COMMAND = re.compile(r"^\s*(release|drop|withdraw)\s", re.I)
 REVIEW_COMMAND = re.compile(r"^\s*(start|go|review|rescan)\s*$", re.I)
+CAT_MARK = '<svg viewBox="0 0 128 112" aria-hidden="true"><path fill="#EC8428" d="M10 62L4 8Q4 0 12 4L52 28ZM118 62L123 34L114 29L125 21L124 8Q124 0 116 4L76 28Z"/><path fill="#FFC7A6" d="M18 50L14 20Q14 16 18 18L40 32ZM110 50L114 20Q114 16 110 18L88 32Z"/><path fill="#EC8428" d="M4 70C4 36 30 20 64 20C98 20 124 36 124 70C124 98 96 112 64 112C32 112 4 98 4 70Z"/><path fill="none" stroke="#C9651B" stroke-width="6" stroke-linecap="round" d="M64 24V38M50 26L53 37M78 26L75 37"/><path fill="#FFEBD1" d="M64 72C78 72 90 79 90 90C90 103 78 110 64 110C50 110 38 103 38 90C38 79 50 72 64 72Z"/><ellipse fill="#14282C" cx="38" cy="66" rx="10" ry="13"/><ellipse fill="#14282C" cx="90" cy="66" rx="10" ry="13"/><circle fill="#fff" cx="41" cy="61" r="3"/><circle fill="#fff" cx="93" cy="61" r="3"/><path fill="#D65468" d="M58 80Q64 78 70 80Q69 86 64 88Q59 86 58 80Z"/></svg>'
 
 
 def build_desk(posts: list[dict], group_text: list[str], pot_room: dict[str, dict] | None = None) -> dict:
@@ -175,10 +177,11 @@ def write_private_text(path: Path, text: str) -> None:
 
 
 def page_message(title: str, body: str, status: int) -> HTMLResponse:
+    """Shown to someone without a session, so it can't use /ui, which is behind the same check as the app."""
     return HTMLResponse(
         "<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Kitty</title>"
-        "<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0E3B43;color:#E4F3EF;font:17px/1.5 system-ui,sans-serif;padding:24px}main{max-width:26rem}h1{font-size:28px;line-height:1.15;color:#fff;margin:0 0 10px}</style>"
-        f"<main><h1>{title}</h1><p>{body}</p></main>",
+        "<style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0E3B43;color:#E4F3EF;font:17px/1.5 system-ui,sans-serif;padding:24px}main{max-width:26rem}svg{width:72px;height:63px;display:block;margin-bottom:16px}h1{font-size:28px;line-height:1.15;color:#fff;margin:0 0 10px}</style>"
+        f"<main>{CAT_MARK}<h1>{title}</h1><p>{body}</p></main>",
         status_code=status,
     )
 
@@ -287,6 +290,8 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
         accepted = SI.read_saved(statement_path)
         meta = read_json(meta_path) or {}
         return {"state": "reviewing" if review_started(private) else "ready", "added_at": meta.get("added_at"), "summary": SI.summary(accepted, trip_model, directory)}
+
+    app.mount("/ui", StaticFiles(directory=ROOT / "app" / "ui"), name="ui")
 
     @app.get("/healthz")
     def healthz() -> PlainTextResponse:

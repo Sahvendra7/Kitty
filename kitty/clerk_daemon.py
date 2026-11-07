@@ -20,6 +20,7 @@ from pathlib import Path
 import uvicorn
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 
 from kitty import claims as C
 from kitty import paths as P
@@ -114,6 +115,7 @@ def main() -> None:
         log.info("replayed %d events", len(lines))
 
     app = FastAPI(title="Kitty trip board")
+    app.mount("/ui", StaticFiles(directory=ROOT / "app" / "ui"), name="ui")
 
     @app.get("/api/board")
     def api_board() -> JSONResponse:

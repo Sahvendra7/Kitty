@@ -19,6 +19,7 @@ import httpx
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
 
 from kitty import access, provision, runtime
 from kitty.claims import CURRENCIES
@@ -132,6 +133,8 @@ def create_app(home: Home, port: int = PORT) -> FastAPI:
 
     def locked() -> JSONResponse:
         return JSONResponse({"error": "The group room is open, so this trip's people and dates are fixed."}, status_code=409)
+
+    app.mount("/ui", StaticFiles(directory=ROOT / "app" / "ui"), name="ui")
 
     @app.get("/")
     @app.get("/trips/{any_path:path}")
