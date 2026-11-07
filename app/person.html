@@ -460,7 +460,7 @@ function table(text){
   return "<table>"+head+rows.map(r=>"<tr>"+r.split("|").slice(1,-1).map(c=>`<td>${esc(c.trim())}</td>`).join("")+"</tr>").join("")+"</table>"+(rest?`<p>${inline(rest)}</p>`:"");
 }
 function groupView(d){
-  let html=`<div class="quick">${d.pot?`<button class="btn go" data-say="group" data-text="pot">Who has paid in</button>`:""}<button class="btn go" data-say="group" data-text="balances">Show balances</button><button class="btn no" data-say="group" data-text="settle">Suggest payments</button></div>`;
+  let html=`<div class="quick">${d.pot?`<button class="btn go" data-say="group" data-text="pot">Who has paid in</button>`:""}<button class="btn go" data-say="group" data-text="balances">Show balances</button><button class="btn no" id="suggestBtn" data-say="group" data-text="settle">Suggest payments</button></div>`;
   const feed=d.group.slice().reverse();
   for(const f of feed){
     if(f.type==="expense"){

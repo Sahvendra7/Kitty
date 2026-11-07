@@ -86,7 +86,7 @@ She's never allowed to sit on a button. `scripts/ui_check.py` measures this.
 uv run --with playwright==1.58.0 python scripts/ui_check.py OUT_DIR --axe path/to/axe.min.js
 ```
 
-It drives 37 page states at 375, 768 and 1440px from fixtures, without the stack, and fails on a page wider than its screen, a console error, or a serious accessibility finding. It also checks keyboard use, focus, moods, reduced motion, and that asking the cat sends nothing. Those figures exist only in that script. The stills in `docs/assets/` come from real runs.
+It drives 35 page states at 375, 768 and 1440px from fixtures, without the stack, and fails on a page wider than its screen, a console error, or a serious accessibility finding. It also checks keyboard use, focus, moods, reduced motion, and that asking the cat sends nothing. Those figures exist only in that script. The stills in `docs/assets/` come from real runs.
 
 ## Dependencies
 

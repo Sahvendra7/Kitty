@@ -238,7 +238,7 @@
       say: square ? "Everyone's square. Every balance is zero." : "Everyone on the trip can see this room. Nothing private lands here unless someone releases it.",
       facts,
       actions: [
-        { label: "Explain my settlement", answer: settleWords ? settleWords : "Press Suggest payments, and the clerk posts the fewest payments that would settle it. Nobody's asked yet.", point: settleWords ? undefined : '[data-text="settle"]' },
+        { label: "Explain my settlement", answer: settleWords ? settleWords : "Press Suggest payments, and the clerk posts the fewest payments that would settle it. Nobody's asked yet.", point: settleWords ? undefined : "#suggestBtn" },
         ...(d.pot ? [{ label: "How much is still outstanding?", answer: asked ? `${cash(left)} of the ${cash(asked)} asked for.` : "Nobody's been asked for money yet." }] : []),
         { label: "What can the group see?", answer: "Date, amount, category and who shared it, and only for what its owner released. No merchant names, and no statements." },
         { label: "Why can't the group see my statement?", answer: STATEMENT_WALL },
