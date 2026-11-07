@@ -314,7 +314,8 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
         try:
             treasurer = trip.get("treasurer")
             private, desk, group = read("private"), read("desk"), read("group", whole=bool(treasurer))
-            uid = clerk_uid() if treasurer else None
+            # Older shared-expense trips were set up without the clerk's name, and keep reading text as before.
+            uid = clerk_uid() if treasurer or config.get("clerk_bot") else None
         except httpx.HTTPError:
             return JSONResponse({"error": "Can't reach Mattermost. Check that it's running."}, status_code=502)
         extra: dict = {}
@@ -338,7 +339,7 @@ def create_app(me: str, port: int, where: P.TripPaths, trip: dict, config: dict,
                 "calls": [{"id": k, "amount": c["amount"], "who": c["label"]} for k, c in room.calls.items()],
             }
         else:
-            group_text = [p["text"] for p in group]
+            group_text = [p["text"] for p in group if uid is None or p["uid"] == uid]
         return JSONResponse({
             **extra,
             "me": {"id": me, "name": my_name},

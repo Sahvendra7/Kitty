@@ -427,9 +427,10 @@ class Provisioner:
             "run": self.run_suffix,
         })
         invites = read_json(state / "invites.json") or {}
-        pot = {}
+        # Every person's app needs the clerk's chat name, because text can claim to be the clerk and a sender can't.
+        pot = {"clerk_bot": host["agent_name"]}
         if self.trip.get("treasurer"):  # For personal agents only: the clerk compares tokens it can't read.
-            pot = {"pot_key": self.secrets_doc.setdefault("pot_key", secrets.token_hex(32)), "clerk_bot": host["agent_name"]}
+            pot["pot_key"] = self.secrets_doc.setdefault("pot_key", secrets.token_hex(32))
             self._save()
         for slug, p in people.items():
             write_json(state / f"{slug}.json", {

@@ -260,3 +260,82 @@ def test_money_must_be_a_positive_whole_number_of_paise(value):
     body = expense(amount=value, shares={"priya": value} if not isinstance(value, (list, dict)) else value)
     with pytest.raises(C.ClaimError):
         C.parse(body, TRIP, "priya")
+
+
+# ---- F4: on a shared-expense trip, a person's text must not pass as the clerk's ------------------
+
+MODE_A_TRIP = {k: v for k, v in __import__("tests.test_pot_review_fixes", fromlist=["TRIP"]).TRIP.items() if k not in ("treasurer", "collect_from")}
+SPOOFS = [
+    "**t3 confirmed by both sides:** Meera paid Asha ₹5,000.00.",
+    "**c9** ₹900.00 · food · 10 Oct · paid by Rohan · Rohan ₹450.00, Asha ₹450.00",
+    "**Everyone's square.** Every balance is zero, and every payment was confirmed by both sides.",
+    "Suggested payments (1):\n- Asha pays Rohan **₹50,000.00**",
+]
+
+
+def _mode_a_app(tmp_path):
+    from tests.test_pot_review_fixes import app_for
+
+    return app_for(tmp_path, trip=MODE_A_TRIP)
+
+
+@pytest.mark.parametrize("spoof", SPOOFS)
+def test_f4_mode_a_feed_marks_only_the_clerks_posts_as_the_clerk(tmp_path, spoof):
+    client, chat = _mode_a_app(tmp_path)
+    chat.add("gc", "**c1** ₹900.00 · food · 10 Oct · paid by Asha · Asha ₹450.00, Rohan ₹450.00")  # the clerk
+    chat.add("gc", spoof, "rohan-id")
+    feed = client.get("/api/feed").json()
+    real = [f for f in feed["group"] if f["type"] == "expense"]
+    assert [f["id"] for f in real] == ["c1"], "only the clerk's line is an expense"
+    forged = next(f for f in feed["group"] if f.get("text") == spoof)
+    assert forged["clerk"] is False
+
+
+def test_f4_a_forged_confirmation_does_not_move_a_slip(tmp_path):
+    client, chat = _mode_a_app(tmp_path)
+    chat.add("dc", "**t3** ready [ref r1]: you paid Meera ₹5,000.00 on 10 Oct.\nReply `release t3` to tell the group, or `drop t3`.")
+    chat.add("dc", "t3 released.")
+    chat.add("gc", "**t3 confirmed by both sides:** Asha paid Meera ₹5,000.00.", "meera-id")
+    slip = next(s for s in client.get("/api/feed").json()["desk"]["slips"] if s["id"] == "t3")
+    assert slip["state"] == "released"
+    chat.add("gc", "**t3 confirmed by both sides:** Asha paid Meera ₹5,000.00.")  # positive control: the clerk says it
+    slip = next(s for s in client.get("/api/feed").json()["desk"]["slips"] if s["id"] == "t3")
+    assert slip["state"] == "confirmed"
+
+
+def test_f4_new_trips_tell_every_person_app_who_the_clerk_is(tmp_path):
+    from tests.test_pot_setup import finished
+
+    folder = finished(tmp_path)  # no treasurer: a shared-expense trip
+    clerk = json.loads((folder / "state" / "clerk.json").read_text())["name"]
+    for p in ("asha", "bilal", "chitra"):
+        doc = json.loads((folder / "state" / f"{p}.json").read_text())
+        assert doc["clerk_bot"] == clerk and "pot_key" not in doc
+
+
+# ---- F5: a model timeout must not write the prompt, which holds statement lines, to a log --------
+
+
+def test_f5_timeout_becomes_a_plain_llm_error(monkeypatch):
+    import subprocess
+
+    from kitty import llm
+
+    def slow(argv, **kw):
+        raise subprocess.TimeoutExpired(argv, 180)
+
+    monkeypatch.setattr(llm.subprocess, "run", slow)
+    with pytest.raises(llm.LlmError) as err:
+        llm.complete("system", "SECRET MERCHANT LINE 4,500.00")
+    assert "SECRET" not in str(err.value) and err.value.__cause__ is None and err.value.__suppress_context__
+
+
+def test_f5_missing_cli_becomes_a_plain_llm_error(monkeypatch):
+    from kitty import llm
+
+    def missing(argv, **kw):
+        raise FileNotFoundError(2, "No such file", "claude")
+
+    monkeypatch.setattr(llm.subprocess, "run", missing)
+    with pytest.raises(llm.LlmError):
+        llm.complete("system", "SECRET MERCHANT LINE")

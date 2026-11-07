@@ -92,7 +92,7 @@ def test_full_run_writes_the_same_files_as_the_command_line(tmp_path):
     assert set(clerk) == {"agent_id", "api_key", "name", "group_room", "people", "run"}
     assert set(clerk["people"]) == {"asha", "bilal", "chitra"}
     person = json.loads((where.state / "asha.json").read_text())
-    assert set(person) == {"me", "agent_id", "api_key", "name", "private_room", "desk_room", "owner_sender", "clerk_sender", "mattermost", "run"}
+    assert set(person) == {"me", "agent_id", "api_key", "name", "private_room", "desk_room", "owner_sender", "clerk_sender", "mattermost", "run", "clerk_bot"}
     assert set(person["mattermost"]["channels"]) == {"private", "desk", "group"}
     assert person["owner_sender"] == "@sender-asha" and person["clerk_sender"] == "@sender-clerk"
 

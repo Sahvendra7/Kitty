@@ -161,6 +161,7 @@ def main() -> int:
     })
     for slug, p in people.items():
         write_private(f"{slug}.json", {
+            "clerk_bot": clerk.name,
             "me": slug, "agent_id": agents[slug].id, "api_key": agents[slug].key, "name": agents[slug].name,
             "private_room": rooms[slug]["private"], "desk_room": rooms[slug]["desk"],
             "owner_sender": senders[slug]["human"], "clerk_sender": clerk_sender,
