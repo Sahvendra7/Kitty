@@ -439,3 +439,15 @@ At the owner's request, `fix/kitty-release-hardening` was fast-forwarded into `f
 
 Mattermost: 228 active people against the limit of 250. The three test trips `goa-pot-6dfb`, `goa-pot-31c5` and `goa-pot-4f19` are ours, and their processes are stopped.
 
+### Sat 7 Nov, 22:10-22:20 - test agents deleted, two of three live suites pass on the merged code
+
+With the owner's go-ahead, the 21 Switch agents of our three failed test trips (`goa-pot-6dfb`, `goa-pot-31c5`, `goa-pot-4f19`) were deleted through Switch's own `DELETE /gateway/agents/{id}`. All 21 returned 200. Connections to Mattermost stayed at 501 straight after.
+
+- **Pot trip, `--attack --restart-midway`, real model, 22:13-22:16 (`goa-pot-30f8`): 68/68 checks passed**, and so did the script's own 31. The live attacks were refused: both agents, a member on their own desk, and a member in the group room. A confirmation made while every process was down survived the restart. A forged confirmation typed by a member changed no figures. Every room boundary returned 403.
+- **Six people, 22:16-22:17 (`coorg-weekend-53c8`): failed at set-up again,** at `rooms:farhan`, with Switch's `create_room` 500. Connections were down to 243 by then, so their number alone doesn't explain this. **Not re-run:** each attempt costs 7 Mattermost accounts. That trip's agents were left in place, because deleting them wasn't covered by the go-ahead.
+- **Three people, `rehearse.sh 1`, real model, 22:18-22:19: 37/37 checks passed.** It leaves the 7100 demo as a played trip.
+
+**What this means:** two of the three live suites now pass on the merged code. The six-person shared-expense story (61/61) hasn't been re-run since `6fd0204`. Its shared-expense code paths are covered by the three-person run and by the frozen six-person transcript test, but not live. Switch's intermittent `create_room` 500 on the sixth person's room is unexplained. It hit 4 of the 6 six-person set-ups tonight, and none of the three-person ones.
+
+Mattermost: 246 active people against the limit of 250. There's no room for another six-person trip until accounts are freed.
+

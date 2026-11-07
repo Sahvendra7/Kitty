@@ -297,3 +297,11 @@ None found.
   - the live suites on CI;
   - real-bank CSV formats.
 - **Ready for public GitHub release?** The history scan found no secrets, and the ignored folders were never committed. Making the repository public is the owner's decision. Before doing it, re-run the live suites on the merged code, and check that `docs/evidence/` holds only synthetic data. It is tracked and was grepped for credentials only.
+
+## 12. Live re-runs after the merge (added 22:20 IST)
+
+| Suite | Result |
+|---|---|
+| Pot trip, `--attack --restart-midway`, real model | **68/68**, plus 31 in-script checks. Two earlier attempts failed at set-up, and a third on a harness keep-alive race, since fixed. See journal section G |
+| Three people, `rehearse.sh 1`, real model | **37/37** |
+| Six people | **Not completed.** Set-up failed on Switch's `create_room` 500. Not retried, because of the Mattermost account limit (246 of 250) |

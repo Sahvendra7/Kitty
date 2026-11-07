@@ -88,7 +88,7 @@
   {
    "check": "the clerk is the only agent in the group room",
    "pass": true,
-   "detail": "['kitty-clerk-d472']"
+   "detail": "['kitty-clerk-0e49']"
   },
   {
    "check": "priya's agent is refused the group room",
@@ -138,27 +138,27 @@
   {
    "check": "no personal agent's bot is in the group's Mattermost channel",
    "pass": true,
-   "detail": "['admin', 'arjund472', 'kitty-clerk-d472', 'meerad472', 'priyad472', 'user']"
+   "detail": "['admin', 'arjun0e49', 'kitty-clerk-0e49', 'meera0e49', 'priya0e49', 'user']"
   },
   {
    "check": "the clerk's bot is not in priya's private Mattermost channel",
    "pass": true,
-   "detail": "['admin', 'priya-agent-d472', 'priyad472', 'user']"
+   "detail": "['admin', 'priya-agent-0e49', 'priya0e49', 'user']"
   },
   {
    "check": "the clerk's bot is not in arjun's private Mattermost channel",
    "pass": true,
-   "detail": "['admin', 'arjun-agent-d472', 'arjund472', 'user']"
+   "detail": "['admin', 'arjun-agent-0e49', 'arjun0e49', 'user']"
   },
   {
    "check": "the clerk's bot is not in meera's private Mattermost channel",
    "pass": true,
-   "detail": "['admin', 'meera-agent-d472', 'meerad472', 'user']"
+   "detail": "['admin', 'meera-agent-0e49', 'meera0e49', 'user']"
   },
   {
    "check": "a withdrawn payment was not counted as confirmed",
    "pass": true,
-   "detail": "withdrawn ['t2'], confirmed ['t1', 't3', 't4']"
+   "detail": "withdrawn ['t1'], confirmed ['t2', 't3', 't4']"
   },
   {
    "check": "the dispute was raised and then closed in the group room",
@@ -166,7 +166,7 @@
    "detail": ""
   },
   {
-   "check": "t1 was released by both people's human accounts",
+   "check": "t2 was released by both people's human accounts",
    "pass": true,
    "detail": "2 releases"
   },
