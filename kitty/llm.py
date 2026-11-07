@@ -38,7 +38,13 @@ def complete(system: str, prompt: str, model: str = MODEL) -> str:
     env = {k: v for k, v in os.environ.items() if not k.startswith(("CLAUDE", "ANTHROPIC_BASE"))}
     with tempfile.TemporaryDirectory(prefix="kitty-llm-") as cwd:
         argv = run_argv(system, prompt, model) + ["--output-format", "json"]
-        p = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True, timeout=TIMEOUT_SECONDS, stdin=subprocess.DEVNULL)
+        try:
+            p = subprocess.run(argv, cwd=cwd, env=env, capture_output=True, text=True, timeout=TIMEOUT_SECONDS, stdin=subprocess.DEVNULL)
+        except subprocess.TimeoutExpired:
+            # Its message quotes the whole command line, prompt included, so it must not reach a log.
+            raise LlmError("the model timed out") from None
+        except OSError as exc:
+            raise LlmError(f"claude could not start: {type(exc).__name__}") from None
     # A failed call's output could quote the prompt, which holds statement lines, so only a code gets logged.
     if p.returncode != 0:
         code = re.search(r"\[claude-code:([a-z_]+)\]", p.stderr or p.stdout or "")
