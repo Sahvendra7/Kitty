@@ -374,7 +374,8 @@ The owner asked for Kitty to stop looking like a prototype, with an original cat
 - **"Payments left" counted unconfirmed payments twice,** because they can also be in the settle plan. We caught this reading a real six-person board. It now counts only the plan, and says separately how many are unconfirmed.
 - **Green on ₹0.00.** Green is meant to mean money arrived. Real data showed it on a zero.
 - **Phones:** ten "details" controls were 28px tall. A real-touch check found them, and they're 44px now.
-- **`six_person.py --shots` crashed,** because its idle browser connection died during the set-up wait. `pot_trip.py` already worked around this, and `six_person.py` now opens a browser per still. The crash was in the stills tool, not the app, and the trip it left behind was cleaned up.
+- **`six_person.py --shots` crashed,** because its idle browser connection died during the set-up wait. `pot_trip.py` already worked around this, and `six_person.py` now opens a browser per still. The crash was in the stills tool, not the app. That attempt left an opened trip that nobody had played, and we kept it by accident while deleting the finished run's folder, so the finished run's log is in `docs/evidence/six_person_kitty_ui_real_model.log`.
+- **Stopping our own server took its trips down with it.** The tool we used to stop the home app kills the whole process tree, including trip processes in their own session, so a kept trip then said its apps weren't running. Start the apps brought it back, and the finished Pot trip replayed to the same figures, still square.
 - **The preview tool in the Claude app wouldn't start this server,** because Kitty sets its own port, so we ran it from a shell.
 
 **Results on this branch:**

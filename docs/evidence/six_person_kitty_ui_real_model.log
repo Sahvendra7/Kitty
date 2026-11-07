@@ -1,0 +1,154 @@
+[10:17:35] Scripted people, through the same routes the pages use.
+[10:17:40] trip coorg-weekend-06b1
+[10:18:42] PASS  six people provisioned in 68s
+[10:18:42] PASS  the organiser's page gets no credentials, room ids or sender ids
+[10:18:44] PASS  Asha's app refuses anyone without their invite
+[10:18:44] PASS  Bilal's app refuses anyone without their invite
+[10:18:44] PASS  Chitra's app refuses anyone without their invite
+[10:18:44] PASS  Dev's app refuses anyone without their invite
+[10:18:44] PASS  Esha's app refuses anyone without their invite
+[10:18:44] PASS  Farhan's app refuses anyone without their invite
+[10:18:44] PASS  an invite works only once
+[10:18:44] PASS  Asha's session doesn't open Bilal's app
+[10:18:51] PASS  a bad file is refused, and its content isn't echoed back
+[10:18:51] PASS  Asha's statement accepted: {'lines': 5, 'in_trip': 3, 'outside_trip': 2, 'spending': 2, 'payments_to_friends': 0, 'incoming': 1, 'first': '2026-10-01', 'last': '2026-10-25'}
+[10:18:51] PASS  Bilal's statement accepted: {'lines': 5, 'in_trip': 3, 'outside_trip': 2, 'spending': 2, 'payments_to_friends': 1, 'incoming': 0, 'first': '2026-10-02', 'last': '2026-10-28'}
+[10:18:51] PASS  Chitra's statement accepted: {'lines': 4, 'in_trip': 3, 'outside_trip': 1, 'spending': 3, 'payments_to_friends': 0, 'incoming': 0, 'first': '2026-10-03', 'last': '2026-10-19'}
+[10:18:51] PASS  Dev's statement accepted: {'lines': 5, 'in_trip': 4, 'outside_trip': 1, 'spending': 2, 'payments_to_friends': 1, 'incoming': 1, 'first': '2026-10-04', 'last': '2026-10-18'}
+[10:18:51] PASS  Esha's statement accepted: {'lines': 4, 'in_trip': 3, 'outside_trip': 1, 'spending': 3, 'payments_to_friends': 0, 'incoming': 0, 'first': '2026-10-05', 'last': '2026-10-18'}
+[10:18:51] PASS  Farhan's statement accepted: {'lines': 5, 'in_trip': 3, 'outside_trip': 2, 'spending': 3, 'payments_to_friends': 0, 'incoming': 0, 'first': '2026-10-06', 'last': '2026-10-22'}
+[10:18:51] PASS  the same file twice is noticed
+[10:18:56] PASS  the organiser sees all six joined, with statements added
+[10:18:56]   Asha   in private: start
+[10:18:56]   Bilal  in private: start
+[10:18:56]   Chitra in private: start
+[10:18:56]   Dev    in private: start
+[10:18:56]   Esha   in private: start
+[10:18:56]   Farhan in private: start
+[10:19:07]   Chitra in private: Yes, but not Asha or Bilal or Dev or Farhan. Just Esha and me.
+[10:19:11]   Chitra's chit c8 is wrong, so they drop it
+[10:19:11]   Chitra in desk   : drop c8
+[10:19:12]   Chitra in private: Yes, but not Dev. Everyone else went rafting.
+[10:19:21] chits people had to correct: 1
+[10:19:21]   Asha   in desk   : release c1
+[10:19:21]   Bilal  in desk   : release c2
+[10:19:22]   Chitra in desk   : release c9
+[10:19:23]   Chitra in desk   : release c10
+[10:19:24]   Dev    in desk   : release c4
+[10:19:24]   Esha   in desk   : release c6
+[10:19:25]   Esha   in desk   : release c7
+[10:19:26]   Farhan in desk   : release c3
+[10:19:27]   Farhan in desk   : release c5
+[10:19:28] PASS  the same dinner from two people is flagged in the group
+[10:19:28] PASS  Farhan's chit shows the conflict
+[10:19:28] PASS  the board holds both until one is dropped
+[10:19:35]   Farhan in desk   : drop c3
+[10:19:36]   Farhan in private: personal
+[10:19:37]   Bilal  in desk   : release t1
+[10:19:38] PASS  Asha's agent finds Bilal's payment on her side
+[10:19:38]   Asha   in desk   : release t1
+[10:19:39]   Dev    in desk   : release t2
+[10:19:40] PASS  Chitra's agent finds nothing, because it never arrived
+[10:19:40]   Chitra in desk   : release t2
+[10:19:47] PASS  the group hears nothing about Dev's reversal
+[10:19:47]   Dev    in desk   : withdraw t2 payment_failed
+[10:19:48] balances: {'Asha': 976666, 'Bilal': 626666, 'Chitra': -68333, 'Dev': -483333, 'Esha': -208333, 'Farhan': -843333}
+[10:19:48] PASS  balances match the hand-worked numbers exactly
+[10:19:48]   Chitra in group  : balances
+[10:19:49]   Chitra in group  : settle
+[10:19:55] payments to make: 5
+[10:19:55]   Farhan in private: rescan
+[10:19:56]   Farhan in desk   : release t3
+[10:19:56] PASS  Asha's agent finds Farhan's ₹8,433.33
+[10:19:56]   Asha   in desk   : release t3
+[10:19:57]   Dev    in private: rescan
+[10:19:58]   Dev    in desk   : release t4
+[10:19:59] PASS  Bilal's agent finds Dev's ₹4,833.33
+[10:19:59]   Bilal  in desk   : release t4
+[10:20:00]   Esha   in private: rescan
+[10:20:00]   Esha   in desk   : release t5
+[10:20:01] PASS  Bilal's agent finds Esha's ₹1,433.33
+[10:20:01]   Bilal  in desk   : release t5
+[10:20:02]   Chitra in private: rescan
+[10:20:03]   Chitra in desk   : release t6
+[10:20:04] PASS  Asha's agent finds Chitra's ₹683.33
+[10:20:04]   Asha   in desk   : release t6
+[10:20:04]   Esha   in private: rescan
+[10:20:05]   Esha   in desk   : release t7
+[10:20:06] PASS  Asha's agent finds Esha's ₹650.00
+[10:20:06]   Asha   in desk   : release t7
+[10:20:07] PASS  everyone's square
+[10:20:08] PASS  Asha's group feed and desk carry no statement words (45 checked)
+[10:20:08] PASS  Bilal's group feed and desk carry no statement words (45 checked)
+[10:20:08] PASS  Chitra's group feed and desk carry no statement words (45 checked)
+[10:20:08] PASS  Dev's group feed and desk carry no statement words (45 checked)
+[10:20:08] PASS  Esha's group feed and desk carry no statement words (45 checked)
+[10:20:08] PASS  Farhan's group feed and desk carry no statement words (45 checked)
+[10:20:08] PASS  no statement words in any process log 
+[10:20:08] PASS  positive control: those same words are in Asha's own statement
+[10:20:08] messages people had to resend: 0 
+[10:20:08] story finished in 154s. Now the independent check.
+TRIP_DIR=/Users/sahvendraz/Desktop/Switch/Kitty-ui/trips/coorg-weekend-06b1
+PASS  group room history was readable and is not empty  [40 messages]
+PASS  group lines were actually parsed (otherwise everything below is vacuous)  [8 lines]
+PASS  allocated shares sum to the total on every group line  [8 lines]
+PASS  net balances, recomputed from room text, sum to zero  [{'asha': 0, 'bilal': 0, 'chitra': 0, 'dev': 0, 'esha': 0, 'farhan': 0}]
+PASS  the board's balances equal the recomputed ones
+PASS  settlement plan clears the expense balances exactly  [5 payments]
+PASS  every visible claim traces to a release by its owner's human account  [8 claims]
+PASS  no release in the log came from an agent that took effect
+PASS  every conflict was cleared in the group room  [1 raised, 1 cleared]
+PASS  a conflicted expense counts exactly once  [[('c3', 'c6')]]
+PASS  each dropped claim was dropped by a person's own human account  [1 drops]
+PASS  group room has messages to scan  [40]
+PASS  no statement text in group room  [90 terms, 40 messages]
+PASS  asha's desk has messages to scan  [32]
+PASS  no statement text in asha's desk  [90 terms, 32 messages]
+PASS  bilal's desk has messages to scan  [26]
+PASS  no statement text in bilal's desk  [90 terms, 26 messages]
+PASS  chitra's desk has messages to scan  [29]
+PASS  no statement text in chitra's desk  [90 terms, 29 messages]
+PASS  dev's desk has messages to scan  [23]
+PASS  no statement text in dev's desk  [90 terms, 23 messages]
+PASS  esha's desk has messages to scan  [24]
+PASS  no statement text in esha's desk  [90 terms, 24 messages]
+PASS  farhan's desk has messages to scan  [22]
+PASS  no statement text in farhan's desk  [90 terms, 22 messages]
+PASS  no merchant field in any desk claim
+PASS  the clerk is the only agent in the group room  [['kitty-clerk-2b4e']]
+PASS  asha's agent is refused the group room  [403]
+PASS  the clerk is refused asha's private room  [403]
+PASS  asha's agent is refused everyone else's private room  [['403', '403', '403', '403', '403']]
+PASS  bilal's agent is refused the group room  [403]
+PASS  the clerk is refused bilal's private room  [403]
+PASS  bilal's agent is refused everyone else's private room  [['403', '403', '403', '403', '403']]
+PASS  chitra's agent is refused the group room  [403]
+PASS  the clerk is refused chitra's private room  [403]
+PASS  chitra's agent is refused everyone else's private room  [['403', '403', '403', '403', '403']]
+PASS  dev's agent is refused the group room  [403]
+PASS  the clerk is refused dev's private room  [403]
+PASS  dev's agent is refused everyone else's private room  [['403', '403', '403', '403', '403']]
+PASS  esha's agent is refused the group room  [403]
+PASS  the clerk is refused esha's private room  [403]
+PASS  esha's agent is refused everyone else's private room  [['403', '403', '403', '403', '403']]
+PASS  farhan's agent is refused the group room  [403]
+PASS  the clerk is refused farhan's private room  [403]
+PASS  farhan's agent is refused everyone else's private room  [['403', '403', '403', '403', '403']]
+PASS  no personal agent's bot is in the group's Mattermost channel  [['admin', 'asha2b4e', 'bilal2b4e', 'chitra2b4e', 'dev2b4e', 'esha2b4e', 'farhan2b4e', 'kitty-clerk-2b4e', 'user']]
+PASS  the clerk's bot is not in asha's private Mattermost channel  [['admin', 'asha-agent-2b4e', 'asha2b4e', 'user']]
+PASS  the clerk's bot is not in bilal's private Mattermost channel  [['admin', 'bilal-agent-2b4e', 'bilal2b4e', 'user']]
+PASS  the clerk's bot is not in chitra's private Mattermost channel  [['admin', 'chitra-agent-2b4e', 'chitra2b4e', 'user']]
+PASS  the clerk's bot is not in dev's private Mattermost channel  [['admin', 'dev-agent-2b4e', 'dev2b4e', 'user']]
+PASS  the clerk's bot is not in esha's private Mattermost channel  [['admin', 'esha-agent-2b4e', 'esha2b4e', 'user']]
+PASS  the clerk's bot is not in farhan's private Mattermost channel  [['admin', 'farhan-agent-2b4e', 'farhan2b4e', 'user']]
+PASS  a withdrawn payment was not counted as confirmed  [withdrawn ['t2'], confirmed ['t1', 't3', 't4', 't5', 't6', 't7']]
+PASS  the dispute was raised and then closed in the group room
+PASS  t1 was released by both people's human accounts  [2 releases]
+PASS  t3 was released by both people's human accounts  [2 releases]
+PASS  t4 was released by both people's human accounts  [2 releases]
+PASS  t5 was released by both people's human accounts  [2 releases]
+PASS  t6 was released by both people's human accounts  [2 releases]
+PASS  t7 was released by both people's human accounts  [2 releases]
+PASS  balances are zero, and only because of confirmed payments
+
+61/61 checks passed
