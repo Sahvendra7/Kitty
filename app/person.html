@@ -328,7 +328,7 @@ function potCard(d){
     const calls=p.calls.length?`<details><summary>What you've asked for</summary>${p.calls.map(c=>`<div class="acts"><span class="what">${cash(c.amount)} from ${esc(c.who)}</span><button class="btn no small" data-say="desk" data-text="cancel ${esc(c.id)}">Cancel this</button></div>`).join("")}</details>`:"";
     const others=d.people.filter(x=>x.id!==d.me.id);
     return `<article class="chit"><div class="amt word">The pot</div><p class="what">You hold the group's money. Only you can confirm it arrived. Checking a payment uses your statement on this laptop, and no model.</p>${note}
-      <div class="figs"><div><span>Expected</span><b>${cash(asked)}</b></div><div class="good"><span>Confirmed</span><b>${cash(credited)}</b></div><div><span>Outstanding</span><b>${cash(left)}</b></div></div>
+      <div class="figs"><div><span>Expected</span><b>${cash(asked)}</b></div><div class="${credited?"good":""}"><span>Confirmed</span><b>${cash(credited)}</b></div><div><span>Outstanding</span><b>${cash(left)}</b></div></div>
       ${asked?`<div class="meter" role="img" aria-label="${Math.round(credited/asked*100)} percent of what you asked for is confirmed"><i style="width:${Math.min(100,credited/asked*100)}%"></i></div>`:""}
       <ul class="roll">${rows}</ul>${calls}
       <form data-pot="call" class="pot-form"><label>Ask for money<input name="ask" inputmode="decimal" placeholder="5000" value="${inv("ask")}"></label><label>Only these people (leave empty for everyone)<input name="who" placeholder="rohan meera" value="${inv("who")}"></label>${potFlag("call")}<div class="acts"><button class="btn go">Ask</button></div></form>
@@ -337,7 +337,7 @@ function potCard(d){
   }
   const m=p.mine;
   return `<article class="chit"><div class="amt word">Your contribution</div><p class="what">${esc(p.treasurer)} holds the group's money. It counts once ${esc(p.treasurer)} confirms it arrived.</p>${note}
-    <div class="figs"><div><span>Asked</span><b>${cash(m.asked)}</b></div><div class="good"><span>Confirmed</span><b>${cash(m.credited)}</b></div><div><span>Outstanding</span><b>${cash(m.outstanding)}</b></div></div>
+    <div class="figs"><div><span>Asked</span><b>${cash(m.asked)}</b></div><div class="${m.credited?"good":""}"><span>Confirmed</span><b>${cash(m.credited)}</b></div><div><span>Outstanding</span><b>${cash(m.outstanding)}</b></div></div>
     ${m.asked?`<div class="meter" role="img" aria-label="${Math.round(Math.min(1,m.credited/m.asked)*100)} percent confirmed"><i style="width:${Math.min(100,m.credited/m.asked*100)}%"></i></div>`:""}
     ${m.above?`<p class="small muted" style="margin-top:6px">${cash(m.above)} above what was asked.</p>`:""}
     <h3 class="form-title"><kitty-cat class="tiny" mood="filing"></kitty-cat>Paid in your usual app?</h3>

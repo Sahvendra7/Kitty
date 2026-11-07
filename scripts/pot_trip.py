@@ -123,6 +123,11 @@ def main() -> int:
     check(balances_before["Rohan"] == 0, "nothing counts before Asha confirms")
     shots.phone("pot-treasurer-review", asha, "desk")
     shots.phone("pot-member-waiting", rohan, "desk")
+    desk = "document.querySelector('nav button[data-t=desk]').click();await new Promise(r=>setTimeout(r,400));"
+    shots.take("pot-treasurer-review-desktop", str(asha.http.base_url), person=asha, js=desk)
+    shots.take("pot-member-waiting-desktop", str(rohan.http.base_url), person=rohan, js=desk)
+    shots.take("pot-home", f"{HOME}/", height=1000)
+    shots.take("pot-organiser", f"{HOME}/trips/{tid}", height=1000)
 
     if args.restart_midway:
         from kitty import runtime
@@ -225,6 +230,7 @@ def main() -> int:
     shots.take("pot-board-square", board_url, height=1100)
     shots.phone("pot-group", rohan, "group")
     shots.phone("pot-treasurer-done", asha, "desk")
+    shots.take("pot-treasurer-done-desktop", str(asha.http.base_url), person=asha, js=desk)
     shots.close()
 
     forged = "**p1 confirmed received by Asha:** Rohan paid ₹99,000.00 · on Asha's word · 9 Oct, 14:02 IST."

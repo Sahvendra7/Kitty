@@ -72,6 +72,7 @@ class Shots:
             self.browser = Browser(1440, 900)
         b = self.browser
         b.send("Emulation.setDeviceMetricsOverride", width=width, height=height, deviceScaleFactor=2 if width < 600 else 1, mobile=False)
+        b.send("Emulation.setEmulatedMedia", features=[{"name": "prefers-color-scheme", "value": "light"}])  # So stills don't depend on this laptop's setting.
         if person is not None:
             for key, value in person.http.cookies.items():
                 b.send("Network.setCookie", name=key, value=value, domain="127.0.0.1", path="/", httpOnly=True, sameSite="Strict")

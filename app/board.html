@@ -151,14 +151,14 @@ function ledger(d,mood){
   let cells,pct,left,right;
   if(d.pot){
     const x=guide.potTotals(d.pot),waiting=d.pot.contributions.filter(c=>["submitted","recipient_review","needs_clarification"].includes(c.status)).length;
-    cells=[["Expected",money(x.asked),"first"],["Confirmed",money(x.credited),"good"],["Outstanding",money(x.outstanding),""]];
+    cells=[["Expected",money(x.asked),"first"],["Confirmed",money(x.credited),x.credited?"good":""],["Outstanding",money(x.outstanding),""]];
     pct=x.asked?Math.min(100,x.credited/x.asked*100):0;
     left=x.asked?`${Math.round(pct)}% of what was asked for is confirmed.`:"Nobody's been asked for money yet.";
     right=waiting?`${waiting} waiting for ${esc(d.pot.treasurer)}. Not counted yet.`:x.above?`${money(x.above)} above what was asked.`:"";
   }else{
     const counted=d.expenses.filter(e=>e.status==="released"),total=counted.reduce((a,e)=>a+e.amount_paise,0);
     const done=d.transfers.filter(t=>t.status==="confirmed").length,open=d.transfers.filter(t=>["awaiting_receiver","challenged"].includes(t.status)).length,all=done+open+d.plan.length;
-    cells=[["Counted",money(total),"first"],["Payments confirmed",String(done),"good"],["Payments left",String(open+d.plan.length),""]];
+    cells=[["Counted",money(total),"first"],["Payments confirmed",String(done),done?"good":""],["Payments left",String(open+d.plan.length),""]];
     pct=all?done/all*100:0;
     left=counted.length?(all?`${done} of ${all} payments confirmed by both sides.`:"No payments are needed."):"Nothing counted yet.";
     right=d.held_count?`${d.held_count} waiting on their owner's release.`:"";
